@@ -27,7 +27,7 @@ make migrate-user
 make run-user
 ```
 
-Swagger: http://localhost:8081/docs  
+Swagger: http://localhost:8081/docs
 OpenAPI: http://localhost:8081/openapi.json
 
 ## OpenAPI → клиент
@@ -37,6 +37,7 @@ make openapi-user
 ```
 
 Артефакты:
+
 - `schema/user-service.openapi.json`
 - `python/libs/clients/user_service/entities.py` (dataclass)
 - HTTP-клиент рядом в `python/libs/clients/user_service/`

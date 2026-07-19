@@ -116,7 +116,7 @@ class S3FileStorage(FileStorage):
         if key_or_url.startswith("http"):
             # Вытаскиваем ключ из URL: .../bucket/avatars/xxx.jpg → avatars/xxx.jpg
             prefix = f"{self.public_base_url}/"
-            key = key_or_url[len(prefix) :] if key_or_url.startswith(prefix) else key_or_url.rsplit("/", 2)[-1]
+            key = key_or_url[len(prefix):] if key_or_url.startswith(prefix) else key_or_url.rsplit("/", 2)[-1]
 
         def _delete() -> None:
             assert self._client is not None

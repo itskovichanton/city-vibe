@@ -3,12 +3,12 @@
 from typing import Protocol
 
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
-
-from python.libs.clients.infra.events import EventBus
-from python.libs.entities.events import UserCreatedEvent
 from user_service.entities.common import CreateUserRequest, UserResponse
 from user_service.infra.orm.mappers import user_dto_to_response
 from user_service.repo.user import UserRepo
+
+from python.libs.clients.infra.events import EventBus
+from python.libs.entities.events import UserCreatedEvent
 
 # Имя топика для события создания пользователя
 TOPIC_USER_CREATED = "user.created"

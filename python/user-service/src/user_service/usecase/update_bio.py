@@ -7,12 +7,12 @@ from src.mybootstrap_mvc_itskovichanton.exceptions import (
     ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
     CoreException,
 )
-
-from python.libs.clients.infra.events import EventBus
-from python.libs.entities.events import UserUpdatedEvent
 from user_service.entities.common import UpdateBioRequest, UserResponse
 from user_service.infra.orm.mappers import user_dto_to_response
 from user_service.repo.user import UserRepo
+
+from python.libs.clients.infra.events import EventBus
+from python.libs.entities.events import UserUpdatedEvent
 
 TOPIC_USER_UPDATED = "user.updated"
 

@@ -1,7 +1,7 @@
 -- Миграция 001: таблица пользователей и устройств
 -- Применяется вручную или через Alembic (см. Makefile: migrate-user)
 
-CREATE TABLE IF NOT EXISTS users (
+create TABLE IF NOT EXISTS users (
     id                    SERIAL PRIMARY KEY,
     name                  VARCHAR(255) NOT NULL,
     username              VARCHAR(255) UNIQUE,
@@ -18,12 +18,12 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS ix_users_status ON users (status) WHERE deleted = FALSE;
-CREATE INDEX IF NOT EXISTS ix_users_onboarding ON users (onboarding_completed) WHERE deleted = FALSE;
+create index IF NOT EXISTS ix_users_status ON users (status) WHERE deleted = FALSE;
+create index IF NOT EXISTS ix_users_onboarding ON users (onboarding_completed) WHERE deleted = FALSE;
 
-CREATE TABLE IF NOT EXISTS user_devices (
+create TABLE IF NOT EXISTS user_devices (
     id            SERIAL PRIMARY KEY,
-    user_id       INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    user_id       INTEGER NOT NULL REFERENCES users (id) ON delete CASCADE,
     device_model  VARCHAR(255) NOT NULL,
     push_token    VARCHAR(512) NOT NULL,
     platform      VARCHAR(32) NOT NULL,
@@ -35,4 +35,4 @@ CREATE TABLE IF NOT EXISTS user_devices (
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS ix_user_devices_user_id ON user_devices (user_id);
+create index IF NOT EXISTS ix_user_devices_user_id ON user_devices (user_id);

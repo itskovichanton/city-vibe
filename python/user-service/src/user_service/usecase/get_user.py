@@ -7,7 +7,6 @@ from src.mybootstrap_mvc_itskovichanton.exceptions import (
     ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
     CoreException,
 )
-
 from user_service.entities.common import UserResponse
 from user_service.infra.orm.mappers import user_dto_to_response
 from user_service.repo.user import UserRepo

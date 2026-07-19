@@ -21,9 +21,9 @@ def _bootstrap_sys_path() -> None:
       - python.libs.*           (корень репозитория)
     Фреймворк mybootstrap_* уже лежит в site-packages/src.
     """
-    service_dir = Path(__file__).resolve().parent          # .../python/user-service
-    repo_root = service_dir.parents[1]                     # .../city-vibe
-    service_src = service_dir / "src"                      # .../python/user-service/src
+    service_dir = Path(__file__).resolve().parent  # .../python/user-service
+    repo_root = service_dir.parents[1]  # .../city-vibe
+    service_src = service_dir / "src"  # .../python/user-service/src
 
     for path in (repo_root, service_src):
         path_str = str(path)

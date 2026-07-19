@@ -1,8 +1,9 @@
 """Маппинг ORM ↔ доменные DTO. Репозитории отдают только DTO."""
 
-from python.libs.entities.user import PlaceCategory, Status, User, UserRole
 from user_service.entities.common import UserResponse
 from user_service.infra.orm.models import UserModel
+
+from python.libs.entities.user import PlaceCategory, Status, User, UserRole
 
 
 def _parse_categories(raw: list[str] | None) -> list[PlaceCategory]:

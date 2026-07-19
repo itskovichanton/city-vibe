@@ -7,7 +7,7 @@ HTTP-клиент user-service (Spring-like: Protocol + @bean Impl).
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Protocol
 
 import httpx
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
