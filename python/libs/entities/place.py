@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
 from typing import List
 
-from python.libs.dto.base import Entity
-from python.libs.dto.geo import GeoLocation
-from python.libs.dto.user import Contact
+from python.libs.entities.base import Entity
+from python.libs.entities.geo import GeoLocation
+from python.libs.entities.user import Contact
 
 
 @dataclass

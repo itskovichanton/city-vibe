@@ -20,4 +20,17 @@ equifax-sync-1.0.0/work/*/logs
 equifax-sync-1.0.0/work/*/cmd/temp
 !equifax-sync-1.0.0/work/dev/cmd/*.sh
 venv
+.venv
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+.DS_Store
 python/user-service/config-kg.yml
+python/user-service/user-service-*/work/
+.env
+.env.*
+!.env.example

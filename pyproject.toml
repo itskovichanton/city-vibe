@@ -1,0 +1,14 @@
+[project]
+name = "city-vibe"
+version = "0.1.0"
+description = "City Vibe monorepo"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+exclude = ["python/libs/clients"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

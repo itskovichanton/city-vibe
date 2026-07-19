@@ -2,31 +2,42 @@ app:
   version: 1.0.0
   name: user-service
 
+server:
+  host: 0.0.0.0
+  port: 8081
+
+db:
+  url: postgresql+asyncpg://cityvibe:cityvibe@localhost:5432/cityvibe_users
+  echo: false
+  pool_size: 5
+
+rabbitmq:
+  url: amqp://cityvibe:cityvibe@localhost:5672/
+  exchange: city_vibe.events
+
+s3:
+  endpoint_url: http://localhost:9000
+  access_key: minioadmin
+  secret_key: minioadmin
+  bucket: city-vibe
+  region: us-east-1
+  public_base_url: http://localhost:9000/city-vibe
+
+redis:
+  host: localhost
+  port: 6379
+
 email:
-  from_address: finstart.mailer@molbulak.com
-  username: finstart.mailer
-  password: Shaxz0da20130
-  host: mail.molbulak.com
-  address: mail.molbulak.com
+  from_address: noreply@cityvibe.local
+  username: ""
+  password: ""
+  host: localhost
+  address: localhost
   port: 25
   encoding: utf-8
 
-jwt-generator:
-  secret: 'WfXrfOmt2nrPN3zBwBXNh9bZletre01GOm3O2chldXMslaeM'
-
-redis:
-  host: 192.168.200.178
-
 alerts:
-  emails:
-    - a.itskovich@molbulak.com
-
-fr:
-  url: http://10.1.2.103:8091
-  developer_id: 106567582
-
-server:
-  port: 8082
+  emails: []
 
 loggers:
   sql:
@@ -34,4 +45,16 @@ loggers:
   http:
     backup_count: 3
 
+# Профиль dev (обязателен для YamlConfigLoaderServiceImpl)
+dev:
+  server:
+    port: 8081
+  db:
+    echo: true
 
+# Профиль prod — переопределения для продакшена
+prod:
+  server:
+    port: 8081
+  db:
+    echo: false

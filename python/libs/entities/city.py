@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from python.libs.dto.base import Entity
-from python.libs.dto.geo import GeoLocation
+from python.libs.entities.base import Entity
+from python.libs.entities.geo import GeoLocation
 
 
 @dataclass
