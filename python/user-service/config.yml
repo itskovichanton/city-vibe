@@ -1,0 +1,37 @@
+app:
+  version: 1.0.0
+  name: user-service
+
+email:
+  from_address: finstart.mailer@molbulak.com
+  username: finstart.mailer
+  password: Shaxz0da20130
+  host: mail.molbulak.com
+  address: mail.molbulak.com
+  port: 25
+  encoding: utf-8
+
+jwt-generator:
+  secret: 'WfXrfOmt2nrPN3zBwBXNh9bZletre01GOm3O2chldXMslaeM'
+
+redis:
+  host: 192.168.200.178
+
+alerts:
+  emails:
+    - a.itskovich@molbulak.com
+
+fr:
+  url: http://10.1.2.103:8091
+  developer_id: 106567582
+
+server:
+  port: 8082
+
+loggers:
+  sql:
+    backup_count: 3
+  http:
+    backup_count: 3
+
+
