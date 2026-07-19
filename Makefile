@@ -56,7 +56,7 @@ test-user:
 	cd $(USER_SERVICE) && $(PYTHON) -m pytest tests/ -v
 
 # --- OpenAPI ---
-# 1) экспорт схемы в schema/user-service.openapi.json
+# 1) экспорт схемы в schema/user-service.json
 # 2) dataclass-сущности → python/libs/clients/user_service/entities.py
 # 3) async httpx-клиент → python/libs/clients/user_service/client.py
 

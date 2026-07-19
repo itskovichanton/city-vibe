@@ -4,8 +4,8 @@ from typing import Protocol
 
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
 
-from python.libs.entities.events.eventbus import EventBus
-from python.libs.entities.events.user import UserCreatedEvent
+from python.libs.entities.events import EventBus
+from python.libs.entities.events import UserCreatedEvent
 from user_service.entities.common import CreateUserRequest, UserResponse
 from user_service.infra.orm.mappers import user_dto_to_response
 from user_service.repo.user import UserRepo

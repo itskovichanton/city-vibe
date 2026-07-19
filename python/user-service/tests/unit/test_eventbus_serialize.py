@@ -3,9 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-import pytest
-
-from python.libs.entities.events.eventbus import deserialize_message, serialize_message
+from python.libs.clients.infra.events.eventbus import serialize_message, deserialize_message
 from python.libs.entities.user import PlaceCategory, Status, User, UserRole
 
 

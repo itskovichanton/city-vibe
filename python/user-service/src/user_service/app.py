@@ -2,7 +2,7 @@ from src.mybootstrap_core_itskovichanton.app import Application
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
 
 # Импорты нужны, чтобы @bean-классы зарегистрировались в IoC до inject()
-from python.libs.entities.events.eventbus import RabbitMQEventBus  # noqa: F401
+from python.libs.entities.events import RabbitMQEventBus  # noqa: F401
 from user_service.infra.db.session import Database  # noqa: F401
 from user_service.infra.s3.storage import S3FileStorage  # noqa: F401
 from user_service.presenter.controller import UserController  # noqa: F401
