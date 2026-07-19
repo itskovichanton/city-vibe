@@ -28,9 +28,12 @@ redis:
   port: 6379
 
 # HTTP-клиенты к нашим микросервисам (on_mbclient_api → MBClientConfig)
+# session_token уходит как sessionToken — S2S middleware его принимает
 clients:
   user_service:
     url: http://localhost:8081
+    auth:
+      session_token: dev-s2s-token
 
 email:
   from_address: noreply@cityvibe.local

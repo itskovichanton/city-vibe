@@ -1,9 +1,9 @@
-"""HTTP-сервер FastAPI: Swagger UI, OpenAPI, async-эндпоинты."""
+"""HTTP-сервер FastAPI: Swagger UI, OpenAPI, async-эндпоинты + infra decorators."""
 
 from typing import List, Optional
 
 import uvicorn
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, Request, UploadFile
 from pydantic import BaseModel, Field
 from src.mybootstrap_core_itskovichanton.logger import LoggerService
 from src.mybootstrap_ioc_itskovichanton.config import ConfigService
@@ -20,8 +20,13 @@ from src.mybootstrap_mvc_itskovichanton.result_presenter import ResultPresenter
 
 from python.libs.clients.infra.s3 import FileStorage
 from python.libs.entities.user import PlaceCategory
-from python.user_service.src.user_service.entities.common import CreateUserRequest, UpdateBioRequest, \
-    CompleteOnboardingRequest
+from python.libs.infra import CityVibeInfraSupport
+from python.libs.infra.decorators import idempotent, rate_limit, read_validated_upload, require_s2s
+from python.user_service.src.user_service.entities.common import (
+    CompleteOnboardingRequest,
+    CreateUserRequest,
+    UpdateBioRequest,
+)
 from python.user_service.src.user_service.repo.user import UserRepo
 from python.user_service.src.user_service.usecase.complete_onboarding import CompleteOnboardingUseCase
 from python.user_service.src.user_service.usecase.create_user import CreateUserUseCase
@@ -30,20 +35,13 @@ from python.user_service.src.user_service.usecase.update_bio import UpdateBioUse
 
 
 class CreateUserBody(BaseModel):
-    """Тело запроса создания профиля (шаг 1)."""
-
     name: str = Field(..., description="Имя")
     age: Optional[int] = Field(None, description="Возраст 1..120")
     short_bio: str = Field("", description="Коротко о себе")
-    favorite_categories: List[str] = Field(
-        default_factory=list,
-        description="Любимые категории мест",
-    )
+    favorite_categories: List[str] = Field(default_factory=list, description="Любимые категории мест")
 
 
 class UpdateBioBody(BaseModel):
-    """Тело запроса развёрнутого bio (шаг 2)."""
-
     long_bio: str = Field(..., description="О себе в свободной форме")
 
 
@@ -53,8 +51,8 @@ class Server:
 
     config_service: ConfigService
     error_handler_fast_api_support: ErrorHandlerFastAPISupport
+    infra_support: CityVibeInfraSupport
     action_runner: ActionRunner
-    # Use-case инжектятся напрямую (без отдельного controller)
     create_user_uc: CreateUserUseCase
     update_bio_uc: UpdateBioUseCase
     complete_onboarding_uc: CompleteOnboardingUseCase
@@ -85,76 +83,80 @@ class Server:
             openapi_url="/openapi.json",
         )
         self.error_handler_fast_api_support.mount(app)
+        # Request-ID / S2S / Idempotency middleware — по ENV-флагам
+        self.infra_support.mount(app)
         return app
 
     def add_routes(self):
         @self.fast_api.get("/health", tags=["infra"])
         async def health():
-            # В формате {result: ...}, чтобы клиенты на on_mbclient_api / parse_response работали одинаково
             return self.presenter.present(
                 Result(result={"status": "ok", "service": "user-service"}),
             )
 
-        @self.fast_api.post(
-            "/users",
-            tags=["users"],
-            summary="Создать пользователя (онбординг, шаг 1)",
-        )
-        async def create_user(body: CreateUserBody):
+        @self.fast_api.post("/users", tags=["users"], summary="Создать пользователя (онбординг, шаг 1)")
+        @require_s2s
+        @idempotent("users.create")
+        @rate_limit("users.create", limit=30)
+        async def create_user(request: Request, body: CreateUserBody):
             categories: list[PlaceCategory] = []
             for code in body.favorite_categories:
                 try:
                     categories.append(PlaceCategory(code))
                 except ValueError:
                     continue
-            request = CreateUserRequest(
+            req = CreateUserRequest(
                 name=body.name,
                 age=body.age,
                 short_bio=body.short_bio,
                 favorite_categories=categories,
             )
             return self.presenter.present(
-                await self.action_runner.run(self.create_user_uc.execute, call=request),
+                await self.action_runner.run(self.create_user_uc.execute, call=req),
             )
 
-        @self.fast_api.get(
-            "/users/{user_id}",
-            tags=["users"],
-            summary="Получить профиль пользователя",
-        )
-        async def get_user(user_id: int):
+        @self.fast_api.get("/users/{user_id}", tags=["users"], summary="Получить профиль")
+        @require_s2s
+        @rate_limit("users.get", limit=120)
+        async def get_user(request: Request, user_id: int):
             return self.presenter.present(
                 await self.action_runner.run(self.get_user_uc.execute, call=user_id),
             )
 
-        @self.fast_api.put(
-            "/users/{user_id}/bio",
-            tags=["users"],
-            summary="Обновить развёрнутое bio (онбординг, шаг 2)",
-        )
-        async def update_bio(user_id: int, body: UpdateBioBody):
-            request = UpdateBioRequest(user_id=user_id, long_bio=body.long_bio)
+        @self.fast_api.put("/users/{user_id}/bio", tags=["users"], summary="Обновить bio")
+        @require_s2s
+        @idempotent("users.bio")
+        @rate_limit("users.bio", limit=60)
+        async def update_bio(request: Request, user_id: int, body: UpdateBioBody):
+            req = UpdateBioRequest(user_id=user_id, long_bio=body.long_bio)
             return self.presenter.present(
-                await self.action_runner.run(self.update_bio_uc.execute, call=request),
+                await self.action_runner.run(self.update_bio_uc.execute, call=req),
             )
 
         @self.fast_api.post(
             "/users/{user_id}/onboarding/complete",
             tags=["users"],
-            summary="Завершить онбординг (шаг 3)",
+            summary="Завершить онбординг",
         )
-        async def complete_onboarding(user_id: int):
-            request = CompleteOnboardingRequest(user_id=user_id)
+        @require_s2s
+        @idempotent("users.onboarding.complete")
+        @rate_limit("users.onboarding", limit=20)
+        async def complete_onboarding(request: Request, user_id: int):
+            req = CompleteOnboardingRequest(user_id=user_id)
             return self.presenter.present(
-                await self.action_runner.run(self.complete_onboarding_uc.execute, call=request),
+                await self.action_runner.run(self.complete_onboarding_uc.execute, call=req),
             )
 
         @self.fast_api.post(
             "/users/{user_id}/avatar",
             tags=["users"],
-            summary="Загрузить аватарку в S3 и привязать к профилю",
+            summary="Загрузить аватарку в S3",
         )
+        @require_s2s
+        @idempotent("users.avatar")
+        @rate_limit("users.avatar", limit=10, window_sec=60)
         async def upload_avatar(
+            request: Request,
             user_id: int,
             file: UploadFile = File(..., description="Файл изображения"),
         ):
@@ -165,9 +167,7 @@ class Server:
                         message=f"Пользователь id={user_id} не найден",
                         reason=ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
                     )
-                data = await file.read()
-                content_type = file.content_type or "image/jpeg"
-                ext = (file.filename or "avatar.jpg").rsplit(".", 1)[-1]
+                data, content_type, ext = await read_validated_upload(file)
                 url = await self.file_storage.upload(
                     data,
                     content_type=content_type,

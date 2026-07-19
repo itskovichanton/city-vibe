@@ -5,7 +5,7 @@ PYTHON ?= /Library/Frameworks/Python.framework/Versions/3.12/bin/python3
 PIP    ?= /Library/Frameworks/Python.framework/Versions/3.12/bin/pip3
 
 REPO_ROOT := $(shell pwd)
-USER_SERVICE := $(REPO_ROOT)/python/user-service
+USER_SERVICE := $(REPO_ROOT)/python/user_service
 LIBS := $(REPO_ROOT)/python/libs
 SCHEMA_DIR := $(REPO_ROOT)/schema
 CLIENTS_DIR := $(LIBS)/clients
@@ -40,9 +40,11 @@ infra-down:
 	docker compose -f infra/docker-compose.yml down
 
 migrate-user:
-	@echo "Применяем миграции user-service..."
+	@echo "Применяем миграции user_service..."
 	docker compose -f infra/docker-compose.yml exec -T postgres \
 		psql -U cityvibe -d cityvibe_users < $(USER_SERVICE)/sql/migrations/001_create_users.sql
+	docker compose -f infra/docker-compose.yml exec -T postgres \
+		psql -U cityvibe -d cityvibe_users < $(USER_SERVICE)/sql/migrations/002_outbox.sql
 	@echo "Миграции применены"
 
 seed-user:

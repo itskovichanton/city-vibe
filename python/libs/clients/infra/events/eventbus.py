@@ -142,12 +142,24 @@ class RabbitMQEventBus(EventBus):
         exchange = await self._ensure_connected()
         body = serialize_message(message)
 
+        # Корреляция: request_id из contextvars → заголовки AMQP
+        headers: dict = {}
+        try:
+            from python.libs.infra.context import get_request_id
+
+            rid = get_request_id()
+            if rid:
+                headers["request_id"] = rid
+        except Exception:
+            pass
+
         await exchange.publish(
             aio_pika.Message(
                 body=body,
                 content_type="application/json",
                 delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
                 type=type(message).__name__,
+                headers=headers or None,
             ),
             routing_key=topic,
         )
