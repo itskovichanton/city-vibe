@@ -15,7 +15,7 @@ from src.mybootstrap_mvc_itskovichanton.exceptions import (
     ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
     CoreException,
 )
-from src.mybootstrap_mvc_itskovichanton.pipeline import ActionRunner
+from src.mybootstrap_mvc_itskovichanton.pipeline import ActionRunner, Result
 from src.mybootstrap_mvc_itskovichanton.result_presenter import ResultPresenter
 
 from python.libs.clients.infra.s3 import FileStorage
@@ -90,7 +90,10 @@ class Server:
     def add_routes(self):
         @self.fast_api.get("/health", tags=["infra"])
         async def health():
-            return {"status": "ok", "service": "user-service"}
+            # В формате {result: ...}, чтобы клиенты на on_mbclient_api / parse_response работали одинаково
+            return self.presenter.present(
+                Result(result={"status": "ok", "service": "user-service"}),
+            )
 
         @self.fast_api.post(
             "/users",

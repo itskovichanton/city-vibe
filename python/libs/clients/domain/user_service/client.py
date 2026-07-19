@@ -1,127 +1,120 @@
 """
 HTTP-клиент user-service (Spring-like: Protocol + @bean Impl).
 
-Интерфейс `UserServiceClient` — контракт для DI.
-Реализация `UserServiceClientImpl` — httpx async-клиент.
+Используем on_mbclient_api — тот же подход, что и для внутренних
+микросервисов (см. mbulak_tools biofull / bioguard):
+  - url / auth / lang из config.yml
+  - logged session + request_id
+  - разбор ответа через parse_response ({result}/{error})
 """
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Any, Protocol
 
-import httpx
+from src.mybootstrap_core_itskovichanton.utils import to_dict
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
+from src.mybootstrap_mvc_fastapi_itskovichanton.client.http import on_mbclient_api
 
 from python.libs.clients.domain.user_service.entities import CreateUserBody, UpdateBioBody
+
+# Имя секции в config.yml → clients.user_service.url
+api_call = on_mbclient_api(_name="clients.user_service")
 
 
 class UserServiceClient(Protocol):
     """Контракт клиента user-service (инжектить именно его)."""
 
-    async def health(self) -> dict:
+    def health(self) -> Any:
         """Healthcheck сервиса."""
         ...
 
-    async def create_user(self, body: CreateUserBody) -> dict:
+    def create_user(self, body: CreateUserBody) -> Any:
         """Создать пользователя (онбординг, шаг 1)."""
         ...
 
-    async def get_user(self, user_id: int) -> dict:
+    def get_user(self, user_id: int) -> Any:
         """Получить профиль по id."""
         ...
 
-    async def update_bio(self, user_id: int, body: UpdateBioBody) -> dict:
+    def update_bio(self, user_id: int, body: UpdateBioBody) -> Any:
         """Обновить развёрнутое bio (онбординг, шаг 2)."""
         ...
 
-    async def complete_onboarding(self, user_id: int) -> dict:
+    def complete_onboarding(self, user_id: int) -> Any:
         """Завершить онбординг (шаг 3)."""
         ...
 
-    async def upload_avatar(
+    def upload_avatar(
         self,
         user_id: int,
         filename: str,
         data: bytes,
         content_type: str = "image/jpeg",
-    ) -> dict:
+    ) -> Any:
         """Загрузить аватарку и привязать к профилю."""
         ...
 
-    async def close(self) -> None:
-        """Закрыть HTTP-соединения."""
-        ...
 
-
-@bean(
-    base_url=("user-service.url", str, "http://localhost:8081"),
-    timeout=("user-service.timeout", float, 30.0),
-)
+@bean
 class UserServiceClientImpl(UserServiceClient):
     """
-    Реализация UserServiceClient поверх httpx.AsyncClient.
+    Реализация UserServiceClient через on_mbclient_api + requests session.
 
-    base_url / timeout берутся из config.yml (секция user-service)
-    через аргументы декоратора @bean(...).
+    Конфиг (MBClientConfig) читается из config.yml:
+      clients:
+        user_service:
+          url: http://localhost:8081
     """
 
-    _http: httpx.AsyncClient | None = None
+    @api_call
+    def health(self, session=None, url=None, headers=None):
+        return session.get(url=f"{url}/health", timeout=30, headers=headers)
 
-    def init(self, **kwargs):
-        self.base_url = str(kwargs.get("base_url", getattr(self, "base_url", "http://localhost:8081"))).rstrip("/")
-        self.timeout = float(kwargs.get("timeout", getattr(self, "timeout", 30.0)))
-        self._http = httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout)
+    @api_call
+    def create_user(self, body: CreateUserBody, session=None, url=None, headers=None):
+        return session.post(
+            url=f"{url}/users",
+            timeout=30,
+            headers=headers,
+            json=to_dict(body, remove_none_values=True),
+        )
 
-    def _client(self) -> httpx.AsyncClient:
-        assert self._http is not None, "UserServiceClientImpl не инициализирован"
-        return self._http
+    @api_call
+    def get_user(self, user_id: int, session=None, url=None, headers=None):
+        return session.get(url=f"{url}/users/{user_id}", timeout=30, headers=headers)
 
-    async def health(self) -> dict:
-        r = await self._client().get("/health")
-        r.raise_for_status()
-        return r.json()
+    @api_call
+    def update_bio(self, user_id: int, body: UpdateBioBody, session=None, url=None, headers=None):
+        return session.put(
+            url=f"{url}/users/{user_id}/bio",
+            timeout=30,
+            headers=headers,
+            json=to_dict(body, remove_none_values=True),
+        )
 
-    async def create_user(self, body: CreateUserBody) -> dict:
-        payload = {
-            "name": body.name,
-            "age": body.age,
-            "short_bio": body.short_bio or "",
-            "favorite_categories": body.favorite_categories or [],
-        }
-        r = await self._client().post("/users", json=payload)
-        r.raise_for_status()
-        return r.json()
+    @api_call
+    def complete_onboarding(self, user_id: int, session=None, url=None, headers=None):
+        return session.post(
+            url=f"{url}/users/{user_id}/onboarding/complete",
+            timeout=30,
+            headers=headers,
+        )
 
-    async def get_user(self, user_id: int) -> dict:
-        r = await self._client().get(f"/users/{user_id}")
-        r.raise_for_status()
-        return r.json()
-
-    async def update_bio(self, user_id: int, body: UpdateBioBody) -> dict:
-        r = await self._client().put(f"/users/{user_id}/bio", json={"long_bio": body.long_bio})
-        r.raise_for_status()
-        return r.json()
-
-    async def complete_onboarding(self, user_id: int) -> dict:
-        r = await self._client().post(f"/users/{user_id}/onboarding/complete")
-        r.raise_for_status()
-        return r.json()
-
-    async def upload_avatar(
+    @api_call
+    def upload_avatar(
         self,
         user_id: int,
         filename: str,
         data: bytes,
         content_type: str = "image/jpeg",
-    ) -> dict:
-        r = await self._client().post(
-            f"/users/{user_id}/avatar",
+        session=None,
+        url=None,
+        headers=None,
+    ):
+        return session.post(
+            url=f"{url}/users/{user_id}/avatar",
+            timeout=60,
+            headers=headers,
             files={"file": (filename, data, content_type)},
         )
-        r.raise_for_status()
-        return r.json()
-
-    async def close(self) -> None:
-        if self._http is not None:
-            await self._http.aclose()
-            self._http = None
