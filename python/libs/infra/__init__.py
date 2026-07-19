@@ -2,7 +2,7 @@
 Общая инфраструктура микросервисов City Vibe.
 
 Библиотеки: asgi-correlation-id (request-id), pyrate-limiter (rate-limit),
-filetype (upload MIME). Свои: S2S, idempotency, outbox.
+filetype (upload MIME), OpenTelemetry→Jaeger (HTTP+SQL). Свои: S2S, idempotency, outbox.
 
 Включение фич — через ENV (см. flags.py / .env.example).
 Локально всё можно выключить и разрабатывать без Redis/S2S.

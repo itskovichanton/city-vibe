@@ -19,7 +19,7 @@ export PYTHONPATH := $(REPO_ROOT):$(USER_SERVICE)/src:/Library/Frameworks/Python
 help:
 	@echo "Цели:"
 	@echo "  install       — зависимости user-service"
-	@echo "  infra-up      — postgres, rabbitmq, redis, minio"
+	@echo "  infra-up      — postgres, rabbitmq, redis, minio, jaeger"
 	@echo "  infra-down    — остановить infra"
 	@echo "  migrate-user  — применить SQL-миграции user-service"
 	@echo "  run-user      — запустить user-service"
@@ -35,6 +35,7 @@ install:
 infra-up:
 	docker compose -f infra/docker-compose.yml up -d
 	@echo "Postgres :5432 | RabbitMQ :5672 (UI :15672) | Redis :6379 | MinIO :9000 (UI :9001)"
+	@echo "Jaeger UI :16686 | OTLP :4317"
 
 infra-down:
 	docker compose -f infra/docker-compose.yml down

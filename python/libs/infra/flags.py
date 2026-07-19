@@ -50,6 +50,10 @@ class InfraFlags:
     outbox: bool
     outbox_poll_sec: float
 
+    tracing: bool
+    otel_endpoint: str
+    otel_service_name: str
+
     redis_url: str
 
 
@@ -83,5 +87,9 @@ def flags() -> InfraFlags:
         upload_allowed_mime=tuple(m.strip().lower() for m in mime.split(",") if m.strip()),
         outbox=env_bool("CITYVIBE_OUTBOX_ENABLED", False),
         outbox_poll_sec=float(env_str("CITYVIBE_OUTBOX_POLL_SEC", "2")),
+        # Tracing → Jaeger (нужен контейнер jaeger из infra-up)
+        tracing=env_bool("CITYVIBE_TRACING_ENABLED", True),
+        otel_endpoint=env_str("CITYVIBE_OTEL_ENDPOINT", "http://localhost:4317"),
+        otel_service_name=env_str("CITYVIBE_OTEL_SERVICE_NAME", "user-service"),
         redis_url=env_str("CITYVIBE_REDIS_URL", "redis://localhost:6379/0"),
     )

@@ -21,6 +21,7 @@ from python.libs.infra.idempotency import IdempotencyMiddleware
 from python.libs.infra.outbox import Outbox, OutboxImpl
 from python.libs.infra.request_id import HEADER, CorrelationIdMiddleware
 from python.libs.infra.s2s import S2SAuthMiddleware
+from python.libs.infra.tracing import instrument_fastapi, instrument_requests, setup_tracer_provider
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,11 @@ class CityVibeInfraSupport:
             )
             logger.info("Infra: CorrelationIdMiddleware ON (%s)", HEADER)
 
+        if f.tracing:
+            setup_tracer_provider()
+            instrument_fastapi(app)
+            instrument_requests()
+
         @app.on_event("startup")
         async def _start_outbox_relay():
             if not flags().outbox:
@@ -69,11 +75,12 @@ class CityVibeInfraSupport:
                 asyncio.create_task(_loop())
 
         logger.info(
-            "Infra flags: request_id=%s s2s=%s idempotency=%s rate_limit=%s upload=%s outbox=%s",
+            "Infra flags: request_id=%s s2s=%s idempotency=%s rate_limit=%s upload=%s outbox=%s tracing=%s",
             f.request_id,
             f.s2s_auth,
             f.idempotency,
             f.rate_limit,
             f.upload_validation,
             f.outbox,
+            f.tracing,
         )

@@ -48,6 +48,13 @@ class Database:
             class_=AsyncSession,
             expire_on_commit=False,
         )
+        # SQL-спаны в Jaeger (если CITYVIBE_TRACING_ENABLED)
+        try:
+            from python.libs.infra.tracing import instrument_sqlalchemy
+
+            instrument_sqlalchemy(self.engine)
+        except Exception:
+            pass
 
     @asynccontextmanager
     async def session(self) -> AsyncIterator[AsyncSession]:
