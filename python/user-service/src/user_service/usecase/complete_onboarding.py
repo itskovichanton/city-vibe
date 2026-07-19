@@ -8,7 +8,7 @@ from src.mybootstrap_mvc_itskovichanton.exceptions import (
     CoreException,
 )
 
-from python.libs.entities.events import EventBus
+from python.libs.clients.infra.events import EventBus
 from python.libs.entities.events import UserOnboardingCompletedEvent
 from user_service.entities.common import CompleteOnboardingRequest, UserResponse
 from user_service.infra.orm.mappers import user_dto_to_response

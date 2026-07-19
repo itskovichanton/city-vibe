@@ -15,17 +15,21 @@ from src.mybootstrap_mvc_itskovichanton.exceptions import (
     ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
     CoreException,
 )
+from src.mybootstrap_mvc_itskovichanton.pipeline import ActionRunner
 from src.mybootstrap_mvc_itskovichanton.result_presenter import ResultPresenter
 
+from python.libs.clients.infra.s3 import FileStorage
 from python.libs.entities.user import PlaceCategory
 from user_service.entities.common import (
     CompleteOnboardingRequest,
     CreateUserRequest,
     UpdateBioRequest,
 )
-from user_service.infra.s3.storage import FileStorage
-from user_service.presenter.controller import UserController
 from user_service.repo.user import UserRepo
+from user_service.usecase.complete_onboarding import CompleteOnboardingUseCase
+from user_service.usecase.create_user import CreateUserUseCase
+from user_service.usecase.get_user import GetUserUseCase
+from user_service.usecase.update_bio import UpdateBioUseCase
 
 
 class CreateUserBody(BaseModel):
@@ -34,7 +38,6 @@ class CreateUserBody(BaseModel):
     name: str = Field(..., description="Имя")
     age: Optional[int] = Field(None, description="Возраст 1..120")
     short_bio: str = Field("", description="Коротко о себе")
-    # Строковые коды категорий (bars, cafes, ...) — парсим в enum в хендлере
     favorite_categories: List[str] = Field(
         default_factory=list,
         description="Любимые категории мест",
@@ -53,7 +56,12 @@ class Server:
 
     config_service: ConfigService
     error_handler_fast_api_support: ErrorHandlerFastAPISupport
-    controller: UserController
+    action_runner: ActionRunner
+    # Use-case инжектятся напрямую (без отдельного controller)
+    create_user_uc: CreateUserUseCase
+    update_bio_uc: UpdateBioUseCase
+    complete_onboarding_uc: CompleteOnboardingUseCase
+    get_user_uc: GetUserUseCase
     file_storage: FileStorage
     user_repo: UserRepo
     logger_service: LoggerService
@@ -105,7 +113,9 @@ class Server:
                 short_bio=body.short_bio,
                 favorite_categories=categories,
             )
-            return self.presenter.present(await self.controller.create_user(request))
+            return self.presenter.present(
+                await self.action_runner.run(self.create_user_uc.execute, call=request),
+            )
 
         @self.fast_api.get(
             "/users/{user_id}",
@@ -113,7 +123,9 @@ class Server:
             summary="Получить профиль пользователя",
         )
         async def get_user(user_id: int):
-            return self.presenter.present(await self.controller.get_user(user_id))
+            return self.presenter.present(
+                await self.action_runner.run(self.get_user_uc.execute, call=user_id),
+            )
 
         @self.fast_api.put(
             "/users/{user_id}/bio",
@@ -122,7 +134,9 @@ class Server:
         )
         async def update_bio(user_id: int, body: UpdateBioBody):
             request = UpdateBioRequest(user_id=user_id, long_bio=body.long_bio)
-            return self.presenter.present(await self.controller.update_bio(request))
+            return self.presenter.present(
+                await self.action_runner.run(self.update_bio_uc.execute, call=request),
+            )
 
         @self.fast_api.post(
             "/users/{user_id}/onboarding/complete",
@@ -132,7 +146,7 @@ class Server:
         async def complete_onboarding(user_id: int):
             request = CompleteOnboardingRequest(user_id=user_id)
             return self.presenter.present(
-                await self.controller.complete_onboarding(request),
+                await self.action_runner.run(self.complete_onboarding_uc.execute, call=request),
             )
 
         @self.fast_api.post(
@@ -144,22 +158,24 @@ class Server:
             user_id: int,
             file: UploadFile = File(..., description="Файл изображения"),
         ):
-            user = await self.user_repo.get_by_id(user_id)
-            if user is None:
-                raise CoreException(
-                    message=f"Пользователь id={user_id} не найден",
-                    reason=ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
+            async def _upload(_):
+                user = await self.user_repo.get_by_id(user_id)
+                if user is None:
+                    raise CoreException(
+                        message=f"Пользователь id={user_id} не найден",
+                        reason=ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
+                    )
+                data = await file.read()
+                content_type = file.content_type or "image/jpeg"
+                ext = (file.filename or "avatar.jpg").rsplit(".", 1)[-1]
+                url = await self.file_storage.upload(
+                    data,
+                    content_type=content_type,
+                    key_prefix=f"avatars/{user_id}",
+                    extension=ext,
                 )
+                user.avatar_url = url
+                await self.user_repo.save(user)
+                return await self.get_user_uc.execute(user_id)
 
-            data = await file.read()
-            content_type = file.content_type or "image/jpeg"
-            ext = (file.filename or "avatar.jpg").rsplit(".", 1)[-1]
-            url = await self.file_storage.upload(
-                data,
-                content_type=content_type,
-                key_prefix=f"avatars/{user_id}",
-                extension=ext,
-            )
-            user.avatar_url = url
-            await self.user_repo.save(user)
-            return self.presenter.present(await self.controller.get_user(user_id))
+            return self.presenter.present(await self.action_runner.run(_upload, call=None))

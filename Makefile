@@ -63,22 +63,22 @@ test-user:
 openapi: openapi-user
 
 openapi-user:
-	@mkdir -p $(SCHEMA_DIR) $(CLIENTS_DIR)/user_service
+	@mkdir -p $(SCHEMA_DIR)/openapi $(CLIENTS_DIR)/domain/user_service
 	$(PYTHON) $(USER_SERVICE)/scripts/export_openapi.py
 	$(PIP) install -q 'datamodel-code-generator'
-	# DTO как dataclass → python/libs/clients/user_service/entities.py
+	# DTO как dataclass → python/libs/clients/domain/user_service/entities.py
 	datamodel-codegen \
-		--input $(SCHEMA_DIR)/user-service.openapi.json \
+		--input $(SCHEMA_DIR)/openapi/user-service.json \
 		--input-file-type openapi \
-		--output $(CLIENTS_DIR)/user_service/entities.py \
+		--output $(CLIENTS_DIR)/domain/user_service/entities.py \
 		--output-model-type dataclasses.dataclass \
 		--target-python-version 3.12 \
 		--use-standard-collections \
 		--use-union-operator \
 		--snake-case-field
-	@echo "Схема:   $(SCHEMA_DIR)/user-service.openapi.json"
-	@echo "Entities:$(CLIENTS_DIR)/user_service/entities.py"
-	@echo "Client:  $(CLIENTS_DIR)/user_service/client.py"
+	@echo "Схема:   $(SCHEMA_DIR)/openapi/user-service.json"
+	@echo "Entities:$(CLIENTS_DIR)/domain/user_service/entities.py"
+	@echo "Client:  $(CLIENTS_DIR)/domain/user_service/client.py"
 
 lint:
 	$(PYTHON) -m ruff check python/user-service/src python/libs || true

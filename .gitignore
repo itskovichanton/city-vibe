@@ -3,8 +3,11 @@
 /*/build/
 !gradle/wrapper/gradle-wrapper.jar
 .idea/
+!.idea/runConfigurations/
+!.idea/runConfigurations/**
 *.iws
 *.iml
+!city-vibe.iml
 *.ipr
 /out
 /logs

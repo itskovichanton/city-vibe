@@ -76,8 +76,12 @@ class S3FileStorage(FileStorage):
         try:
             self._client.head_bucket(Bucket=self.bucket)
         except Exception:
-            logger.info("Создаём S3 bucket '%s'", self.bucket)
-            self._client.create_bucket(Bucket=self.bucket)
+            try:
+                logger.info("Создаём S3 bucket '%s'", self.bucket)
+                self._client.create_bucket(Bucket=self.bucket)
+            except Exception as e:
+                # Не валим старт сервиса — bucket создадим при первой загрузке
+                logger.warning("Не удалось подготовить S3 bucket '%s': %s", self.bucket, e)
 
     async def upload(
         self,

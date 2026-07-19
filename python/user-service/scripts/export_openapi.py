@@ -97,7 +97,7 @@ def build_openapi_app() -> FastAPI:
 
 
 def main() -> None:
-    out_dir = REPO_ROOT / "schema"
+    out_dir = REPO_ROOT / "schema" / "openapi"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / "user-service.json"
 
