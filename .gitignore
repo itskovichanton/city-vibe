@@ -32,8 +32,8 @@ __pycache__/
 .mypy_cache/
 *.egg-info/
 .DS_Store
-python/user-service/config-kg.yml
-python/user-service/user-service-*/work/
+python/user_service/config-kg.yml
+python/user_service/user-service-*/work/
 .env
 .env.*
 !.env.example

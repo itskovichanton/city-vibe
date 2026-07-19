@@ -11,6 +11,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from python.user_service.src.user_service.app import UserServiceApp
+
 
 def _bootstrap_sys_path() -> None:
     """
@@ -36,7 +38,7 @@ _bootstrap_sys_path()
 from src.mbulak_tools.events import exit_signal  # noqa: E402
 from src.mybootstrap_core_itskovichanton.di import injector  # noqa: E402
 
-from user_service.app import UserServiceApp  # noqa: E402
+ # noqa: E402
 
 
 def main() -> None:

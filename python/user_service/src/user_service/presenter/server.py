@@ -17,19 +17,16 @@ from src.mybootstrap_mvc_itskovichanton.exceptions import (
 )
 from src.mybootstrap_mvc_itskovichanton.pipeline import ActionRunner
 from src.mybootstrap_mvc_itskovichanton.result_presenter import ResultPresenter
-from user_service.entities.common import (
-    CompleteOnboardingRequest,
-    CreateUserRequest,
-    UpdateBioRequest,
-)
-from user_service.repo.user import UserRepo
-from user_service.usecase.complete_onboarding import CompleteOnboardingUseCase
-from user_service.usecase.create_user import CreateUserUseCase
-from user_service.usecase.get_user import GetUserUseCase
-from user_service.usecase.update_bio import UpdateBioUseCase
 
 from python.libs.clients.infra.s3 import FileStorage
 from python.libs.entities.user import PlaceCategory
+from python.user_service.src.user_service.entities.common import CreateUserRequest, UpdateBioRequest, \
+    CompleteOnboardingRequest
+from python.user_service.src.user_service.repo.user import UserRepo
+from python.user_service.src.user_service.usecase.complete_onboarding import CompleteOnboardingUseCase
+from python.user_service.src.user_service.usecase.create_user import CreateUserUseCase
+from python.user_service.src.user_service.usecase.get_user import GetUserUseCase
+from python.user_service.src.user_service.usecase.update_bio import UpdateBioUseCase
 
 
 class CreateUserBody(BaseModel):
