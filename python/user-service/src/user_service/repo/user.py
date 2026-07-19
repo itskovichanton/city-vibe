@@ -4,7 +4,7 @@ from typing import Optional, Protocol
 
 from sqlalchemy import select
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
-from user_service.infra.db.session import Database
+from python.libs.clients.db import Database
 from user_service.infra.orm.mappers import user_model_to_dto
 from user_service.infra.orm.models import UserModel
 
