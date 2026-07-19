@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from uuid import uuid4
 
 from fastapi import FastAPI
 from src.mybootstrap_core_itskovichanton.di import injector
@@ -18,7 +19,7 @@ from src.mybootstrap_ioc_itskovichanton.ioc import bean
 from python.libs.infra.flags import flags
 from python.libs.infra.idempotency import IdempotencyMiddleware
 from python.libs.infra.outbox import Outbox, OutboxImpl
-from python.libs.infra.request_id import RequestIdMiddleware
+from python.libs.infra.request_id import HEADER, CorrelationIdMiddleware
 from python.libs.infra.s2s import S2SAuthMiddleware
 
 logger = logging.getLogger(__name__)
@@ -38,8 +39,14 @@ class CityVibeInfraSupport:
             app.add_middleware(S2SAuthMiddleware)
             logger.info("Infra: S2SAuthMiddleware ON")
         if f.request_id:
-            app.add_middleware(RequestIdMiddleware)
-            logger.info("Infra: RequestIdMiddleware ON")
+            # validator=None — принимаем любой непустой X-Request-ID (не только UUID4)
+            app.add_middleware(
+                CorrelationIdMiddleware,
+                header_name=HEADER,
+                generator=lambda: str(uuid4()),
+                validator=None,
+            )
+            logger.info("Infra: CorrelationIdMiddleware ON (%s)", HEADER)
 
         @app.on_event("startup")
         async def _start_outbox_relay():

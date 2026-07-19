@@ -1,4 +1,4 @@
-"""Контекст запроса (contextvars): request_id и пр. для логов / EventBus / outbox."""
+"""Контекст запроса: request_id из asgi-correlation-id (+ локальный fallback)."""
 
 from __future__ import annotations
 
@@ -10,18 +10,32 @@ _service_name: ContextVar[str | None] = ContextVar("cityvibe_service_name", defa
 
 
 def get_request_id() -> str | None:
+    try:
+        from asgi_correlation_id.context import correlation_id
+
+        rid = correlation_id.get()
+        if rid:
+            return rid
+    except ImportError:
+        pass
     return _request_id.get()
 
 
 def set_request_id(value: str | None) -> None:
     _request_id.set(value)
+    try:
+        from asgi_correlation_id.context import correlation_id
+
+        correlation_id.set(value)
+    except ImportError:
+        pass
 
 
 def ensure_request_id() -> str:
-    rid = _request_id.get()
+    rid = get_request_id()
     if not rid:
         rid = str(uuid4())
-        _request_id.set(rid)
+        set_request_id(rid)
     return rid
 
 

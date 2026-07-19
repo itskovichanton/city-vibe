@@ -1,35 +1,35 @@
 """
-Валидация upload (размер + MIME).
+Валидация upload: размер + MIME через filetype (pure Python, без libmagic).
 
 ENV: CITYVIBE_UPLOAD_VALIDATION_ENABLED=true (default on)
 """
 
 from __future__ import annotations
 
-import functools
 from typing import Callable
 
+import filetype
 from fastapi import UploadFile
 from src.mybootstrap_mvc_itskovichanton.exceptions import ERR_REASON_VALIDATION, CoreException
 
 from python.libs.infra.flags import flags
 
-# Сигнатуры файлов (magic bytes) → MIME
-_MAGIC = (
-    (b"\xff\xd8\xff", "image/jpeg"),
-    (b"\x89PNG\r\n\x1a\n", "image/png"),
-    (b"RIFF", "image/webp"),  # уточняем ниже
-)
+_EXT_BY_MIME = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+}
 
 
 def sniff_mime(data: bytes) -> str | None:
-    if data.startswith(b"\xff\xd8\xff"):
+    """Определяет MIME по содержимому (filetype)."""
+    kind = filetype.guess(data)
+    if kind is None:
+        return None
+    mime = (kind.mime or "").lower()
+    if mime == "image/jpg":
         return "image/jpeg"
-    if data.startswith(b"\x89PNG\r\n\x1a\n"):
-        return "image/png"
-    if len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP":
-        return "image/webp"
-    return None
+    return mime or None
 
 
 async def read_validated_upload(file: UploadFile) -> tuple[bytes, str, str]:
@@ -68,32 +68,25 @@ async def read_validated_upload(file: UploadFile) -> tuple[bytes, str, str]:
 
     if sniffed:
         effective = sniffed
-        ext = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}.get(sniffed, ext)
+        ext = _EXT_BY_MIME.get(sniffed, ext)
 
     return data, effective, ext
 
 
 def validate_upload(param: str = "file"):
-    """
-    Декоратор: валидирует UploadFile-аргумент и кладёт байты в kwargs['_upload_bytes'] и т.п.
-    Удобнее вызывать read_validated_upload явно в хендлере — декоратор для краткости:
-
-        @validate_upload()
-        async def upload_avatar(..., file: UploadFile):
-            data, ctype, ext = file.state.validated  # type: ignore
-    """
+    """Декоратор: кладёт результат в file.state.validated = (bytes, ctype, ext)."""
 
     def decorator(fn: Callable):
-        @functools.wraps(fn)
+        from python.libs.infra._wrap import preserve_signature
+
         async def wrapper(*args, **kwargs):
             upload: UploadFile | None = kwargs.get(param)
             if upload is None:
                 return await fn(*args, **kwargs)
             data, ctype, ext = await read_validated_upload(upload)
-            # Сохраняем результат на объекте файла (без ломки сигнатуры)
             upload.state.validated = (data, ctype, ext)  # type: ignore[attr-defined]
             return await fn(*args, **kwargs)
 
-        return wrapper
+        return preserve_signature(wrapper, fn)
 
     return decorator
