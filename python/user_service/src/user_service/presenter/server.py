@@ -1,5 +1,6 @@
 """HTTP-сервер FastAPI: Swagger UI, OpenAPI, async-эндпоинты + infra decorators."""
 
+from datetime import date
 from typing import List, Optional
 
 import uvicorn
@@ -39,6 +40,9 @@ class CreateUserBody(BaseModel):
     age: Optional[int] = Field(None, description="Возраст 1..120")
     short_bio: str = Field("", description="Коротко о себе")
     favorite_categories: List[str] = Field(default_factory=list, description="Любимые категории мест")
+    city_id: Optional[int] = Field(None, description="ID города из place-catalog")
+    birthdate: Optional[date] = Field(None, description="Дата рождения")
+    auth_account_id: Optional[int] = Field(None, description="ID аккаунта auth-service")
 
 
 class UpdateBioBody(BaseModel):
@@ -110,6 +114,9 @@ class Server:
                 age=body.age,
                 short_bio=body.short_bio,
                 favorite_categories=categories,
+                city_id=body.city_id,
+                birthdate=body.birthdate,
+                auth_account_id=body.auth_account_id,
             )
             return self.presenter.present(
                 await self.action_runner.run(self.create_user_uc.execute, call=req),
@@ -179,3 +186,17 @@ class Server:
                 return await self.get_user_uc.execute(user_id)
 
             return self.presenter.present(await self.action_runner.run(_upload, call=None))
+
+        @self.fast_api.delete("/users/{user_id}", tags=["users"], summary="Soft-delete пользователя")
+        @require_s2s
+        async def delete_user(request: Request, user_id: int):
+            async def _delete(_):
+                ok = await self.user_repo.soft_delete(user_id)
+                if not ok:
+                    raise CoreException(
+                        message=f"Пользователь id={user_id} не найден",
+                        reason=ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
+                    )
+                return {"ok": True, "user_id": user_id}
+
+            return self.presenter.present(await self.action_runner.run(_delete, call=None))

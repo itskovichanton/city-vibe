@@ -1,5 +1,7 @@
 """Маппинг ORM ↔ доменные DTO. Репозитории отдают только DTO."""
 
+from datetime import date
+
 from python.libs.entities.user import PlaceCategory, Status, User, UserRole
 from python.user_service.src.user_service.entities.common import UserResponse
 from python.user_service.src.user_service.infra.orm.models import UserModel
@@ -33,8 +35,11 @@ def user_model_to_dto(model: UserModel) -> User:
         username=model.username,
         avatar_url=model.avatar_url,
         role=UserRole[model.role] if model.role in UserRole.__members__ else UserRole.REGULAR,
+        city_id=model.city_id,
+        auth_account_id=model.auth_account_id,
         favorite_categories=_parse_categories(model.favorite_categories),
         onboarding_completed=model.onboarding_completed,
+        birthdate=model.birthdate,
     )
 
 
@@ -52,4 +57,9 @@ def user_dto_to_response(user: User) -> UserResponse:
         favorite_categories=list(user.favorite_categories),
         onboarding_completed=user.onboarding_completed,
         deleted=user.deleted,
+        city_id=user.city_id,
+        birthdate=user.birthdate if isinstance(user.birthdate, date) else (
+            user.birthdate.date() if user.birthdate else None
+        ),
+        auth_account_id=user.auth_account_id,
     )

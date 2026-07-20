@@ -37,3 +37,4 @@ python/user_service/user-service-*/work/
 .env
 .env.*
 !.env.example
+.run/

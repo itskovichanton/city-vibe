@@ -1,9 +1,5 @@
-"""Клиент и DTO user-service. Сущности обновляй через: make openapi-user."""
+"""Клиент и DTO user-service. Impl — из .client (не импортировать в тестах)."""
 
-from python.libs.clients.domain.user_service.client import (
-    UserServiceClient,
-    UserServiceClientImpl,
-)
 from python.libs.clients.domain.user_service.entities import (
     AvatarUploadOut,
     CreateUserBody,
@@ -12,8 +8,6 @@ from python.libs.clients.domain.user_service.entities import (
 )
 
 __all__ = [
-    "UserServiceClient",
-    "UserServiceClientImpl",
     "CreateUserBody",
     "UpdateBioBody",
     "UserOut",

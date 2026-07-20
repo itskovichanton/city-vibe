@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 from python.libs.entities.base import Entity
 from python.libs.entities.geo import GeoLocation
@@ -6,6 +7,12 @@ from python.libs.entities.geo import GeoLocation
 
 @dataclass
 class City(Entity):
-    geo: GeoLocation
+    """Город справочника (place-catalog)."""
+
     name: str
-    about: str
+    slug: str = ""
+    about: str = ""
+    geo: Optional[GeoLocation] = None
+    region: str = ""
+    is_major: bool = True
+    sort_order: int = 0

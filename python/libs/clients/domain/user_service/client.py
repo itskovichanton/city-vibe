@@ -55,6 +55,10 @@ class UserServiceClient(Protocol):
         """Загрузить аватарку и привязать к профилю."""
         ...
 
+    def delete_user(self, user_id: int) -> Any:
+        """Soft-delete пользователя (компенсация saga)."""
+        ...
+
 
 @bean
 class UserServiceClientImpl(UserServiceClient):
@@ -118,3 +122,7 @@ class UserServiceClientImpl(UserServiceClient):
             headers=headers,
             files={"file": (filename, data, content_type)},
         )
+
+    @api_call
+    def delete_user(self, user_id: int, session=None, url=None, headers=None):
+        return session.delete(url=f"{url}/users/{user_id}", timeout=30, headers=headers)

@@ -4,9 +4,7 @@ OpenTelemetry → Jaeger (OTLP).
 ENV:
   CITYVIBE_TRACING_ENABLED=true
   CITYVIBE_OTEL_ENDPOINT=http://localhost:4317
-  CITYVIBE_OTEL_SERVICE_NAME=user-service
-
-Инструментирует: входящий HTTP (FastAPI), SQL (SQLAlchemy), исходящий HTTP (requests).
+  CITYVIBE_OTEL_SERVICE_NAME=<имя сервиса>  # обязательно разное на процесс
 """
 
 from __future__ import annotations
@@ -20,10 +18,11 @@ logger = logging.getLogger(__name__)
 
 _provider_ready = False
 _requests_ready = False
+_httpx_ready = False
 _instrumented_engines: set[int] = set()
 
 
-def setup_tracer_provider() -> bool:
+def setup_tracer_provider(service_name: str | None = None) -> bool:
     """Идемпотентно поднимает TracerProvider + OTLP exporter. False если tracing выключен."""
     global _provider_ready
     f = flags()
@@ -38,9 +37,10 @@ def setup_tracer_provider() -> bool:
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+    name = service_name or f.otel_service_name
     resource = Resource.create(
         {
-            "service.name": f.otel_service_name,
+            "service.name": name,
             "service.namespace": "city-vibe",
         },
     )
@@ -51,17 +51,13 @@ def setup_tracer_provider() -> bool:
     )
     trace.set_tracer_provider(provider)
     _provider_ready = True
-    logger.info(
-        "Tracing ON → %s (service=%s)",
-        f.otel_endpoint,
-        f.otel_service_name,
-    )
+    logger.info("Tracing ON → %s (service=%s)", f.otel_endpoint, name)
     return True
 
 
-def instrument_fastapi(app: Any) -> None:
+def instrument_fastapi(app: Any, service_name: str | None = None) -> None:
     """Входящие HTTP-запросы FastAPI/Starlette."""
-    if not setup_tracer_provider():
+    if not setup_tracer_provider(service_name):
         return
 
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -69,7 +65,6 @@ def instrument_fastapi(app: Any) -> None:
     def _request_hook(span, scope):  # noqa: ANN001
         if span is None or not span.is_recording():
             return
-        # Берём из заголовка — contextvars ещё могут быть не выставлены
         for key, value in scope.get("headers") or ():
             if key.lower() == b"x-request-id":
                 span.set_attribute("http.request_id", value.decode("utf-8", errors="replace"))
@@ -84,7 +79,7 @@ def instrument_fastapi(app: Any) -> None:
 
 
 def instrument_requests() -> None:
-    """Исходящие HTTP через requests (on_mbclient_api / Session)."""
+    """Исходящие HTTP через requests (on_mbclient_api)."""
     global _requests_ready
     if not setup_tracer_provider():
         return
@@ -96,6 +91,24 @@ def instrument_requests() -> None:
     RequestsInstrumentor().instrument()
     _requests_ready = True
     logger.info("Tracing: requests instrumented")
+
+
+def instrument_httpx() -> None:
+    """Исходящие HTTP через httpx (gateway, auth→user S2S)."""
+    global _httpx_ready
+    if not setup_tracer_provider():
+        return
+    if _httpx_ready:
+        return
+
+    try:
+        from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+
+        HTTPXClientInstrumentor().instrument()
+        _httpx_ready = True
+        logger.info("Tracing: httpx instrumented")
+    except ImportError:
+        logger.warning("opentelemetry-instrumentation-httpx не установлен — httpx без трейсов")
 
 
 def instrument_sqlalchemy(engine: Any) -> None:

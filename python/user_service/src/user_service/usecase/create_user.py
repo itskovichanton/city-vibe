@@ -30,6 +30,9 @@ class CreateUserUseCaseImpl(CreateUserUseCase):
             short_bio=request.short_bio,
             favorite_categories=request.favorite_categories,
             avatar_url=request.avatar_url,
+            city_id=request.city_id,
+            birthdate=request.birthdate,
+            auth_account_id=request.auth_account_id,
         )
         # Outbox: при CITYVIBE_OUTBOX_ENABLED=false сразу уйдёт в EventBus
         await self.outbox.publish(TOPIC_USER_CREATED, UserCreatedEvent(user=user))

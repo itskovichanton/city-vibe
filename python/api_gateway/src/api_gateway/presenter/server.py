@@ -1,0 +1,129 @@
+"""Reverse proxy FastAPI + опциональная JWT-валидация."""
+
+from __future__ import annotations
+
+import logging
+from typing import Optional
+
+import httpx
+import jwt
+import uvicorn
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import JSONResponse
+from src.mybootstrap_ioc_itskovichanton.config import ConfigService
+from src.mybootstrap_ioc_itskovichanton.ioc import bean
+
+from python.libs.infra import CityVibeInfraSupport
+
+logger = logging.getLogger(__name__)
+
+
+@bean(
+    port=("server.port", int, 8080),
+    host=("server.host", str, "0.0.0.0"),
+    auth_url=("upstreams.auth", str, "http://localhost:8082"),
+    users_url=("upstreams.users", str, "http://localhost:8081"),
+    cities_url=("upstreams.cities", str, "http://localhost:8083"),
+    jwt_secret=("auth.jwt_secret", str, "dev-jwt-secret-change-me"),
+)
+class Server:
+    config_service: ConfigService
+    infra_support: CityVibeInfraSupport
+    _client: httpx.AsyncClient | None = None
+
+    def init(self, **kwargs):
+        self.port = kwargs.get("port", getattr(self, "port", 8080))
+        self.host = kwargs.get("host", getattr(self, "host", "0.0.0.0"))
+        self._auth_url = kwargs.get("auth_url", "http://localhost:8082").rstrip("/")
+        self._users_url = kwargs.get("users_url", "http://localhost:8081").rstrip("/")
+        self._cities_url = kwargs.get("cities_url", "http://localhost:8083").rstrip("/")
+        self._jwt_secret = kwargs.get("jwt_secret", "dev-jwt-secret-change-me")
+        self.fast_api = self.init_fast_api()
+        self.add_routes()
+
+    def start(self):
+        uvicorn.run(self.fast_api, port=self.port, host=self.host)
+
+    def init_fast_api(self) -> FastAPI:
+        app = FastAPI(title="City Vibe — API Gateway", version="1.0.0")
+        self.infra_support.mount(app)
+
+        @app.on_event("startup")
+        async def _startup():
+            self._client = httpx.AsyncClient(timeout=30.0, follow_redirects=True)
+
+        @app.on_event("shutdown")
+        async def _shutdown():
+            if self._client:
+                await self._client.aclose()
+
+        return app
+
+    def _validate_jwt_optional(self, request: Request) -> Optional[JSONResponse]:
+        """Если есть Authorization — проверяем JWT, иначе пропускаем."""
+        auth = request.headers.get("Authorization", "")
+        if not auth.startswith("Bearer "):
+            return None
+        token = auth[7:]
+        try:
+            jwt.decode(token, self._jwt_secret, algorithms=["HS256"])
+        except jwt.PyJWTError:
+            return JSONResponse(status_code=401, content={"error": "invalid_token"})
+        return None
+
+    async def _proxy(self, request: Request, base_url: str, path: str) -> Response:
+        assert self._client is not None
+        url = f"{base_url}{path}"
+        if request.url.query:
+            url = f"{url}?{request.url.query}"
+        headers = {k: v for k, v in request.headers.items() if k.lower() not in {"host", "content-length"}}
+        body = await request.body()
+        resp = await self._client.request(request.method, url, headers=headers, content=body)
+        return Response(content=resp.content, status_code=resp.status_code, headers=dict(resp.headers))
+
+    def add_routes(self):
+        @self.fast_api.get("/health", tags=["infra"])
+        async def health():
+            assert self._client is not None
+            backends = {
+                "auth": f"{self._auth_url}/health",
+                "users": f"{self._users_url}/health",
+                "cities": f"{self._cities_url}/health",
+            }
+            status = {"gateway": "ok", "backends": {}}
+            for name, url in backends.items():
+                try:
+                    r = await self._client.get(url, timeout=3.0)
+                    status["backends"][name] = "ok" if r.status_code < 500 else "error"
+                except Exception as e:
+                    status["backends"][name] = f"down: {e}"
+            return status
+
+        @self.fast_api.api_route("/auth/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+        async def proxy_auth(request: Request, path: str):
+            err = self._validate_jwt_optional(request)
+            if err:
+                return err
+            return await self._proxy(request, self._auth_url, f"/auth/{path}")
+
+        @self.fast_api.api_route("/users", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+        async def proxy_users_root(request: Request):
+            err = self._validate_jwt_optional(request)
+            if err:
+                return err
+            return await self._proxy(request, self._users_url, "/users")
+
+        @self.fast_api.api_route("/users/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+        async def proxy_users(request: Request, path: str):
+            err = self._validate_jwt_optional(request)
+            if err:
+                return err
+            return await self._proxy(request, self._users_url, f"/users/{path}")
+
+        @self.fast_api.api_route("/cities/{path:path}", methods=["GET"])
+        async def proxy_cities(request: Request, path: str):
+            return await self._proxy(request, self._cities_url, f"/cities/{path}")
+
+        @self.fast_api.get("/cities")
+        async def proxy_cities_root(request: Request):
+            return await self._proxy(request, self._cities_url, "/cities")

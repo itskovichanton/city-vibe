@@ -1,0 +1,60 @@
+app:
+  version: 1.0.0
+  name: notification-service
+
+server:
+  host: 0.0.0.0
+  port: 8084
+
+db:
+  url: postgresql+asyncpg://cityvibe:cityvibe@localhost:5432/cityvibe_notifications
+  echo: false
+  pool_size: 3
+
+rabbitmq:
+  url: amqp://cityvibe:cityvibe@localhost:5672/
+  exchange: city_vibe.events
+
+# SMTP для реальной отправки email (OTP, welcome)
+# Для Gmail: host=smtp.gmail.com, port=587, user=..., password=app-password
+smtp:
+  host: localhost          # SMTP-хост (например smtp.gmail.com)
+  port: 1025               # 587 STARTTLS / 465 SSL / 1025 MailHog local
+  user: ""                 # логин SMTP
+  password: ""             # пароль или app-password
+  from: noreply@cityvibe.local
+  use_tls: false
+
+# Mock SMS gateway (infra mock-notify :8090)
+sms:
+  gateway_url: http://localhost:8090/sms
+
+clients:
+  user_service:
+    url: http://localhost:8081
+    auth:
+      session_token: dev-s2s-token
+  auth_service:
+    url: http://localhost:8082
+    auth:
+      session_token: dev-s2s-token
+  place_catalog:
+    url: http://localhost:8083
+  notification_service:
+    url: http://localhost:8084
+  mock_notify:
+    url: http://localhost:8090
+  api_gateway:
+    url: http://localhost:8080
+
+loggers:
+  http:
+    backup_count: 3
+
+dev:
+  server:
+    port: 8084
+
+prod:
+  server:
+    port: 8084

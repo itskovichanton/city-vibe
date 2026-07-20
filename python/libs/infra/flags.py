@@ -90,6 +90,7 @@ def flags() -> InfraFlags:
         # Tracing → Jaeger (нужен контейнер jaeger из infra-up)
         tracing=env_bool("CITYVIBE_TRACING_ENABLED", True),
         otel_endpoint=env_str("CITYVIBE_OTEL_ENDPOINT", "http://localhost:4317"),
-        otel_service_name=env_str("CITYVIBE_OTEL_SERVICE_NAME", "user-service"),
+        # Переопределять в make run-* / start-all (иначе все сервисы свалятся в одно имя)
+        otel_service_name=env_str("CITYVIBE_OTEL_SERVICE_NAME", "city-vibe"),
         redis_url=env_str("CITYVIBE_REDIS_URL", "redis://localhost:6379/0"),
     )

@@ -2,6 +2,8 @@
 
 from typing import Optional, Protocol
 
+from datetime import date
+
 from sqlalchemy import select
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
 
@@ -25,6 +27,9 @@ class UserRepo(Protocol):
         short_bio: str = "",
         favorite_categories: list[PlaceCategory] | None = None,
         avatar_url: Optional[str] = None,
+        city_id: Optional[int] = None,
+        birthdate: Optional[date] = None,
+        auth_account_id: Optional[int] = None,
     ) -> User:
         ...
 
@@ -35,6 +40,9 @@ class UserRepo(Protocol):
         ...
 
     async def save(self, user: User) -> User:
+        ...
+
+    async def soft_delete(self, user_id: int) -> bool:
         ...
 
 
@@ -59,6 +67,9 @@ class UserRepoImpl(UserRepo):
         short_bio: str = "",
         favorite_categories: list[PlaceCategory] | None = None,
         avatar_url: Optional[str] = None,
+        city_id: Optional[int] = None,
+        birthdate: Optional[date] = None,
+        auth_account_id: Optional[int] = None,
     ) -> User:
         categories = [c.value for c in (favorite_categories or [])]
         model = UserModel(
@@ -67,6 +78,9 @@ class UserRepoImpl(UserRepo):
             short_bio=short_bio or "",
             long_bio="",
             avatar_url=avatar_url,
+            city_id=city_id,
+            birthdate=birthdate,
+            auth_account_id=auth_account_id,
             status=Status.ACTIVE.name,
             role=UserRole.REGULAR.name,
             favorite_categories=categories,
@@ -129,3 +143,12 @@ class UserRepoImpl(UserRepo):
             )
             rows = (await session.execute(stmt)).scalars().all()
             return [user_model_to_dto(m) for m in rows]
+
+    async def soft_delete(self, user_id: int) -> bool:
+        async with self.db.session() as session:
+            model = await session.get(UserModel, user_id)
+            if model is None or model.deleted:
+                return False
+            model.deleted = True
+            await session.flush()
+            return True

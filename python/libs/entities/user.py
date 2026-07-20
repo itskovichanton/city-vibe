@@ -92,6 +92,8 @@ class User(Entity):
     # URL аватарки в S3
     avatar_url: Optional[str] = None
     role: UserRole = UserRole.REGULAR
+    city_id: Optional[int] = None
+    auth_account_id: Optional[int] = None
     # Любимые категории мест (онбординг)
     favorite_categories: List[PlaceCategory] = field(default_factory=list)
     contacts: List[Contact] = field(default_factory=list)

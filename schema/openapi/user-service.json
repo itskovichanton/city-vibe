@@ -295,7 +295,44 @@
             },
             "type": "array",
             "title": "Favorite Categories",
-            "description": "Коды категорий: bars, cafes, theaters, ..."
+            "description": "Коды категорий"
+          },
+          "city_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City Id",
+            "description": "ID города"
+          },
+          "birthdate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthdate",
+            "description": "Дата рождения"
+          },
+          "auth_account_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Account Id",
+            "description": "ID auth-аккаунта"
           }
         },
         "type": "object",
@@ -398,6 +435,40 @@
             "type": "boolean",
             "title": "Deleted",
             "default": false
+          },
+          "city_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City Id"
+          },
+          "birthdate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthdate"
+          },
+          "auth_account_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Account Id"
           }
         },
         "type": "object",

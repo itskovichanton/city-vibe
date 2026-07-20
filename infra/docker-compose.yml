@@ -81,6 +81,23 @@ services:
       COLLECTOR_OTLP_ENABLED: "true"
     restart: unless-stopped
 
+  # MailHog — локальный SMTP catcher (UI :8025, SMTP :1025). Для реальной почты см. notification_service/config.yml
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: cityvibe-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    restart: unless-stopped
+
+  # Mock SMS (и опционально email-лог). Реальный email идёт через SMTP notification-service.
+  mock-notify:
+    build: ./mock-notify
+    container_name: cityvibe-mock-notify
+    ports:
+      - "8090:8090"
+    restart: unless-stopped
+
 volumes:
   cityvibe_pg_data:
   cityvibe_rabbit_data:

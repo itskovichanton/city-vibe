@@ -1,0 +1,41 @@
+app:
+  version: 1.0.0
+  name: api-gateway
+
+server:
+  host: 0.0.0.0
+  port: 8080
+
+auth:
+  jwt_secret: dev-jwt-secret-change-me
+
+upstreams:
+  auth: http://localhost:8082
+  users: http://localhost:8081
+  cities: http://localhost:8083
+
+clients:
+  user_service:
+    url: http://localhost:8081
+    auth:
+      session_token: dev-s2s-token
+  auth_service:
+    url: http://localhost:8082
+    auth:
+      session_token: dev-s2s-token
+  place_catalog:
+    url: http://localhost:8083
+  notification_service:
+    url: http://localhost:8084
+  mock_notify:
+    url: http://localhost:8090
+  api_gateway:
+    url: http://localhost:8080
+
+dev:
+  server:
+    port: 8080
+
+prod:
+  server:
+    port: 8080

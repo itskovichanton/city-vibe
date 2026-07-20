@@ -13,6 +13,9 @@ class CreateUserBody:
     age: int | None = None
     short_bio: str | None = ''
     favorite_categories: list[str] | None = None
+    city_id: int | None = None
+    birthdate: str | None = None
+    auth_account_id: int | None = None
 
 
 @dataclass

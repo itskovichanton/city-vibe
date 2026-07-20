@@ -34,6 +34,18 @@ clients:
     url: http://localhost:8081
     auth:
       session_token: dev-s2s-token
+  auth_service:
+    url: http://localhost:8082
+    auth:
+      session_token: dev-s2s-token
+  place_catalog:
+    url: http://localhost:8083
+  notification_service:
+    url: http://localhost:8084
+  mock_notify:
+    url: http://localhost:8090
+  api_gateway:
+    url: http://localhost:8080
 
 email:
   from_address: noreply@cityvibe.local

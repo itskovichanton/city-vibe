@@ -1,6 +1,7 @@
 """DTO уровня API / use-case (dataclass). Не путать с ORM-моделями."""
 
 from dataclasses import dataclass, field
+from datetime import date
 from typing import List, Optional
 
 from python.libs.entities.user import PlaceCategory, Status, UserRole
@@ -15,6 +16,9 @@ class CreateUserRequest:
     short_bio: str = ""
     favorite_categories: List[PlaceCategory] = field(default_factory=list)
     avatar_url: Optional[str] = None
+    city_id: Optional[int] = None
+    birthdate: Optional[date] = None
+    auth_account_id: Optional[int] = None
 
 
 @dataclass
@@ -47,3 +51,6 @@ class UserResponse:
     favorite_categories: List[PlaceCategory] = field(default_factory=list)
     onboarding_completed: bool = False
     deleted: bool = False
+    city_id: Optional[int] = None
+    birthdate: Optional[date] = None
+    auth_account_id: Optional[int] = None

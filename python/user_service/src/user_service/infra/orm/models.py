@@ -1,9 +1,10 @@
 """ORM-модели SQLAlchemy. Не отдаём наружу — репозитории мапят в DTO."""
 
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import (
     Boolean,
+    Date,
     DateTime,
     ForeignKey,
     Integer,
@@ -42,6 +43,9 @@ class UserModel(Base):
         server_default="{}",
     )
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    city_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    birthdate: Mapped[date | None] = mapped_column(Date, nullable=True)
+    auth_account_id: Mapped[int | None] = mapped_column(Integer, unique=True, nullable=True)
     deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

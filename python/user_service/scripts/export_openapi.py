@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 from typing import List, Optional
 
@@ -21,10 +22,10 @@ class CreateUserBody(BaseModel):
     name: str = Field(..., description="Имя")
     age: Optional[int] = Field(None, description="Возраст")
     short_bio: str = Field("", description="Коротко о себе")
-    favorite_categories: List[str] = Field(
-        default_factory=list,
-        description="Коды категорий: bars, cafes, theaters, ...",
-    )
+    favorite_categories: List[str] = Field(default_factory=list, description="Коды категорий")
+    city_id: Optional[int] = Field(None, description="ID города")
+    birthdate: Optional[date] = Field(None, description="Дата рождения")
+    auth_account_id: Optional[int] = Field(None, description="ID auth-аккаунта")
 
 
 class UpdateBioBody(BaseModel):
@@ -43,6 +44,9 @@ class UserOut(BaseModel):
     favorite_categories: List[str] = Field(default_factory=list)
     onboarding_completed: bool = False
     deleted: bool = False
+    city_id: Optional[int] = None
+    birthdate: Optional[date] = None
+    auth_account_id: Optional[int] = None
 
 
 class AvatarUploadOut(BaseModel):
