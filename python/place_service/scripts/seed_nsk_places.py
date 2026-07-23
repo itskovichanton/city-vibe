@@ -124,6 +124,50 @@ def _schedule(rng: random.Random) -> dict | None:
     return {"timezone": "Asia/Novosibirsk", "periods": periods, "exceptions": []}
 
 
+def _contacts(idx: int, rng: random.Random) -> list[dict]:
+    """1–3 контакта: телефон Новосибирска (+7383…) и/или email."""
+    contacts: list[dict] = []
+    cid = 1
+    # всегда телефон
+    phone = f"+7383{rng.randint(2000000, 3999999)}"
+    contacts.append(
+        {
+            "id": cid,
+            "type": "phone",
+            "value": phone,
+            "verified": rng.random() < 0.7,
+            "deleted": False,
+        }
+    )
+    cid += 1
+    if rng.random() < 0.75:
+        slug = f"place{idx}"
+        domain = rng.choice(["nsk.ru", "sibmail.ru", "cityvibe.local", "yandex.ru", "mail.ru"])
+        contacts.append(
+            {
+                "id": cid,
+                "type": "email",
+                "value": f"info@{slug}.{domain}" if domain == "cityvibe.local" else f"{slug}@{domain}",
+                "verified": rng.random() < 0.4,
+                "deleted": False,
+            }
+        )
+        cid += 1
+    if rng.random() < 0.25:
+        # второй телефон (мобильный)
+        mobile = f"+7900{rng.randint(1000000, 9999999)}"
+        contacts.append(
+            {
+                "id": cid,
+                "type": "phone",
+                "value": mobile,
+                "verified": rng.random() < 0.5,
+                "deleted": False,
+            }
+        )
+    return contacts
+
+
 def _name(category: PlaceCategory, idx: int, rng: random.Random) -> str:
     title = PLACE_CATEGORY_TITLES[category]
     style = rng.randint(0, 3)
@@ -233,7 +277,7 @@ async def main() -> None:
                     None,  # chat_theme_id
                     rng.randint(0, 80),
                     rng.randint(0, 20),
-                    "[]",
+                    json.dumps(_contacts(i, rng), ensure_ascii=False),
                 )
             )
             if len(rows) >= BATCH:

@@ -11,7 +11,7 @@
 | `/users/*` | user-service | 8081 | [users](users.md) |
 | `/cities/*` | place-service | 8083 | [cities](cities.md) |
 | `/categories`, `/attr-schemas/*` | place-service | 8083 | [categories](categories.md) |
-| `/places/*` | place-service | 8083 | [places](places.md) |
+| `/places/*` | place-service | 8083 | [places](places.md), [places-search](places-search.md) |
 | `/pin-styles/*`, `/chat-themes/*` | design-service | 8085 | [design](design.md) |
 
 ## Темы
@@ -22,6 +22,7 @@
 - [cities.md](cities.md)
 - [categories.md](categories.md)
 - [places.md](places.md)
+- [places-search.md](places-search.md)
 - [users.md](users.md)
 - [design.md](design.md)
 

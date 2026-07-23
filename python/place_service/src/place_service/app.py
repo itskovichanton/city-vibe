@@ -8,6 +8,7 @@ from python.place_service.src.place_service.repo.attr_schema import AttrSchemaRe
 from python.place_service.src.place_service.repo.category import CategoryRepoImpl  # noqa: F401
 from python.place_service.src.place_service.repo.city import CityRepoImpl  # noqa: F401
 from python.place_service.src.place_service.repo.place import PlaceRepoImpl  # noqa: F401
+from python.place_service.src.place_service.repo.place_search import PlaceSearchRepoImpl  # noqa: F401
 
 
 @bean

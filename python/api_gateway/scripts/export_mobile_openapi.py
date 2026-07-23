@@ -166,6 +166,19 @@ def build_openapi_app() -> FastAPI:
     async def create_place(body: dict):
         raise NotImplementedError
 
+    @app.post(
+        "/places/search",
+        tags=["places", "search"],
+        summary="Многокритериальный поиск мест",
+        description=(
+            "Обязательны city_id, category. Опционально name, limit=20, page=1, "
+            "sort_by=rating|distance (+my_geo), open_at, attrs (exact|between|or|and). "
+            "Для мобильного клиента и ИИ-команд."
+        ),
+    )
+    async def search_places(body: dict):
+        raise NotImplementedError
+
     @app.get("/places/{place_id}", tags=["places"])
     async def get_place(place_id: int):
         raise NotImplementedError

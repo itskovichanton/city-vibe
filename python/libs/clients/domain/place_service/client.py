@@ -38,6 +38,8 @@ class PlaceServiceClient(Protocol):
 
     def delete_place(self, place_id: int) -> Any: ...
 
+    def search_places(self, body: dict) -> Any: ...
+
 
 @bean
 class PlaceServiceClientImpl(PlaceServiceClient):
@@ -98,3 +100,7 @@ class PlaceServiceClientImpl(PlaceServiceClient):
     @api_call
     def delete_place(self, place_id: int, session=None, url=None, headers=None):
         return session.delete(url=f"{url}/places/{place_id}", timeout=30, headers=headers)
+
+    @api_call
+    def search_places(self, body: dict, session=None, url=None, headers=None):
+        return session.post(url=f"{url}/places/search", json=body, timeout=60, headers=headers)

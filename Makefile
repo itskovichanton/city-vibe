@@ -74,6 +74,10 @@ migrate-place:
 		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/migrations/001_create_cities.sql
 	docker compose -f infra/docker-compose.yml exec -T postgres \
 		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/migrations/002_places_categories_attrs.sql
+	docker compose -f infra/docker-compose.yml exec -T postgres \
+		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/migrations/003_search_extensions.sql
+	docker compose -f infra/docker-compose.yml exec -T postgres \
+		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/migrations/004_schedule_covers_fn.sql
 
 migrate-design:
 	-docker compose -f infra/docker-compose.yml exec -T postgres \

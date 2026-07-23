@@ -48,3 +48,7 @@ curl -s http://localhost:8080/places -H 'Content-Type: application/json' -d '{
 ## «Мои места»
 
 `GET /places?owner_id=<user_id>`
+
+## Поиск
+
+См. подробный гайд: [places-search.md](places-search.md) — `POST /places/search`.

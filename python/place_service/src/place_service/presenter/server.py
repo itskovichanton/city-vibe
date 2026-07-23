@@ -22,12 +22,14 @@ from src.mybootstrap_mvc_itskovichanton.result_presenter import ResultPresenter
 from python.libs.entities.place import PlaceCategory
 from python.libs.infra import CityVibeInfraSupport
 from python.libs.infra.decorators import rate_limit
+from python.place_service.src.place_service.entities.search import PlaceSearchRequest
 from python.place_service.src.place_service.infra.attrs_validation import validate_attrs
 from python.place_service.src.place_service.infra.orm.mappers import city_dto_to_response, place_to_api_dict
 from python.place_service.src.place_service.repo.attr_schema import AttrSchemaRepo
 from python.place_service.src.place_service.repo.category import CategoryRepo
 from python.place_service.src.place_service.repo.city import CityRepo
 from python.place_service.src.place_service.repo.place import PlaceRepo
+from python.place_service.src.place_service.repo.place_search import PlaceSearchRepo
 
 
 class GeoIn(BaseModel):
@@ -72,6 +74,7 @@ class Server:
     category_repo: CategoryRepo
     attr_schema_repo: AttrSchemaRepo
     place_repo: PlaceRepo
+    place_search_repo: PlaceSearchRepo
     presenter: ResultPresenter = default_dataclass_field(
         JSONResultPresenterImpl(exclude_unset=True),
     )
@@ -246,6 +249,57 @@ class Server:
                 return [place_to_api_dict(p) for p in places]
 
             return self.presenter.present(await self.action_runner.run(_list, call=None))
+
+        @self.fast_api.post(
+            "/places/search",
+            tags=["places", "search"],
+            summary="Многокритериальный поиск мест",
+            description=(
+                "Гибкий поиск по city_id + category с фильтрами name / open_at / attrs "
+                "(exact|between|or|and) и сортировкой rating|distance. "
+                "Предназначен для мобильного клиента и вызова ИИ-агентом."
+            ),
+        )
+        @rate_limit("places.search", limit=60)
+        async def search_places(request: Request, body: PlaceSearchRequest):
+            async def _search(_):
+                # category уже в справочнике?
+                cat = await self.category_repo.get_by_code(body.category)
+                if cat is None:
+                    raise CoreException(message=f"Категория {body.category} не найдена в справочнике")
+                city = await self.city_repo.get_by_id(body.city_id)
+                if city is None:
+                    raise CoreException(
+                        message=f"Город id={body.city_id} не найден",
+                        reason=ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
+                    )
+                # ключи attrs должны существовать в schema категории (мягко: неизвестные — ошибка)
+                if body.attrs:
+                    schema = await self.attr_schema_repo.get_by_category(body.category)
+                    if schema is None:
+                        raise CoreException(message=f"JSON Schema для {body.category} не найдена")
+                    allowed = set((schema.json_schema.get("properties") or {}).keys())
+                    unknown = [k for k in body.attrs if k not in allowed]
+                    if unknown:
+                        raise CoreException(
+                            message=f"Неизвестные поля attrs для {body.category}: {', '.join(unknown)}"
+                        )
+                result = await self.place_search_repo.search(body)
+                items = []
+                for p in result.items:
+                    d = place_to_api_dict(p)
+                    if p.id in result.distances_m:
+                        d["distance_m"] = round(result.distances_m[p.id], 1)
+                    items.append(d)
+                return {
+                    "items": items,
+                    "total": result.total,
+                    "page": result.page,
+                    "limit": result.limit,
+                    "pages": (result.total + result.limit - 1) // result.limit if result.limit else 0,
+                }
+
+            return self.presenter.present(await self.action_runner.run(_search, call=None))
 
         @self.fast_api.get("/places/{place_id}", tags=["places"], summary="Место по id")
         @rate_limit("places.get", limit=120)
