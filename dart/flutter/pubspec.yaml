@@ -1,0 +1,28 @@
+name: city_vibe
+description: CityVibe — мобильный клиент поиска мест и событий в городе.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Иконки Cupertino (нативное ощущение на iOS) + Material из SDK.
+  cupertino_icons: ^1.0.8
+  # Красивые веб-шрифты без ручной загрузки .ttf в assets.
+  # Pacifico — рукописный логотип; Inter — читаемый UI-текст.
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  # Строгий линтер от команды Flutter — учит хорошим привычкам.
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    # Фоновая картинка с макета (карта + неон-скайлайн).
+    - assets/images/

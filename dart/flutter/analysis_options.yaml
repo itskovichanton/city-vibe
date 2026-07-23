@@ -1,0 +1,9 @@
+# Рекомендации линтера Flutter.
+# Документация: https://dart.dev/tools/linter-rules
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    prefer_const_constructors: true
+    prefer_const_literals_to_create_immutables: true
+    avoid_print: false # на этапе обучения print допустим
