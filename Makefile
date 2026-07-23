@@ -18,7 +18,7 @@ CLIENTS_DIR := $(LIBS)/clients
 export PYTHONPATH := $(REPO_ROOT):$(USER_SERVICE)/src:$(AUTH_SERVICE)/src:$(PLACE_SERVICE)/src:$(DESIGN_SERVICE)/src:$(NOTIFICATION_SERVICE)/src:$(API_GATEWAY)/src:/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages
 
 .PHONY: help install infra-up infra-down migrate-user migrate-auth migrate-place migrate-design migrate-notification migrate-all \
-        seed-user seed-place seed-design run-user run-auth run-place run-design run-notification run-gateway test-user test-auth test-place \
+        seed-user seed-place seed-design seed-nsk-places run-user run-auth run-place run-design run-notification run-gateway test-user test-auth test-place \
         test-design test-notification test-libs test-unit test-integration test-all openapi openapi-user openapi-auth openapi-place \
         openapi-design openapi-gateway openapi-notification openapi-mobile openapi-all up-all start-all stop-all restart-all docs lint format clean
 
@@ -97,6 +97,9 @@ seed-place:
 		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/seed/001_seed_cities.sql
 	docker compose -f infra/docker-compose.yml exec -T postgres \
 		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/seed/002_seed_categories_attrs.sql
+
+seed-nsk-places:
+	$(PYTHON) $(PLACE_SERVICE)/scripts/seed_nsk_places.py
 
 seed-design:
 	docker compose -f infra/docker-compose.yml exec -T postgres \
