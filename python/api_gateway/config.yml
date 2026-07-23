@@ -14,6 +14,7 @@ upstreams:
   users: http://localhost:8081
   places: http://localhost:8083
   design: http://localhost:8085
+  milana: http://localhost:8086
 
 clients:
   user_service:
@@ -28,6 +29,8 @@ clients:
     url: http://localhost:8083
   design_service:
     url: http://localhost:8085
+  milana_service:
+    url: http://localhost:8086
   notification_service:
     url: http://localhost:8084
   mock_notify:

@@ -1,0 +1,41 @@
+app:
+  version: 1.0.0
+  name: milana-service
+
+server:
+  host: 0.0.0.0
+  port: 8086
+
+# DeepSeek: секреты только из ENV (см. .env.example).
+# DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, DEEPSEEK_MAX_TOKENS
+deepseek:
+  base_url: https://api.deepseek.com
+  model: deepseek-chat
+  max_tokens: 4096
+  temperature: 0.2
+  timeout_sec: 90
+
+milana:
+  default_city_id: 3
+  places_per_step: 5
+  max_steps: 5
+
+clients:
+  place_service:
+    url: http://localhost:8083
+  milana_service:
+    url: http://localhost:8086
+  api_gateway:
+    url: http://localhost:8080
+
+redis:
+  host: localhost
+  port: 6379
+
+dev:
+  server:
+    port: 8086
+
+prod:
+  server:
+    port: 8086

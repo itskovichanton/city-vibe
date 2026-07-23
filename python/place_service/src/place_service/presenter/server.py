@@ -187,7 +187,11 @@ class Server:
             summary="JSON Schema attrs по категории",
         )
         @rate_limit("attr_schemas.get", limit=120)
-        async def get_attr_schema(request: Request, category_code: str):
+        async def get_attr_schema(
+            request: Request,
+            category_code: str,
+            compact: bool = False,
+        ):
             async def _get(_):
                 s = await self.attr_schema_repo.get_by_category(category_code)
                 if s is None:
@@ -195,11 +199,17 @@ class Server:
                         message=f"Schema для {category_code} не найдена",
                         reason=ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
                     )
+                schema = s.json_schema
+                if compact:
+                    from python.libs.utils.schema_compact import compact_json_schema
+
+                    schema = compact_json_schema(schema)
                 return {
                     "id": s.id,
                     "category_code": s.category_code,
                     "version": s.version,
-                    "json_schema": s.json_schema,
+                    "json_schema": schema,
+                    "compact": compact,
                 }
 
             return self.presenter.present(await self.action_runner.run(_get, call=None))

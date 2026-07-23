@@ -25,3 +25,7 @@ Enum в коде (`python.libs.entities.place.PlaceCategory`) остаётся �
 ## `GET /attr-schemas/{category_code}`
 
 Схема одной категории. При create/patch place `attrs` валидируются **строго** (Draft 2020-12).
+
+Query: `?compact=true` — без `description`, только type/enum/min/max (для LLM / milana).
+
+См. также LLM-справочники: [milana.md](milana.md) — `GET /milana/world`, `/milana/attr-schemas/{code}`.

@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
     users_url=("upstreams.users", str, "http://localhost:8081"),
     places_url=("upstreams.places", str, "http://localhost:8083"),
     design_url=("upstreams.design", str, "http://localhost:8085"),
+    milana_url=("upstreams.milana", str, "http://localhost:8086"),
     jwt_secret=("auth.jwt_secret", str, "dev-jwt-secret-change-me"),
 )
 class Server:
@@ -39,6 +40,7 @@ class Server:
         self._users_url = kwargs.get("users_url", "http://localhost:8081").rstrip("/")
         self._places_url = kwargs.get("places_url", "http://localhost:8083").rstrip("/")
         self._design_url = kwargs.get("design_url", "http://localhost:8085").rstrip("/")
+        self._milana_url = kwargs.get("milana_url", "http://localhost:8086").rstrip("/")
         self._jwt_secret = kwargs.get("jwt_secret", "dev-jwt-secret-change-me")
         self.fast_api = self.init_fast_api()
         self.add_routes()
@@ -52,7 +54,8 @@ class Server:
 
         @app.on_event("startup")
         async def _startup():
-            self._client = httpx.AsyncClient(timeout=30.0, follow_redirects=True)
+            # 60s default; milana (LLM) может идти дольше — отдельный timeout на route
+            self._client = httpx.AsyncClient(timeout=60.0, follow_redirects=True)
 
         @app.on_event("shutdown")
         async def _shutdown():
@@ -72,14 +75,24 @@ class Server:
             return JSONResponse(status_code=401, content={"error": "invalid_token"})
         return None
 
-    async def _proxy(self, request: Request, base_url: str, path: str) -> Response:
+    async def _proxy(
+        self,
+        request: Request,
+        base_url: str,
+        path: str,
+        *,
+        timeout: float | None = None,
+    ) -> Response:
         assert self._client is not None
         url = f"{base_url}{path}"
         if request.url.query:
             url = f"{url}?{request.url.query}"
         headers = {k: v for k, v in request.headers.items() if k.lower() not in {"host", "content-length"}}
         body = await request.body()
-        resp = await self._client.request(request.method, url, headers=headers, content=body)
+        kwargs: dict = {"headers": headers, "content": body}
+        if timeout is not None:
+            kwargs["timeout"] = timeout
+        resp = await self._client.request(request.method, url, **kwargs)
         return Response(content=resp.content, status_code=resp.status_code, headers=dict(resp.headers))
 
     def add_routes(self):
@@ -91,6 +104,7 @@ class Server:
                 "users": f"{self._users_url}/health",
                 "places": f"{self._places_url}/health",
                 "design": f"{self._design_url}/health",
+                "milana": f"{self._milana_url}/health",
             }
             status = {"gateway": "ok", "backends": {}}
             for name, url in backends.items():
@@ -173,3 +187,14 @@ class Server:
         @self.fast_api.api_route("/chat-themes/{path:path}", methods=["GET"])
         async def proxy_themes(request: Request, path: str):
             return await self._proxy(request, self._design_url, f"/chat-themes/{path}")
+
+        # milana-service (LLM — длинный timeout)
+        @self.fast_api.api_route("/milana", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+        async def proxy_milana_root(request: Request):
+            return await self._proxy(request, self._milana_url, "/milana", timeout=120.0)
+
+        @self.fast_api.api_route("/milana/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+        async def proxy_milana(request: Request, path: str):
+            return await self._proxy(
+                request, self._milana_url, f"/milana/{path}", timeout=120.0
+            )

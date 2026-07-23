@@ -1,0 +1,405 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "City Vibe — Milana Service",
+    "description": "ИИ-агент Милана: NL → places/search (DeepSeek, variant B)",
+    "version": "1.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "infra"
+        ],
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/milana/world": {
+      "get": {
+        "tags": [
+          "world"
+        ],
+        "summary": "Города + категории (compact)",
+        "operationId": "world_milana_world_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/milana/cities": {
+      "get": {
+        "tags": [
+          "world"
+        ],
+        "summary": "Города compact",
+        "operationId": "cities_milana_cities_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/milana/categories": {
+      "get": {
+        "tags": [
+          "world"
+        ],
+        "summary": "Категории compact",
+        "operationId": "categories_milana_categories_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/milana/attr-schemas/{category_code}": {
+      "get": {
+        "tags": [
+          "world"
+        ],
+        "summary": "Compact JSON Schema attrs",
+        "operationId": "attr_schema_milana_attr_schemas__category_code__get",
+        "parameters": [
+          {
+            "name": "category_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Category Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/milana/places/search": {
+      "post": {
+        "tags": [
+          "milana"
+        ],
+        "summary": "NL-поиск мест (Милана, variant B)",
+        "description": "Pass1 plan (cities+categories) → Pass2 build (compact schemas) → places/search × N → message от Миланы. Нужен DEEPSEEK_API_KEY. Лог: milana-agent-*.txt через LoggerService.",
+        "operationId": "milana_places_search_milana_places_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MilanaPlacesSearchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MilanaPlacesSearchOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MilanaGeo": {
+        "properties": {
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lng": {
+            "type": "number",
+            "title": "Lng"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lat",
+          "lng"
+        ],
+        "title": "MilanaGeo"
+      },
+      "MilanaPlacesSearchIn": {
+        "properties": {
+          "q": {
+            "type": "string",
+            "title": "Q",
+            "description": "Произвольный текст пожеланий на русском"
+          },
+          "city_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City Id",
+            "description": "ID города (default из config)"
+          },
+          "my_geo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MilanaGeo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "weekday": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 6.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekday"
+          },
+          "limit_per_step": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 20.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit Per Step"
+          }
+        },
+        "type": "object",
+        "required": [
+          "q"
+        ],
+        "title": "MilanaPlacesSearchIn"
+      },
+      "MilanaPlacesSearchOut": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Текст от Миланы"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/MilanaStepOut"
+            },
+            "type": "array",
+            "title": "Steps"
+          },
+          "plan": {
+            "items": {
+              "$ref": "#/components/schemas/MilanaPlanStepOut"
+            },
+            "type": "array",
+            "title": "Plan",
+            "default": []
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "used_llm": {
+            "type": "boolean",
+            "title": "Used Llm",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "steps"
+        ],
+        "title": "MilanaPlacesSearchOut"
+      },
+      "MilanaPlanStepOut": {
+        "properties": {
+          "intent": {
+            "type": "string",
+            "title": "Intent"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "why": {
+            "type": "string",
+            "title": "Why",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "intent",
+          "category"
+        ],
+        "title": "MilanaPlanStepOut"
+      },
+      "MilanaStepOut": {
+        "properties": {
+          "intent": {
+            "type": "string",
+            "title": "Intent"
+          },
+          "why": {
+            "type": "string",
+            "title": "Why",
+            "default": ""
+          },
+          "search": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Search"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "places": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Places",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "intent",
+          "search"
+        ],
+        "title": "MilanaStepOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

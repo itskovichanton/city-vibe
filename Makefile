@@ -9,18 +9,19 @@ USER_SERVICE := $(REPO_ROOT)/python/user_service
 AUTH_SERVICE := $(REPO_ROOT)/python/auth_service
 PLACE_SERVICE := $(REPO_ROOT)/python/place_service
 DESIGN_SERVICE := $(REPO_ROOT)/python/design_service
+MILANA_SERVICE := $(REPO_ROOT)/python/milana_service
 NOTIFICATION_SERVICE := $(REPO_ROOT)/python/notification_service
 API_GATEWAY := $(REPO_ROOT)/python/api_gateway
 LIBS := $(REPO_ROOT)/python/libs
 SCHEMA_DIR := $(REPO_ROOT)/schema
 CLIENTS_DIR := $(LIBS)/clients
 
-export PYTHONPATH := $(REPO_ROOT):$(USER_SERVICE)/src:$(AUTH_SERVICE)/src:$(PLACE_SERVICE)/src:$(DESIGN_SERVICE)/src:$(NOTIFICATION_SERVICE)/src:$(API_GATEWAY)/src:/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages
+export PYTHONPATH := $(REPO_ROOT):$(USER_SERVICE)/src:$(AUTH_SERVICE)/src:$(PLACE_SERVICE)/src:$(DESIGN_SERVICE)/src:$(MILANA_SERVICE)/src:$(NOTIFICATION_SERVICE)/src:$(API_GATEWAY)/src:/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages
 
 .PHONY: help install infra-up infra-down migrate-user migrate-auth migrate-place migrate-design migrate-notification migrate-all \
-        seed-user seed-place seed-design seed-nsk-places run-user run-auth run-place run-design run-notification run-gateway test-user test-auth test-place \
-        test-design test-notification test-libs test-unit test-integration test-all openapi openapi-user openapi-auth openapi-place \
-        openapi-design openapi-gateway openapi-notification openapi-mobile openapi-all up-all start-all stop-all restart-all docs lint format clean
+        seed-user seed-place seed-design seed-nsk-places run-user run-auth run-place run-design run-milana run-notification run-gateway test-user test-auth test-place \
+        test-design test-milana test-notification test-libs test-unit test-integration test-all openapi openapi-user openapi-auth openapi-place \
+        openapi-design openapi-milana openapi-gateway openapi-notification openapi-mobile openapi-all up-all start-all stop-all restart-all docs lint format clean
 
 help:
 	@echo "Цели:"
@@ -41,6 +42,7 @@ install:
 	$(PIP) install -r $(AUTH_SERVICE)/requirements.txt
 	$(PIP) install -r $(PLACE_SERVICE)/requirements.txt
 	$(PIP) install -r $(DESIGN_SERVICE)/requirements.txt
+	$(PIP) install -r $(MILANA_SERVICE)/requirements.txt
 	$(PIP) install -r $(NOTIFICATION_SERVICE)/requirements.txt
 	$(PIP) install -r $(API_GATEWAY)/requirements.txt
 	$(PIP) install pwdlib argon2-cffi PyJWT phonenumbers email-validator google-auth aiosmtplib jinja2 httpx fakeredis jsonschema opentelemetry-instrumentation-httpx testcontainers
@@ -121,6 +123,9 @@ run-place:
 run-design:
 	cd $(DESIGN_SERVICE) && CITYVIBE_OTEL_SERVICE_NAME=design-service CITYVIBE_TRACING_ENABLED=true $(PYTHON) main.py
 
+run-milana:
+	cd $(MILANA_SERVICE) && CITYVIBE_OTEL_SERVICE_NAME=milana-service CITYVIBE_TRACING_ENABLED=true $(PYTHON) main.py
+
 run-notification:
 	cd $(NOTIFICATION_SERVICE) && CITYVIBE_OTEL_SERVICE_NAME=notification-service CITYVIBE_TRACING_ENABLED=true $(PYTHON) main.py
 
@@ -150,13 +155,16 @@ test-place:
 test-design:
 	cd $(DESIGN_SERVICE) && $(PYTHON) -m pytest tests/ -v || true
 
+test-milana:
+	cd $(MILANA_SERVICE) && $(PYTHON) -m pytest tests/ -v
+
 test-notification:
 	cd $(NOTIFICATION_SERVICE) && $(PYTHON) -m pytest tests/ -v --ignore=tests/integration || true
 
 test-libs:
 	cd $(REPO_ROOT) && $(PYTHON) -m pytest python/libs/infra/tests/ python/libs/clients/tests/ -v
 
-test-unit: test-user test-auth test-place test-design test-notification test-libs
+test-unit: test-user test-auth test-place test-design test-milana test-notification test-libs
 	@echo "Unit tests OK"
 
 test-integration:
@@ -183,6 +191,10 @@ openapi-design:
 	@mkdir -p $(SCHEMA_DIR)/openapi
 	$(PYTHON) $(DESIGN_SERVICE)/scripts/export_openapi.py
 
+openapi-milana:
+	@mkdir -p $(SCHEMA_DIR)/openapi
+	$(PYTHON) $(MILANA_SERVICE)/scripts/export_openapi.py
+
 openapi-gateway:
 	@mkdir -p $(SCHEMA_DIR)/openapi
 	$(PYTHON) $(API_GATEWAY)/scripts/export_openapi.py
@@ -195,7 +207,7 @@ openapi-mobile:
 	@mkdir -p $(SCHEMA_DIR)/openapi
 	$(PYTHON) $(API_GATEWAY)/scripts/export_mobile_openapi.py
 
-openapi-all: openapi-user openapi-auth openapi-place openapi-design openapi-gateway openapi-notification openapi-mobile
+openapi-all: openapi-user openapi-auth openapi-place openapi-design openapi-milana openapi-gateway openapi-notification openapi-mobile
 	@echo "Схемы в $(SCHEMA_DIR)/openapi/"
 	@echo "Flutter: schema/openapi/city-vibe-mobile.json"
 

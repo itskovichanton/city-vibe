@@ -13,6 +13,7 @@
 | `/categories`, `/attr-schemas/*` | place-service | 8083 | [categories](categories.md) |
 | `/places/*` | place-service | 8083 | [places](places.md), [places-search](places-search.md) |
 | `/pin-styles/*`, `/chat-themes/*` | design-service | 8085 | [design](design.md) |
+| `/milana/*` | milana-service | 8086 | [milana](milana.md) |
 
 ## Темы
 
@@ -23,6 +24,7 @@
 - [categories.md](categories.md)
 - [places.md](places.md)
 - [places-search.md](places-search.md)
+- [milana.md](milana.md)
 - [users.md](users.md)
 - [design.md](design.md)
 
@@ -31,4 +33,5 @@
 - Mobile aggregate: `schema/openapi/city-vibe-mobile.json` · `make openapi-mobile`
 - Place: `schema/openapi/place-service.json`
 - Design: `schema/openapi/design-service.json`
-- Swagger сервисов: `:8083/docs`, `:8085/docs`, …
+- Milana: `schema/openapi/milana-service.json`
+- Swagger сервисов: `:8083/docs`, `:8085/docs`, `:8086/docs`, …

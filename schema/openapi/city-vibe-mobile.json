@@ -462,6 +462,150 @@
         }
       }
     },
+    "/milana/places/search": {
+      "post": {
+        "tags": [
+          "milana",
+          "places"
+        ],
+        "summary": "NL-поиск мест (ИИ-агент Милана)",
+        "description": "Произвольный русский текст q. Variant B: plan(world) → build(compact schemas) → places/search × N → message от Миланы. Также: GET /milana/world, /milana/cities, /milana/categories, /milana/attr-schemas/{code}.",
+        "operationId": "milana_places_search_milana_places_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/milana/world": {
+      "get": {
+        "tags": [
+          "milana",
+          "world"
+        ],
+        "summary": "Справочник мира (города+категории)",
+        "operationId": "milana_world_milana_world_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/milana/cities": {
+      "get": {
+        "tags": [
+          "milana",
+          "world"
+        ],
+        "summary": "Milana Cities",
+        "operationId": "milana_cities_milana_cities_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/milana/categories": {
+      "get": {
+        "tags": [
+          "milana",
+          "world"
+        ],
+        "summary": "Milana Categories",
+        "operationId": "milana_categories_milana_categories_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/milana/attr-schemas/{category_code}": {
+      "get": {
+        "tags": [
+          "milana",
+          "world"
+        ],
+        "summary": "Milana Attr Schema",
+        "operationId": "milana_attr_schema_milana_attr_schemas__category_code__get",
+        "parameters": [
+          {
+            "name": "category_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Category Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/register": {
       "post": {
         "tags": [

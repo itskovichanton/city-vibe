@@ -8,7 +8,7 @@ LOG_DIR="${ROOT}/.run/logs"
 PID_DIR="${ROOT}/.run/pids"
 mkdir -p "$LOG_DIR" "$PID_DIR"
 
-export PYTHONPATH="${ROOT}:${ROOT}/python/user_service/src:${ROOT}/python/auth_service/src:${ROOT}/python/place_service/src:${ROOT}/python/design_service/src:${ROOT}/python/notification_service/src:${ROOT}/python/api_gateway/src:/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages"
+export PYTHONPATH="${ROOT}:${ROOT}/python/user_service/src:${ROOT}/python/auth_service/src:${ROOT}/python/place_service/src:${ROOT}/python/design_service/src:${ROOT}/python/milana_service/src:${ROOT}/python/notification_service/src:${ROOT}/python/api_gateway/src:/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages"
 export CITYVIBE_TRACING_ENABLED="${CITYVIBE_TRACING_ENABLED:-true}"
 export CITYVIBE_OTEL_ENDPOINT="${CITYVIBE_OTEL_ENDPOINT:-http://localhost:4317}"
 
@@ -58,6 +58,7 @@ start_one user          "${ROOT}/python/user_service"          8081 user-service
 start_one auth          "${ROOT}/python/auth_service"          8082 auth-service
 start_one place         "${ROOT}/python/place_service"         8083 place-service
 start_one design        "${ROOT}/python/design_service"        8085 design-service
+start_one milana        "${ROOT}/python/milana_service"        8086 milana-service
 start_one notification  "${ROOT}/python/notification_service"  8084 notification-service
 start_one gateway       "${ROOT}/python/api_gateway"           8080 api-gateway
 
@@ -66,6 +67,7 @@ wait_health "http://127.0.0.1:8081/health" user
 wait_health "http://127.0.0.1:8082/health" auth
 wait_health "http://127.0.0.1:8083/health" place
 wait_health "http://127.0.0.1:8085/health" design
+wait_health "http://127.0.0.1:8086/health" milana
 wait_health "http://127.0.0.1:8084/health" notification
 wait_health "http://127.0.0.1:8080/health" gateway
 

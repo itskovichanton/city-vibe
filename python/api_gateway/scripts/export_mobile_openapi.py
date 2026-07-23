@@ -199,6 +199,35 @@ def build_openapi_app() -> FastAPI:
     async def default_theme():
         raise NotImplementedError
 
+    @app.post(
+        "/milana/places/search",
+        tags=["milana", "places"],
+        summary="NL-поиск мест (ИИ-агент Милана)",
+        description=(
+            "Произвольный русский текст q. Variant B: plan(world) → build(compact schemas) → "
+            "places/search × N → message от Миланы. Также: GET /milana/world, /milana/cities, "
+            "/milana/categories, /milana/attr-schemas/{code}."
+        ),
+    )
+    async def milana_places_search(body: dict):
+        raise NotImplementedError
+
+    @app.get("/milana/world", tags=["milana", "world"], summary="Справочник мира (города+категории)")
+    async def milana_world():
+        raise NotImplementedError
+
+    @app.get("/milana/cities", tags=["milana", "world"])
+    async def milana_cities():
+        raise NotImplementedError
+
+    @app.get("/milana/categories", tags=["milana", "world"])
+    async def milana_categories():
+        raise NotImplementedError
+
+    @app.get("/milana/attr-schemas/{category_code}", tags=["milana", "world"])
+    async def milana_attr_schema(category_code: str):
+        raise NotImplementedError
+
     @app.post("/auth/register", tags=["auth"], response_model=ChallengeOut)
     async def register(body: RegisterBody):
         raise NotImplementedError
