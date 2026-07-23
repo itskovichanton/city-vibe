@@ -4,7 +4,8 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import List, Optional
 
-from python.libs.entities.user import PlaceCategory, Status, UserRole
+from python.libs.entities.place import PlaceCategory
+from python.libs.entities.user import Status, UserRole
 
 
 @dataclass

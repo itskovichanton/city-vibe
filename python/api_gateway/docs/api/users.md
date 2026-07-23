@@ -28,7 +28,7 @@
 | `favorite_categories` | string[] | Коды категорий мест (`PlaceCategory`) |
 | `onboarding_completed` | bool | Флаг завершения онбординга |
 | `deleted` | bool | Soft-delete |
-| `city_id` | int \| null | Город из place-catalog |
+| `city_id` | int \| null | Город из place-service |
 | `birthdate` | date \| null | `YYYY-MM-DD` |
 | `auth_account_id` | int \| null | Связь с auth-аккаунтом |
 

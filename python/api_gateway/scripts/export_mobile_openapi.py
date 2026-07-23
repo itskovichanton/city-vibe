@@ -134,7 +134,7 @@ class AvatarUploadOut(BaseModel):
 def build_openapi_app() -> FastAPI:
     app = FastAPI(
         title="City Vibe — Mobile API",
-        description="Агрегированная схема auth + users + cities (через api-gateway)",
+        description="Агрегированная схема auth + users + cities + places + design (через api-gateway)",
         version="1.0.0",
     )
 
@@ -148,6 +148,42 @@ def build_openapi_app() -> FastAPI:
 
     @app.get("/cities/{city_id}", tags=["cities"], response_model=CityOut)
     async def get_city(city_id: int):
+        raise NotImplementedError
+
+    @app.get("/categories", tags=["categories"])
+    async def list_categories():
+        raise NotImplementedError
+
+    @app.get("/attr-schemas/{category_code}", tags=["attrs"])
+    async def get_attr_schema(category_code: str):
+        raise NotImplementedError
+
+    @app.get("/places", tags=["places"])
+    async def list_places(owner_id: Optional[int] = None, category: Optional[str] = None):
+        raise NotImplementedError
+
+    @app.post("/places", tags=["places"])
+    async def create_place(body: dict):
+        raise NotImplementedError
+
+    @app.get("/places/{place_id}", tags=["places"])
+    async def get_place(place_id: int):
+        raise NotImplementedError
+
+    @app.patch("/places/{place_id}", tags=["places"])
+    async def patch_place(place_id: int, body: dict):
+        raise NotImplementedError
+
+    @app.delete("/places/{place_id}", tags=["places"])
+    async def delete_place(place_id: int):
+        raise NotImplementedError
+
+    @app.get("/pin-styles/default", tags=["design"])
+    async def default_pin():
+        raise NotImplementedError
+
+    @app.get("/chat-themes/default", tags=["design"])
+    async def default_theme():
         raise NotImplementedError
 
     @app.post("/auth/register", tags=["auth"], response_model=ChallengeOut)

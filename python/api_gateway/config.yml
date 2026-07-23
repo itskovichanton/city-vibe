@@ -12,7 +12,8 @@ auth:
 upstreams:
   auth: http://localhost:8082
   users: http://localhost:8081
-  cities: http://localhost:8083
+  places: http://localhost:8083
+  design: http://localhost:8085
 
 clients:
   user_service:
@@ -23,8 +24,10 @@ clients:
     url: http://localhost:8082
     auth:
       session_token: dev-s2s-token
-  place_catalog:
+  place_service:
     url: http://localhost:8083
+  design_service:
+    url: http://localhost:8085
   notification_service:
     url: http://localhost:8084
   mock_notify:

@@ -18,7 +18,7 @@ for p in (REPO_ROOT, USER_SRC, SITE):
 
 @pytest.fixture
 def sample_create_request():
-    from python.libs.entities.user import PlaceCategory
+    from python.libs.entities.place import PlaceCategory
     from user_service.entities.common import CreateUserRequest
 
     return CreateUserRequest(

@@ -2,7 +2,7 @@
 
 from python.libs.clients.domain.auth_service.entities import RegisterBody, VerifyBody
 from python.libs.clients.domain.mock_notify.entities import EmailIn, SmsIn
-from python.libs.clients.domain.place_catalog.entities import CityOut, GeoOut
+from python.libs.clients.domain.place_service.entities import CityOut, GeoOut
 from python.libs.clients.domain.user_service.entities import CreateUserBody
 
 
@@ -31,7 +31,7 @@ def test_auth_entities():
     assert verify.code == "123456"
 
 
-def test_place_catalog_entities():
+def test_place_service_entities():
     city = CityOut(
         id=1,
         name="Москва",

@@ -1,0 +1,36 @@
+app:
+  version: 1.0.0
+  name: design-service
+
+server:
+  host: 0.0.0.0
+  port: 8085
+
+db:
+  url: postgresql+asyncpg://cityvibe:cityvibe@localhost:5432/cityvibe_design
+  echo: false
+  pool_size: 5
+
+redis:
+  host: localhost
+  port: 6379
+
+clients:
+  design_service:
+    url: http://localhost:8085
+  place_service:
+    url: http://localhost:8083
+  api_gateway:
+    url: http://localhost:8080
+
+dev:
+  server:
+    port: 8085
+  db:
+    echo: true
+
+prod:
+  server:
+    port: 8085
+  db:
+    echo: false

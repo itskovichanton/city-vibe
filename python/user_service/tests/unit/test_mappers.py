@@ -5,7 +5,8 @@ from datetime import datetime, timezone
 from user_service.infra.orm.mappers import user_dto_to_response, user_model_to_dto
 from user_service.infra.orm.models import UserModel
 
-from python.libs.entities.user import PlaceCategory, Status
+from python.libs.entities.place import PlaceCategory
+from python.libs.entities.user import Status
 
 
 def test_user_model_to_dto():

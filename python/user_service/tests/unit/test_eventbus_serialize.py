@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from python.libs.clients.infra.events.eventbus import serialize_message, deserialize_message
-from python.libs.entities.user import PlaceCategory, Status, User, UserRole
+from python.libs.entities.place import PlaceCategory
+from python.libs.entities.user import Status, User, UserRole
 
 
 @dataclass

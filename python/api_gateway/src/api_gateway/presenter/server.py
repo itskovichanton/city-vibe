@@ -23,7 +23,8 @@ logger = logging.getLogger(__name__)
     host=("server.host", str, "0.0.0.0"),
     auth_url=("upstreams.auth", str, "http://localhost:8082"),
     users_url=("upstreams.users", str, "http://localhost:8081"),
-    cities_url=("upstreams.cities", str, "http://localhost:8083"),
+    places_url=("upstreams.places", str, "http://localhost:8083"),
+    design_url=("upstreams.design", str, "http://localhost:8085"),
     jwt_secret=("auth.jwt_secret", str, "dev-jwt-secret-change-me"),
 )
 class Server:
@@ -36,7 +37,8 @@ class Server:
         self.host = kwargs.get("host", getattr(self, "host", "0.0.0.0"))
         self._auth_url = kwargs.get("auth_url", "http://localhost:8082").rstrip("/")
         self._users_url = kwargs.get("users_url", "http://localhost:8081").rstrip("/")
-        self._cities_url = kwargs.get("cities_url", "http://localhost:8083").rstrip("/")
+        self._places_url = kwargs.get("places_url", "http://localhost:8083").rstrip("/")
+        self._design_url = kwargs.get("design_url", "http://localhost:8085").rstrip("/")
         self._jwt_secret = kwargs.get("jwt_secret", "dev-jwt-secret-change-me")
         self.fast_api = self.init_fast_api()
         self.add_routes()
@@ -60,7 +62,6 @@ class Server:
         return app
 
     def _validate_jwt_optional(self, request: Request) -> Optional[JSONResponse]:
-        """Если есть Authorization — проверяем JWT, иначе пропускаем."""
         auth = request.headers.get("Authorization", "")
         if not auth.startswith("Bearer "):
             return None
@@ -88,7 +89,8 @@ class Server:
             backends = {
                 "auth": f"{self._auth_url}/health",
                 "users": f"{self._users_url}/health",
-                "cities": f"{self._cities_url}/health",
+                "places": f"{self._places_url}/health",
+                "design": f"{self._design_url}/health",
             }
             status = {"gateway": "ok", "backends": {}}
             for name, url in backends.items():
@@ -120,10 +122,54 @@ class Server:
                 return err
             return await self._proxy(request, self._users_url, f"/users/{path}")
 
-        @self.fast_api.api_route("/cities/{path:path}", methods=["GET"])
-        async def proxy_cities(request: Request, path: str):
-            return await self._proxy(request, self._cities_url, f"/cities/{path}")
-
+        # place-service
         @self.fast_api.get("/cities")
         async def proxy_cities_root(request: Request):
-            return await self._proxy(request, self._cities_url, "/cities")
+            return await self._proxy(request, self._places_url, "/cities")
+
+        @self.fast_api.api_route("/cities/{path:path}", methods=["GET"])
+        async def proxy_cities(request: Request, path: str):
+            return await self._proxy(request, self._places_url, f"/cities/{path}")
+
+        @self.fast_api.get("/categories")
+        async def proxy_categories(request: Request):
+            return await self._proxy(request, self._places_url, "/categories")
+
+        @self.fast_api.api_route("/attr-schemas", methods=["GET"])
+        async def proxy_attr_schemas_root(request: Request):
+            return await self._proxy(request, self._places_url, "/attr-schemas")
+
+        @self.fast_api.api_route("/attr-schemas/{path:path}", methods=["GET"])
+        async def proxy_attr_schemas(request: Request, path: str):
+            return await self._proxy(request, self._places_url, f"/attr-schemas/{path}")
+
+        @self.fast_api.api_route("/places", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+        async def proxy_places_root(request: Request):
+            err = self._validate_jwt_optional(request)
+            if err:
+                return err
+            return await self._proxy(request, self._places_url, "/places")
+
+        @self.fast_api.api_route("/places/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+        async def proxy_places(request: Request, path: str):
+            err = self._validate_jwt_optional(request)
+            if err:
+                return err
+            return await self._proxy(request, self._places_url, f"/places/{path}")
+
+        # design-service
+        @self.fast_api.api_route("/pin-styles", methods=["GET"])
+        async def proxy_pins_root(request: Request):
+            return await self._proxy(request, self._design_url, "/pin-styles")
+
+        @self.fast_api.api_route("/pin-styles/{path:path}", methods=["GET"])
+        async def proxy_pins(request: Request, path: str):
+            return await self._proxy(request, self._design_url, f"/pin-styles/{path}")
+
+        @self.fast_api.api_route("/chat-themes", methods=["GET"])
+        async def proxy_themes_root(request: Request):
+            return await self._proxy(request, self._design_url, "/chat-themes")
+
+        @self.fast_api.api_route("/chat-themes/{path:path}", methods=["GET"])
+        async def proxy_themes(request: Request, path: str):
+            return await self._proxy(request, self._design_url, f"/chat-themes/{path}")

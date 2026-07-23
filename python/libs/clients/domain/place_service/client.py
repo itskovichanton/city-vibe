@@ -1,0 +1,100 @@
+"""HTTP-клиент place-service."""
+
+from __future__ import annotations
+
+from typing import Any, Optional, Protocol
+
+from src.mybootstrap_ioc_itskovichanton.ioc import bean
+from src.mybootstrap_mvc_fastapi_itskovichanton.client.http import on_mbclient_api
+
+api_call = on_mbclient_api(_name="clients.place_service")
+
+
+class PlaceServiceClient(Protocol):
+    def health(self) -> Any: ...
+
+    def list_cities(self) -> Any: ...
+
+    def get_city(self, city_id: int) -> Any: ...
+
+    def list_categories(self) -> Any: ...
+
+    def list_attr_schemas(self) -> Any: ...
+
+    def get_attr_schema(self, category_code: str) -> Any: ...
+
+    def create_place(self, body: dict) -> Any: ...
+
+    def list_places(
+        self,
+        owner_id: Optional[int] = None,
+        category: Optional[str] = None,
+        **kwargs,
+    ) -> Any: ...
+
+    def get_place(self, place_id: int) -> Any: ...
+
+    def patch_place(self, place_id: int, body: dict) -> Any: ...
+
+    def delete_place(self, place_id: int) -> Any: ...
+
+
+@bean
+class PlaceServiceClientImpl(PlaceServiceClient):
+    @api_call
+    def health(self, session=None, url=None, headers=None):
+        return session.get(url=f"{url}/health", timeout=30, headers=headers)
+
+    @api_call
+    def list_cities(self, session=None, url=None, headers=None):
+        return session.get(url=f"{url}/cities", timeout=30, headers=headers)
+
+    @api_call
+    def get_city(self, city_id: int, session=None, url=None, headers=None):
+        return session.get(url=f"{url}/cities/{city_id}", timeout=30, headers=headers)
+
+    @api_call
+    def list_categories(self, session=None, url=None, headers=None):
+        return session.get(url=f"{url}/categories", timeout=30, headers=headers)
+
+    @api_call
+    def list_attr_schemas(self, session=None, url=None, headers=None):
+        return session.get(url=f"{url}/attr-schemas", timeout=30, headers=headers)
+
+    @api_call
+    def get_attr_schema(self, category_code: str, session=None, url=None, headers=None):
+        return session.get(url=f"{url}/attr-schemas/{category_code}", timeout=30, headers=headers)
+
+    @api_call
+    def create_place(self, body: dict, session=None, url=None, headers=None):
+        return session.post(url=f"{url}/places", json=body, timeout=30, headers=headers)
+
+    @api_call
+    def list_places(
+        self,
+        owner_id: Optional[int] = None,
+        category: Optional[str] = None,
+        session=None,
+        url=None,
+        headers=None,
+        **kwargs,
+    ):
+        params = {}
+        if owner_id is not None:
+            params["owner_id"] = owner_id
+        if category is not None:
+            params["category"] = category
+        params.update({k: v for k, v in kwargs.items() if v is not None})
+        return session.get(url=f"{url}/places", params=params, timeout=30, headers=headers)
+
+    @api_call
+    def get_place(self, place_id: int, session=None, url=None, headers=None):
+        return session.get(url=f"{url}/places/{place_id}", timeout=30, headers=headers)
+
+    @api_call
+    def patch_place(self, place_id: int, body: dict, session=None, url=None, headers=None):
+        return session.patch(url=f"{url}/places/{place_id}", json=body, timeout=30, headers=headers)
+
+    @api_call
+    def delete_place(self, place_id: int, session=None, url=None, headers=None):
+        return session.delete(url=f"{url}/places/{place_id}", timeout=30, headers=headers)

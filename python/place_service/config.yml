@@ -1,0 +1,58 @@
+app:
+  version: 1.0.0
+  name: place-service
+
+server:
+  host: 0.0.0.0
+  port: 8083
+
+db:
+  url: postgresql+asyncpg://cityvibe:cityvibe@localhost:5432/cityvibe_places
+  echo: false
+  pool_size: 5
+
+rabbitmq:
+  url: amqp://cityvibe:cityvibe@localhost:5672/
+  exchange: city_vibe.events
+
+redis:
+  host: localhost
+  port: 6379
+
+clients:
+  user_service:
+    url: http://localhost:8081
+    auth:
+      session_token: dev-s2s-token
+  auth_service:
+    url: http://localhost:8082
+    auth:
+      session_token: dev-s2s-token
+  place_service:
+    url: http://localhost:8083
+  design_service:
+    url: http://localhost:8085
+  notification_service:
+    url: http://localhost:8084
+  mock_notify:
+    url: http://localhost:8090
+  api_gateway:
+    url: http://localhost:8080
+
+loggers:
+  sql:
+    backup_count: 3
+  http:
+    backup_count: 3
+
+dev:
+  server:
+    port: 8083
+  db:
+    echo: true
+
+prod:
+  server:
+    port: 8083
+  db:
+    echo: false

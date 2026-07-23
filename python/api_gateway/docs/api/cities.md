@@ -3,8 +3,7 @@
 ← [Оглавление](index.md) · [Conventions](conventions.md)
 
 **Префикс:** `/cities`, `/cities/{path}`  
-**Upstream:** place-catalog (`http://localhost:8083`)  
-**Прокси:** `GET` (только чтение)
+**Upstream:** place-service (`http://localhost:8083`)
 
 Публичные методы: JWT не обязателен. Используются при онбординге / регистрации (`city_id`).
 
@@ -28,7 +27,7 @@
 | `created_at` | datetime \| null | |
 | `updated_at` | datetime \| null | |
 
-> В части OpenAPI/Swagger place-catalog могут фигурировать устаревшие поля `lat`/`lng`; канонический ответ DTO — вложенный `geo`.
+> В части OpenAPI/Swagger place-service могут фигурировать устаревшие поля `lat`/`lng`; канонический ответ DTO — вложенный `geo`.
 
 ---
 

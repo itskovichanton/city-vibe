@@ -7,7 +7,7 @@ from python.libs.entities.geo import GeoLocation
 
 @dataclass
 class City(Entity):
-    """Город справочника (place-catalog)."""
+    """Город справочника (place-service)."""
 
     name: str
     slug: str = ""

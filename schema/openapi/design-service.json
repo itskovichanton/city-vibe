@@ -1,0 +1,342 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "City Vibe — Design Service",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "infra"
+        ],
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pin-styles": {
+      "get": {
+        "tags": [
+          "pins"
+        ],
+        "summary": "List Pins",
+        "operationId": "list_pins_pin_styles_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PinStyleOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Pins Pin Styles Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pin-styles/default": {
+      "get": {
+        "tags": [
+          "pins"
+        ],
+        "summary": "Default Pin",
+        "operationId": "default_pin_pin_styles_default_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PinStyleOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pin-styles/{style_id}": {
+      "get": {
+        "tags": [
+          "pins"
+        ],
+        "summary": "Get Pin",
+        "operationId": "get_pin_pin_styles__style_id__get",
+        "parameters": [
+          {
+            "name": "style_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Style Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PinStyleOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat-themes": {
+      "get": {
+        "tags": [
+          "themes"
+        ],
+        "summary": "List Themes",
+        "operationId": "list_themes_chat_themes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChatThemeOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Themes Chat Themes Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat-themes/default": {
+      "get": {
+        "tags": [
+          "themes"
+        ],
+        "summary": "Default Theme",
+        "operationId": "default_theme_chat_themes_default_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatThemeOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat-themes/{theme_id}": {
+      "get": {
+        "tags": [
+          "themes"
+        ],
+        "summary": "Get Theme",
+        "operationId": "get_theme_chat_themes__theme_id__get",
+        "parameters": [
+          {
+            "name": "theme_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Theme Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatThemeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ChatThemeOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "background_url": {
+            "type": "string",
+            "title": "Background Url"
+          },
+          "font_family": {
+            "type": "string",
+            "title": "Font Family",
+            "default": "system"
+          },
+          "colors": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Colors",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "name",
+          "background_url"
+        ],
+        "title": "ChatThemeOut"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "PinStyleOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "image_url": {
+            "type": "string",
+            "title": "Image Url"
+          },
+          "gif_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gif Url"
+          },
+          "anchor_x": {
+            "type": "number",
+            "title": "Anchor X",
+            "default": 0.5
+          },
+          "anchor_y": {
+            "type": "number",
+            "title": "Anchor Y",
+            "default": 1.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "name",
+          "image_url"
+        ],
+        "title": "PinStyleOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

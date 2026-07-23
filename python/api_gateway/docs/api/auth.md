@@ -58,7 +58,7 @@
 | `name` | string | да | Отображаемое имя |
 | `identifier` | string | да | Email или телефон (см. [conventions](conventions.md)) |
 | `password` | string | да | Пароль (хеш argon2/pwdlib на сервере) |
-| `city_id` | int | да | ID города из place-catalog |
+| `city_id` | int | да | ID города из place-service |
 | `accept_terms` | bool | да | Должен быть `true`, иначе ошибка |
 | `birthdate` | date \| null | нет | `YYYY-MM-DD` |
 

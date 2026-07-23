@@ -8,7 +8,7 @@ LOG_DIR="${ROOT}/.run/logs"
 PID_DIR="${ROOT}/.run/pids"
 mkdir -p "$LOG_DIR" "$PID_DIR"
 
-export PYTHONPATH="${ROOT}:${ROOT}/python/user_service/src:${ROOT}/python/auth_service/src:${ROOT}/python/place_catalog/src:${ROOT}/python/notification_service/src:${ROOT}/python/api_gateway/src:/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages"
+export PYTHONPATH="${ROOT}:${ROOT}/python/user_service/src:${ROOT}/python/auth_service/src:${ROOT}/python/place_service/src:${ROOT}/python/design_service/src:${ROOT}/python/notification_service/src:${ROOT}/python/api_gateway/src:/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages"
 export CITYVIBE_TRACING_ENABLED="${CITYVIBE_TRACING_ENABLED:-true}"
 export CITYVIBE_OTEL_ENDPOINT="${CITYVIBE_OTEL_ENDPOINT:-http://localhost:4317}"
 
@@ -26,12 +26,14 @@ start_one() {
   fi
 
   echo "  starting ${name} → :${port} (otel=${otel_name})"
+  # nohup: чтобы процессы жили после закрытия терминала
   (
     cd "$dir"
     export CITYVIBE_OTEL_SERVICE_NAME="$otel_name"
-    exec "$PYTHON" main.py
+    exec nohup "$PYTHON" main.py
   ) >"$logfile" 2>&1 &
   echo $! >"$pidfile"
+  disown $! 2>/dev/null || true
 }
 
 wait_health() {
@@ -51,9 +53,11 @@ wait_health() {
 }
 
 echo "=== City Vibe: start all services ==="
+# Важно: запускать через nohup/disown из IDE/терминала, иначе фон может умереть с shell.
 start_one user          "${ROOT}/python/user_service"          8081 user-service
 start_one auth          "${ROOT}/python/auth_service"          8082 auth-service
-start_one place         "${ROOT}/python/place_catalog"         8083 place-catalog
+start_one place         "${ROOT}/python/place_service"         8083 place-service
+start_one design        "${ROOT}/python/design_service"        8085 design-service
 start_one notification  "${ROOT}/python/notification_service"  8084 notification-service
 start_one gateway       "${ROOT}/python/api_gateway"           8080 api-gateway
 
@@ -61,6 +65,7 @@ echo "=== waiting health ==="
 wait_health "http://127.0.0.1:8081/health" user
 wait_health "http://127.0.0.1:8082/health" auth
 wait_health "http://127.0.0.1:8083/health" place
+wait_health "http://127.0.0.1:8085/health" design
 wait_health "http://127.0.0.1:8084/health" notification
 wait_health "http://127.0.0.1:8080/health" gateway
 

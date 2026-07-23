@@ -8,7 +8,8 @@ from sqlalchemy import select
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
 
 from python.libs.clients.db import Database
-from python.libs.entities.user import PlaceCategory, Status, User, UserRole
+from python.libs.entities.place import PlaceCategory
+from python.libs.entities.user import Status, User, UserRole
 from python.user_service.src.user_service.infra.orm.mappers import user_model_to_dto
 from python.user_service.src.user_service.infra.orm.models import UserModel
 

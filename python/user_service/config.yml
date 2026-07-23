@@ -38,8 +38,10 @@ clients:
     url: http://localhost:8082
     auth:
       session_token: dev-s2s-token
-  place_catalog:
+  place_service:
     url: http://localhost:8083
+  design_service:
+    url: http://localhost:8085
   notification_service:
     url: http://localhost:8084
   mock_notify:

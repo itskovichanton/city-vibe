@@ -20,7 +20,7 @@ from src.mybootstrap_mvc_itskovichanton.pipeline import ActionRunner, Result
 from src.mybootstrap_mvc_itskovichanton.result_presenter import ResultPresenter
 
 from python.libs.clients.infra.s3 import FileStorage
-from python.libs.entities.user import PlaceCategory
+from python.libs.entities.place import PlaceCategory
 from python.libs.infra import CityVibeInfraSupport
 from python.libs.infra.decorators import idempotent, rate_limit, read_validated_upload, require_s2s
 from python.user_service.src.user_service.entities.common import (
@@ -40,7 +40,7 @@ class CreateUserBody(BaseModel):
     age: Optional[int] = Field(None, description="Возраст 1..120")
     short_bio: str = Field("", description="Коротко о себе")
     favorite_categories: List[str] = Field(default_factory=list, description="Любимые категории мест")
-    city_id: Optional[int] = Field(None, description="ID города из place-catalog")
+    city_id: Optional[int] = Field(None, description="ID города из place-service")
     birthdate: Optional[date] = Field(None, description="Дата рождения")
     auth_account_id: Optional[int] = Field(None, description="ID аккаунта auth-service")
 

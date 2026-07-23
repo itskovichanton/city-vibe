@@ -4,7 +4,7 @@
 
 | Сервис | Порт | Назначение |
 |--------|------|------------|
-| Postgres | 5432 | БД: `cityvibe_users`, `cityvibe_auth`, `cityvibe_places`, `cityvibe_notifications` |
+| Postgres | 5432 | БД: `cityvibe_users`, `cityvibe_auth`, `cityvibe_places`, `cityvibe_notifications`, `cityvibe_design` |
 | RabbitMQ | 5672 / UI 15672 | События (`city_vibe.events`), user/pass `cityvibe` |
 | Redis | 6379 | OTP, rate-limit, idempotency |
 | MinIO | 9000 / UI 9001 | S3 (аватары) |
@@ -20,22 +20,25 @@ make install
 make start-all       # infra + миграции + seed + все 5 сервисов в фоне
 # логи: .run/logs/   стоп: make stop-all   рестарт: make restart-all
 
-# либо по отдельности (5 терминалов / IDE Run Configs):
+# либо по отдельности (IDE Run Configs):
 make run-user          # :8081
 make run-auth          # :8082
 make run-place         # :8083
 make run-notification  # :8084
+make run-design        # :8085
 make run-gateway       # :8080  ← точка входа для мобилки
 ```
 
 Мобильное приложение ходит **только на gateway**: `http://<mac-ip>:8080`
 
-В Jaeger UI (http://localhost:16686) сервисы: `user-service`, `auth-service`, `place-catalog`, `notification-service`, `api-gateway`.
+В Jaeger UI (http://localhost:16686) сервисы: `user-service`, `auth-service`, `place-service`, `design-service`, `notification-service`, `api-gateway`.
 
 Примеры:
 - `GET  http://localhost:8080/cities`
+- `GET  http://localhost:8080/categories`
+- `GET  http://localhost:8080/places?owner_id=1`
+- `GET  http://localhost:8080/pin-styles/default`
 - `POST http://localhost:8080/auth/register`
-- `POST http://localhost:8080/auth/login`
 - `GET  http://localhost:8080/health`
 
 Swagger сервисов:
@@ -112,7 +115,8 @@ Access ~15 мин, refresh ~30 дней.
 |--------|----------|-----|
 | user-service | `cityvibe_users` | `postgresql://cityvibe:cityvibe@localhost:5432/cityvibe_users` |
 | auth-service | `cityvibe_auth` | `postgresql://cityvibe:cityvibe@localhost:5432/cityvibe_auth` |
-| place-catalog | `cityvibe_places` | `postgresql://cityvibe:cityvibe@localhost:5432/cityvibe_places` |
+| place-service | `cityvibe_places` | `postgresql://cityvibe:cityvibe@localhost:5432/cityvibe_places` |
+| design-service | `cityvibe_design` | `postgresql://cityvibe:cityvibe@localhost:5432/cityvibe_design` |
 | notification-service | `cityvibe_notifications` | `postgresql://cityvibe:cityvibe@localhost:5432/cityvibe_notifications` |
 
 CLI:

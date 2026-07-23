@@ -18,7 +18,8 @@
 |---------|-----|
 | auth | `{upstreams.auth}/health` → `http://localhost:8082/health` |
 | users | `{upstreams.users}/health` → `http://localhost:8081/health` |
-| cities | `{upstreams.cities}/health` → `http://localhost:8083/health` |
+| places | `{upstreams.places}/health` → `http://localhost:8083/health` |
+| design | `{upstreams.design}/health` → `http://localhost:8085/health` |
 
 Timeout на каждый backend: **3 секунды**.
 
