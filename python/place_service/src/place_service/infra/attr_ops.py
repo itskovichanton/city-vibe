@@ -6,6 +6,7 @@
   - {"operation": "between", "args": {"from"?: n, "to"?: n}}
   - {"operation": "or", "args": {"list": [...]}}
   - {"operation": "and", "args": {"list": [...]}}
+  - {"operation": "not_in", "args": {"list": [...]}}
 
 Вложенности операций нет — одна операция на поле.
 Новые операции добавляются регистрацией в ATTR_OP_REGISTRY.
@@ -165,11 +166,54 @@ class AndOp(AttrOperation):
         return cls(values=tuple(lst))
 
 
+@dataclass(frozen=True)
+class NotInOp(AttrOperation):
+    """
+    Исключение значений из списка (NOT IN).
+    - scalar: attrs[key] ∉ list
+    - array: нет пересечения с list
+    Отсутствующий ключ проходит фильтр (значение не входит в запрещённый список).
+    """
+
+    name: ClassVar[str] = "not_in"
+    values: Tuple[Any, ...]
+
+    def to_sql(self, key: str, param_prefix: str) -> SqlFragment:
+        if not self.values:
+            raise CoreException(message="not_in: args.list не должен быть пустым")
+        p_arr = f"{param_prefix}_nin_arr"
+        p_scalars = f"{param_prefix}_nin_sc"
+        # логическое отрицание OrOp: нет overlap у array и scalar не в list
+        sql = (
+            f"("
+            f"attrs->'{key}' IS NULL "
+            f"OR ("
+            f"jsonb_typeof(attrs->'{key}') = 'array' "
+            f"AND NOT (attrs->'{key}' ?| CAST(:{p_arr} AS text[]))"
+            f") "
+            f"OR ("
+            f"jsonb_typeof(attrs->'{key}') <> 'array' "
+            f"AND NOT (attrs->>'{key}' = ANY(CAST(:{p_scalars} AS text[])))"
+            f")"
+            f")"
+        )
+        as_text = [str(v) if not isinstance(v, bool) else ("true" if v else "false") for v in self.values]
+        return (sql, {p_arr: as_text, p_scalars: as_text})
+
+    @classmethod
+    def from_args(cls, args: Dict[str, Any]) -> "NotInOp":
+        lst = args.get("list")
+        if not isinstance(lst, list):
+            raise CoreException(message="not_in: нужен args.list (array)")
+        return cls(values=tuple(lst))
+
+
 ATTR_OP_REGISTRY: Dict[str, Type[AttrOperation]] = {
     ExactMatch.name: ExactMatch,
     BetweenOp.name: BetweenOp,
     OrOp.name: OrOp,
     AndOp.name: AndOp,
+    NotInOp.name: NotInOp,
 }
 
 

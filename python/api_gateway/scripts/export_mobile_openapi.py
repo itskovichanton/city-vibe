@@ -172,7 +172,7 @@ def build_openapi_app() -> FastAPI:
         summary="Многокритериальный поиск мест",
         description=(
             "Обязательны city_id, category. Опционально name, limit=20, page=1, "
-            "sort_by=rating|distance (+my_geo), open_at, attrs (exact|between|or|and). "
+            "sort_by=rating|distance (+my_geo), open_at, attrs (exact|between|or|and|not_in). "
             "Для мобильного клиента и ИИ-команд."
         ),
     )

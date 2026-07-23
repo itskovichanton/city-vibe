@@ -4,6 +4,7 @@ from python.place_service.src.place_service.infra.attr_ops import (
     AndOp,
     BetweenOp,
     ExactMatch,
+    NotInOp,
     OrOp,
     compile_attrs_filters,
     parse_attr_predicate,
@@ -41,6 +42,16 @@ def test_or_list():
 def test_and_list():
     op = parse_attr_predicate("cuisine", {"operation": "and", "args": {"list": ["italian", "vegan"]}})
     assert isinstance(op, AndOp)
+
+
+def test_not_in_list():
+    op = parse_attr_predicate(
+        "dress_code", {"operation": "not_in", "args": {"list": ["formal", "black_tie"]}}
+    )
+    assert isinstance(op, NotInOp)
+    sql, params = op.to_sql("dress_code", "a3")
+    assert "NOT" in sql
+    assert params["a3_nin_sc"] == ["formal", "black_tie"]
 
 
 def test_nested_forbidden():

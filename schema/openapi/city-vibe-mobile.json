@@ -260,7 +260,7 @@
           "search"
         ],
         "summary": "Многокритериальный поиск мест",
-        "description": "Обязательны city_id, category. Опционально name, limit=20, page=1, sort_by=rating|distance (+my_geo), open_at, attrs (exact|between|or|and). Для мобильного клиента и ИИ-команд.",
+        "description": "Обязательны city_id, category. Опционально name, limit=20, page=1, sort_by=rating|distance (+my_geo), open_at, attrs (exact|between|or|and|not_in). Для мобильного клиента и ИИ-команд.",
         "operationId": "search_places_places_search_post",
         "requestBody": {
           "content": {

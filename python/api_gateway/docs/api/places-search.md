@@ -9,7 +9,7 @@
 ## Назначение
 
 Гибкий поиск мест в городе по категории с опциональными фильтрами:
-имя, расписание (`open_at`), кастомные `attrs` (exact / between / or / and),
+имя, расписание (`open_at`), кастомные `attrs` (exact / between / or / and / not_in),
 сортировка по рейтингу или расстоянию.
 
 ## Обязательные поля
@@ -51,7 +51,8 @@
     "kids_menu": false,
     "has_parking": true,
     "avg_bill_rub": {"operation": "between", "args": {"from": 200, "to": 5000}},
-    "dress_code": {"operation": "or", "args": {"list": ["casual", "smart_casual"]}}
+    "dress_code": {"operation": "or", "args": {"list": ["casual", "smart_casual"]}},
+    "cuisine": {"operation": "not_in", "args": {"list": ["fast_food"]}}
   }
 }
 ```
@@ -64,6 +65,7 @@
 | `between` | `from?`, `to?` | Числовой диапазон (границы опциональны) |
 | `or` | `list: [...]` | Scalar ∈ list **или** пересечение с array-атрибутом |
 | `and` | `list: [...]` | Все элементы list ⊆ array-атрибута |
+| `not_in` | `list: [...]` | Scalar ∉ list **и** нет пересечения с array-атрибутом |
 
 Вложенность операций **не** поддерживается. Новые операции — через `ATTR_OP_REGISTRY` / `@register_attr_operation`.
 

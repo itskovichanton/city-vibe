@@ -119,7 +119,7 @@ def build_openapi_app() -> FastAPI:
         summary="Многокритериальный поиск мест",
         description=(
             "Обязательны city_id и category. Опционально: name, limit=20, page=1, "
-            "sort_by=rating|distance, open_at, my_geo, attrs (exact|between|or|and)."
+            "sort_by=rating|distance, open_at, my_geo, attrs (exact|between|or|and|not_in)."
         ),
     )
     async def search_places(body: Dict[str, Any]):
