@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from python.libs.entities.base import Entity
+from python.libs.entities.common import Entity
 from python.libs.entities.geo import GeoLocation
 
 
