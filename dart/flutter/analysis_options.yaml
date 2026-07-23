@@ -1,9 +1,15 @@
-# Рекомендации линтера Flutter.
-# Документация: https://dart.dev/tools/linter-rules
 include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  # Плагины custom_lint (riverpod_lint) подхватываются IDE / `dart run custom_lint`
+  plugins:
+    - custom_lint
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
 
 linter:
   rules:
     prefer_const_constructors: true
     prefer_const_literals_to_create_immutables: true
-    avoid_print: false # на этапе обучения print допустим
+    avoid_print: false

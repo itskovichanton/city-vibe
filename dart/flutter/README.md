@@ -10,10 +10,13 @@
 ## План (как будем делать клиент)
 
 1. **Auth UI** — логин (готово), регистрация, OTP, forgot password по макетам.
-2. **API-слой** — `http`/`dio` → только `api-gateway :8080`, модели из OpenAPI `schema/openapi/city-vibe-mobile.json`.
-3. **Состояние** — провайдер/репозитории (сессия JWT, профиль).
-4. **Навигация** — после логина: home / карта / Милана (NL-поиск).
-5. **Фичи** — places/search, milana, профиль — итерациями под дизайн.
+2. **API-слой** — `dio` → только `api-gateway :8080`, модели `freezed` + `json_serializable`.
+3. **Состояние** — `Riverpod` (+ codegen `riverpod_generator`).
+4. **Навигация** — `go_router` (сейчас `/login`).
+5. **Фичи** — places/search, milana, профиль — feature-first.
+
+Стек: **Riverpod + freezed + go_router + dio + feature-first**  
+(+ secure_storage, talker_dio_logger, cached_network_image, svg, connectivity).
 
 Принцип: **сначала пиксель-пёрфект UI по макету → потом логика**.
 
@@ -22,19 +25,50 @@
 ## Структура
 
 ```
-dart/flutter/
-  lib/
-    main.dart                 # точка входа
-    app.dart                  # MaterialApp
-    theme/                    # цвета и ThemeData
-    features/auth/presentation/
-      login_screen.dart       # экран логина
-      widgets/                # поля, кнопка, фон, social
-  assets/images/              # референс макета
-  README.md                   # этот файл
+dart/flutter/lib/
+  main.dart
+  app.dart                      # ProviderScope + MaterialApp.router
+  core/
+    router/app_router.dart      # go_router
+    network/dio_client.dart     # Dio + logger
+  theme/
+  features/
+    auth/
+      domain/                   # freezed-модели
+      data/                     # (скоро) API/репозитории
+      presentation/             # экраны + виджеты
 ```
 
-Комментарии в коде — учебные: зачем StatefulWidget, controller, setState, dispose и т.д.
+Codegen после изменений моделей/провайдеров:
+
+```bash
+dart run build_runner build --delete-conflicting-outputs
+```
+
+---
+
+## Запуск на Android-телефоне (когда подключил)
+
+1. На телефоне: **Настройки → О телефоне → 7× «Номер сборки»** → **Режим разработчика**.
+2. Включить **Отладка по USB** (и при необходимости «Установка через USB»).
+3. Кабель → на телефоне **Разрешить отладку по USB**.
+4. На Mac:
+
+```bash
+export PATH="$HOME/development/flutter/bin:$HOME/Library/Android/sdk/platform-tools:$PATH"
+adb devices
+# должно быть: <serial>   device
+
+cd /Users/itskovich/IdeaProjects/city-vibe/dart/flutter
+flutter devices
+flutter run -d <serial_или_имя>
+```
+
+Если `unauthorized` — сними/воткни кабель и снова подтверди RSA-ключ на телефоне.  
+Если устройства нет в списке — поставь драйверы OEM / на Samsung включи «Отладка по умолчанию».
+
+**Сеть к бэкенду с телефона:** не `localhost`, а IP Mac в Wi‑Fi, например `http://192.168.1.10:8080`  
+(телефон и Mac в одной сети; gateway слушает `0.0.0.0:8080`).
 
 ---
 

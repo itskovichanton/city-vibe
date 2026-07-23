@@ -9,20 +9,56 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # Иконки Cupertino (нативное ощущение на iOS) + Material из SDK.
+
   cupertino_icons: ^1.0.8
-  # Красивые веб-шрифты без ручной загрузки .ttf в assets.
-  # Pacifico — рукописный логотип; Inter — читаемый UI-текст.
   google_fonts: ^6.2.1
+
+  # --- State management ---
+  # Riverpod: провайдеры без BuildContext, отличный DX + codegen.
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # --- Navigation ---
+  # Декларативный роутинг, deep links, redirect (auth guard).
+  go_router: ^14.8.1
+
+  # --- Network ---
+  dio: ^5.8.0+1
+  talker_dio_logger: ^4.7.2
+
+  # --- Immutable models / unions ---
+  freezed_annotation: ^3.0.0
+  json_annotation: ^4.9.0
+
+  # --- Storage / utils (топ для прод-приложений) ---
+  flutter_secure_storage: ^9.2.4 # JWT / refresh token
+  shared_preferences: ^2.5.3 # простые флаги (onboarding seen…)
+  cached_network_image: ^3.4.1 # кэш картинок мест
+  flutter_svg: ^2.0.17
+  collection: ^1.19.1
+  intl: ^0.20.2
+  equatable: ^2.0.7 # если где-то без freezed
+  connectivity_plus: ^6.1.4 # онлайн/оффлайн
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  # Строгий линтер от команды Flutter — учит хорошим привычкам.
   flutter_lints: ^5.0.0
+
+  # Codegen
+  build_runner: ^2.4.15
+  freezed: ^3.0.6
+  json_serializable: ^6.9.5
+  riverpod_generator: ^2.6.5
+
+  # Линты именно для Riverpod (ловят типичные ошибки провайдеров)
+  custom_lint: ^0.7.5
+  riverpod_lint: ^2.6.5
+
+  # Тесты
+  mocktail: ^1.0.4
 
 flutter:
   uses-material-design: true
   assets:
-    # Фоновая картинка с макета (карта + неон-скайлайн).
     - assets/images/
