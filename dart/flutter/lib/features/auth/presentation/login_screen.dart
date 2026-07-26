@@ -201,7 +201,7 @@ class _LoginCard extends StatelessWidget {
 
           AuthTextField(
             controller: emailController,
-            hintText: 'Email',
+            hintText: 'Email / Телефон',
             prefixIcon: Icons.mail_outline_rounded,
             keyboardType: TextInputType.emailAddress,
             onChanged: onFieldsChanged,

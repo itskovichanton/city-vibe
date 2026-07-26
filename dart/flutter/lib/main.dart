@@ -1,6 +1,7 @@
 import 'package:city_vibe/app.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Точка входа Flutter-приложения.
 ///
@@ -21,5 +22,5 @@ Future<void> main() async {
     ),
   );
 
-  runApp(const CityVibeApp());
+  runApp(const ProviderScope(child: CityVibeApp()));
 }
