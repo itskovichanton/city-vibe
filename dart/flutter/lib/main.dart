@@ -1,4 +1,6 @@
 import 'package:city_vibe/app.dart';
+import 'package:city_vibe/core/audio/ambient_music.dart';
+import 'package:city_vibe/core/device/device_capability.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +15,9 @@ Future<void> main() async {
   // Нужен, если до runApp есть async-инициализация / SystemChrome.
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Слабый телефон? Нужно до UI, чтобы фичи читали флаг синхронно.
+  await DeviceCapability.init();
+
   // Светлые иконки status bar — под тёмный фон макета.
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -21,6 +26,9 @@ Future<void> main() async {
       statusBarBrightness: Brightness.dark,
     ),
   );
+
+  // Фоновый lo-fi при запуске (не блокируем UI, если аудио не поднялось).
+  AmbientMusic.start().ignore();
 
   runApp(const ProviderScope(child: CityVibeApp()));
 }

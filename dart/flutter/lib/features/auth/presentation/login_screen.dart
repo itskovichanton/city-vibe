@@ -1,6 +1,7 @@
 import 'package:city_vibe/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/login_background.dart';
+import 'package:city_vibe/features/auth/presentation/widgets/scrolling_city_decor_bar.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/social_login_button.dart';
 import 'package:city_vibe/theme/app_colors.dart';
 import 'package:flutter/foundation.dart';
@@ -104,6 +105,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
+          ),
+          // Последним в Stack — полоса города рисуется поверх формы.
+          const Align(
+            alignment: Alignment.bottomCenter,
+            child: ScrollingCityDecorBar(),
           ),
         ],
       ),
