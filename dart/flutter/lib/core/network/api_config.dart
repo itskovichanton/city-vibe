@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 /// `flutter run --dart-define=API_BASE_URL=http://x.x.x.x:8080`
 abstract final class ApiConfig {
   /// IP Mac в домашней сети (см. `ipconfig getifaddr en0`).
-  static const lanHost = '192.168.0.101';
+  static const lanHost = '192.168.1.12';
   static const port = 8080;
 
   static const _fromDefine = String.fromEnvironment('API_BASE_URL');
