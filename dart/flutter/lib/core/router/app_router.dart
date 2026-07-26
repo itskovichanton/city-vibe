@@ -7,12 +7,14 @@
 library;
 
 import 'package:city_vibe/features/auth/presentation/login_screen.dart';
+import 'package:city_vibe/features/auth/presentation/register_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 /// Имена маршрутов — лучше строки-константы, чем «магические» литералы в UI.
 abstract final class AppRoutes {
   static const login = '/login';
+  static const register = '/register';
   // Дальше: home, places, milana…
 }
 
@@ -24,6 +26,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.login,
       name: 'login',
       builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.register,
+      name: 'register',
+      builder: (context, state) => const RegisterScreen(),
     ),
   ],
   // Красивая заглушка, если путь не найден (особенно на web).

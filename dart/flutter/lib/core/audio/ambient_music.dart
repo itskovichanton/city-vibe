@@ -6,7 +6,7 @@ import 'package:just_audio/just_audio.dart';
 class AmbientMusic {
   AmbientMusic._();
 
-  static const startupTrack = 'assets/audio/lofi1.mp3';
+  static const startupTrack = 'assets/audio/lofi2.mp3';
 
   static const tracks = <String>[
     'assets/audio/lofi1.mp3',

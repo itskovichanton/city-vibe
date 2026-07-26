@@ -15,6 +15,8 @@ class AuthTextField extends StatelessWidget {
     this.suffix,
     this.keyboardType,
     this.onChanged,
+    this.readOnly = false,
+    this.onTap,
   });
 
   /// Контроллер хранит текст поля. Обычно создаётся в State экрана.
@@ -34,6 +36,11 @@ class AuthTextField extends StatelessWidget {
   /// Колбэк при каждом изменении текста (для enable/disable кнопки).
   final ValueChanged<String>? onChanged;
 
+  /// Только выбор (дата / город), без клавиатуры.
+  final bool readOnly;
+
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
     return TextField(
@@ -41,6 +48,8 @@ class AuthTextField extends StatelessWidget {
       obscureText: obscureText,
       keyboardType: keyboardType,
       onChanged: onChanged,
+      readOnly: readOnly,
+      onTap: onTap,
       style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
       cursorColor: AppColors.accent,
       decoration: InputDecoration(

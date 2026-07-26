@@ -1,3 +1,4 @@
+import 'package:city_vibe/core/router/app_router.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/login_background.dart';
@@ -6,6 +7,7 @@ import 'package:city_vibe/features/auth/presentation/widgets/social_login_button
 import 'package:city_vibe/theme/app_colors.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 /// Экран логина — вёрстка по макету + минимальная UI-логика.
 ///
@@ -267,11 +269,18 @@ class _LoginCard extends StatelessWidget {
               style: textTheme.bodyMedium,
               children: [
                 const TextSpan(text: 'Нет аккаунта? '),
-                TextSpan(
-                  text: 'Зарегистрироваться',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: AppColors.accent,
-                    fontWeight: FontWeight.w600,
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.baseline,
+                  baseline: TextBaseline.alphabetic,
+                  child: GestureDetector(
+                    onTap: () => context.push(AppRoutes.register),
+                    child: Text(
+                      'Зарегистрироваться',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.accent,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
               ],
