@@ -1,4 +1,8 @@
+import 'package:city_vibe/core/api/api_providers.dart';
+import 'package:city_vibe/core/api/models/auth_models.dart';
+import 'package:city_vibe/core/network/api_exception.dart';
 import 'package:city_vibe/core/router/app_router.dart';
+import 'package:city_vibe/features/auth/presentation/otp_verify_screen.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/login_background.dart';
@@ -7,30 +11,25 @@ import 'package:city_vibe/features/auth/presentation/widgets/social_login_button
 import 'package:city_vibe/theme/app_colors.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Экран логина — вёрстка по макету + минимальная UI-логика.
-///
-/// StatefulWidget нужен, потому что экран **хранит изменяемое состояние**:
-/// - текст в полях (через контроллеры + setState для кнопки),
-/// - скрыт/показан пароль (`_obscurePassword`).
-///
-/// Позже сюда прикрутим API auth-service; сейчас onPressed только заглушка.
-class LoginScreen extends StatefulWidget {
+/// Экран логина — вёрстка по макету + `POST /auth/login` → OTP.
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   /// Контроллеры — «источник правды» для текста полей.
-  /// Их обязательно dispose(), иначе утечка памяти.
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   /// true = пароль скрыт точками; false = виден открытым текстом.
   bool _obscurePassword = true;
+  bool _submitting = false;
 
   /// Кнопка «Войти» активна только если оба поля не пустые (после trim).
   bool get _canSubmit {
@@ -41,15 +40,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    // Симметрично create: всё, что создали в State — освобождаем здесь.
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   void _onFieldsChanged(String _) {
-    // TextField сам обновляет controller, но виджет кнопки не узнает об этом,
-    // пока мы не вызовем setState → rebuild → пересчёт `_canSubmit`.
     setState(() {});
   }
 
@@ -57,24 +53,41 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _obscurePassword = !_obscurePassword);
   }
 
-  void _onLoginPressed() {
-    // Заглушка: логику API добавим позже.
-    // ScaffoldMessenger — стандартный способ показать SnackBar.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Скоро здесь будет реальный вход через api-gateway'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  Future<void> _onLoginPressed() async {
+    if (!_canSubmit || _submitting) return;
+    setState(() => _submitting = true);
+    try {
+      final challenge = await ref.read(authClientProvider).login(
+            LoginRequest(
+              identifier: _emailController.text.trim(),
+              password: _passwordController.text,
+            ),
+          );
+      if (!mounted) return;
+      await context.push(
+        AppRoutes.registerOtp,
+        extra: OtpVerifyArgs(
+          challenge: challenge,
+          purpose: OtpPurpose.login,
+        ),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    // SafeArea учитывает notch / status bar / home indicator.
-    // LayoutBuilder + SingleChildScrollView — чтобы на маленьких экранах
-    // и при открытой клавиатуре форма скроллилась, а не обрезалась.
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
@@ -86,7 +99,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: ConstrainedBox(
-                  // На широких устройствах / web карточка не растягивается бесконечно.
                   constraints: const BoxConstraints(maxWidth: 420),
                   child: Column(
                     children: [
@@ -97,10 +109,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         emailController: _emailController,
                         passwordController: _passwordController,
                         obscurePassword: _obscurePassword,
-                        canSubmit: _canSubmit,
+                        canSubmit: _canSubmit && !_submitting,
+                        submitLabel: _submitting ? 'Входим…' : 'Войти',
                         onFieldsChanged: _onFieldsChanged,
                         onTogglePassword: _togglePasswordVisibility,
-                        onLoginPressed: _canSubmit ? _onLoginPressed : null,
+                        onLoginPressed:
+                            (_canSubmit && !_submitting) ? _onLoginPressed : null,
                       ),
                     ],
                   ),
@@ -108,7 +122,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-          // Последним в Stack — полоса города рисуется поверх формы.
           const Align(
             alignment: Alignment.bottomCenter,
             child: ScrollingCityDecorBar(),
@@ -153,6 +166,7 @@ class _LoginCard extends StatelessWidget {
     required this.passwordController,
     required this.obscurePassword,
     required this.canSubmit,
+    required this.submitLabel,
     required this.onFieldsChanged,
     required this.onTogglePassword,
     required this.onLoginPressed,
@@ -163,6 +177,7 @@ class _LoginCard extends StatelessWidget {
   final TextEditingController passwordController;
   final bool obscurePassword;
   final bool canSubmit;
+  final String submitLabel;
   final ValueChanged<String> onFieldsChanged;
   final VoidCallback onTogglePassword;
   final VoidCallback? onLoginPressed;
@@ -236,8 +251,7 @@ class _LoginCard extends StatelessWidget {
 
           const SizedBox(height: 14),
           GradientButton(
-            label: 'Войти',
-            // Важно: передаём null, когда форма пустая → disabled.
+            label: submitLabel,
             onPressed: canSubmit ? onLoginPressed : null,
           ),
 
