@@ -1,7 +1,9 @@
 import 'package:city_vibe/core/api/api_providers.dart';
+import 'package:city_vibe/core/api/models/auth_models.dart';
 import 'package:city_vibe/core/api/models/city.dart';
 import 'package:city_vibe/core/network/api_exception.dart';
 import 'package:city_vibe/core/router/app_router.dart';
+import 'package:city_vibe/features/auth/presentation/otp_verify_screen.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/login_background.dart';
@@ -44,6 +46,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _citiesLoading = true;
   String? _citiesError;
   bool _detectingCity = false;
+  bool _submitting = false;
 
   /// 0..4 сегмента силы пароля (простая эвристика для UI).
   int get _passwordStrength {
@@ -296,15 +299,43 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
   }
 
-  void _onRegisterPressed() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Город id=${_selectedCity?.id}. Регистрация через AuthClient — следующим шагом.',
+  Future<void> _onRegisterPressed() async {
+    if (!_canSubmit || _submitting) return;
+    final city = _selectedCity;
+    final birthday = _birthday;
+    if (city == null || birthday == null) return;
+
+    setState(() => _submitting = true);
+    try {
+      final challenge = await ref.read(authClientProvider).register(
+            RegisterRequest(
+              name: _nameController.text.trim(),
+              identifier: _emailController.text.trim(),
+              password: _passwordController.text,
+              cityId: city.id,
+              acceptTerms: _acceptedTerms,
+              birthdate: DateFormat('yyyy-MM-dd').format(birthday),
+            ),
+          );
+      if (!mounted) return;
+      await context.push(
+        AppRoutes.registerOtp,
+        extra: OtpVerifyArgs(
+          challenge: challenge,
+          purpose: OtpPurpose.register,
         ),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -361,8 +392,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               obscurePasswordRepeat: _obscurePasswordRepeat,
                               passwordStrength: _passwordStrength,
                               acceptedTerms: _acceptedTerms,
-                              canSubmit: _canSubmit,
+                              canSubmit: _canSubmit && !_submitting,
                               citiesLoading: _citiesLoading || _detectingCity,
+                              submitLabel: _submitting
+                                  ? 'Регистрируем…'
+                                  : 'Зарегистрироваться',
                               onFieldsChanged: _onFieldsChanged,
                               onTogglePassword: () => setState(
                                 () => _obscurePassword = !_obscurePassword,
@@ -376,7 +410,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               onAcceptedChanged: (v) =>
                                   setState(() => _acceptedTerms = v ?? false),
                               onRegisterPressed:
-                                  _canSubmit ? _onRegisterPressed : null,
+                                  (_canSubmit && !_submitting)
+                                      ? _onRegisterPressed
+                                      : null,
                             ),
                           ],
                         ),
@@ -412,6 +448,7 @@ class _RegisterCard extends StatelessWidget {
     required this.acceptedTerms,
     required this.canSubmit,
     required this.citiesLoading,
+    required this.submitLabel,
     required this.onFieldsChanged,
     required this.onTogglePassword,
     required this.onTogglePasswordRepeat,
@@ -434,6 +471,7 @@ class _RegisterCard extends StatelessWidget {
   final bool acceptedTerms;
   final bool canSubmit;
   final bool citiesLoading;
+  final String submitLabel;
   final ValueChanged<String> onFieldsChanged;
   final VoidCallback onTogglePassword;
   final VoidCallback onTogglePasswordRepeat;
@@ -553,7 +591,7 @@ class _RegisterCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           GradientButton(
-            label: 'Зарегистрироваться',
+            label: submitLabel,
             onPressed: canSubmit ? onRegisterPressed : null,
           ),
           const SizedBox(height: 18),

@@ -143,8 +143,8 @@ class AuthUseCaseImpl(AuthUseCase):
             raise CoreException(message="Необходимо принять условия использования")
         parsed = parse_identifier(req.identifier)
         existing = await self.account_repo.find_by_identity(parsed.type.value, parsed.value)
-        if existing and existing.status == "active":
-            raise CoreException(message="Аккаунт с таким identifier уже существует")
+        if existing is not None:
+            raise CoreException(message="Аккаунт с таким email или телефоном уже существует")
         pwd_hash = self.password_service.hash(req.password)
         account = await self.account_repo.create_pending(
             name=req.name,
