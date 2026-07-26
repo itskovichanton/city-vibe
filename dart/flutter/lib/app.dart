@@ -5,23 +5,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Корневой виджет приложения.
 ///
-/// [ProviderScope] — обязательная обёртка Riverpod: хранит состояние всех
-/// провайдеров. Без неё `ref.watch` / `ConsumerWidget` не работают.
-///
-/// [MaterialApp.router] + [GoRouter] вместо классического `home:` —
-/// навигация через декларативные маршруты.
+/// [ProviderScope] создаётся в `main.dart`.
+/// [MaterialApp.router] + [GoRouter] — декларативные маршруты.
 class CityVibeApp extends StatelessWidget {
   const CityVibeApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ProviderScope(
-      child: MaterialApp.router(
-        title: 'CityVibe',
-        debugShowCheckedModeBanner: false,
-        theme: buildAppTheme(),
-        routerConfig: appRouter,
-      ),
+    return MaterialApp.router(
+      title: 'CityVibe',
+      debugShowCheckedModeBanner: false,
+      theme: buildAppTheme(),
+      routerConfig: appRouter,
     );
   }
 }

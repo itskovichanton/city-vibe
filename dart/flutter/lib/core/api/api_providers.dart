@@ -1,0 +1,29 @@
+import 'package:city_vibe/core/api/auth_client.dart';
+import 'package:city_vibe/core/api/common_client.dart';
+import 'package:city_vibe/core/api/user_client.dart';
+import 'package:city_vibe/core/network/api_http.dart';
+import 'package:city_vibe/core/network/dio_client.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final dioProvider = Provider<Dio>((ref) {
+  final dio = createDio();
+  ref.onDispose(dio.close);
+  return dio;
+});
+
+final apiHttpProvider = Provider<ApiHttp>((ref) {
+  return ApiHttp(ref.watch(dioProvider));
+});
+
+final commonClientProvider = Provider<CommonClient>((ref) {
+  return CommonClient(ref.watch(apiHttpProvider));
+});
+
+final authClientProvider = Provider<AuthClient>((ref) {
+  return AuthClient(ref.watch(apiHttpProvider));
+});
+
+final userClientProvider = Provider<UserClient>((ref) {
+  return UserClient(ref.watch(apiHttpProvider));
+});

@@ -1,3 +1,6 @@
+import 'package:city_vibe/core/api/api_providers.dart';
+import 'package:city_vibe/core/api/models/city.dart';
+import 'package:city_vibe/core/network/api_exception.dart';
 import 'package:city_vibe/core/router/app_router.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dart';
@@ -5,21 +8,24 @@ import 'package:city_vibe/features/auth/presentation/widgets/login_background.da
 import 'package:city_vibe/features/auth/presentation/widgets/scrolling_city_decor_bar.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/social_login_button.dart';
 import 'package:city_vibe/theme/app_colors.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 /// Экран регистрации — вёрстка по макету + лёгкая UI-логика.
 ///
 /// Фон и нижняя плашка города — те же, что на логине.
-class RegisterScreen extends StatefulWidget {
+/// Города подгружаются с api-gateway `GET /cities`.
+class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -32,13 +38,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _acceptedTerms = false;
   DateTime? _birthday;
 
-  static const _cities = <String>[
-    'Москва',
-    'Санкт-Петербург',
-    'Казань',
-    'Новосибирск',
-    'Екатеринбург',
-  ];
+  List<City> _cities = const [];
+  City? _selectedCity;
+  bool _citiesLoading = true;
+  String? _citiesError;
 
   /// 0..4 сегмента силы пароля (простая эвристика для UI).
   int get _passwordStrength {
@@ -50,7 +53,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (RegExp(r'[A-ZА-Я]').hasMatch(p) && RegExp(r'[a-zа-я]').hasMatch(p)) {
       score++;
     }
-    if (RegExp(r'[0-9]').hasMatch(p) || RegExp(r'[^A-Za-zА-Яа-я0-9]').hasMatch(p)) {
+    if (RegExp(r'[0-9]').hasMatch(p) ||
+        RegExp(r'[^A-Za-zА-Яа-я0-9]').hasMatch(p)) {
       score++;
     }
     return score.clamp(0, 4);
@@ -62,8 +66,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _passwordController.text.length >= 8 &&
         _passwordController.text == _passwordRepeatController.text &&
         _birthday != null &&
-        _cityController.text.trim().isNotEmpty &&
+        _selectedCity != null &&
         _acceptedTerms;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // HTTP уходит в фоне (Future/Dio), UI не блокируем.
+    Future.microtask(_loadCities);
+  }
+
+  Future<void> _loadCities() async {
+    setState(() {
+      _citiesLoading = true;
+      _citiesError = null;
+    });
+    try {
+      final cities = await ref.read(commonClientProvider).getCities();
+      if (!mounted) return;
+      setState(() {
+        _cities = cities;
+        _citiesLoading = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _citiesLoading = false;
+        _citiesError = e.message;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _citiesLoading = false;
+        _citiesError = e.toString();
+      });
+    }
   }
 
   @override
@@ -106,7 +144,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _pickCity() async {
-    final selected = await showModalBottomSheet<String>(
+    if (_citiesLoading) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Города ещё загружаются…'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    if (_cities.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_citiesError ?? 'Список городов пуст'),
+          behavior: SnackBarBehavior.floating,
+          action: SnackBarAction(label: 'Повторить', onPressed: _loadCities),
+        ),
+      );
+      return;
+    }
+
+    final selected = await showModalBottomSheet<City>(
       context: context,
       backgroundColor: AppColors.backgroundDeep,
       shape: const RoundedRectangleBorder(
@@ -130,7 +188,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               for (final city in _cities)
                 ListTile(
-                  title: Text(city, style: const TextStyle(color: AppColors.textPrimary)),
+                  title: Text(
+                    city.name,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                  ),
+                  subtitle: city.region.isEmpty
+                      ? null
+                      : Text(
+                          city.region,
+                          style: const TextStyle(color: AppColors.textSecondary),
+                        ),
                   onTap: () => Navigator.pop(context, city),
                 ),
             ],
@@ -139,13 +206,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
       },
     );
     if (selected == null) return;
-    setState(() => _cityController.text = selected);
+    setState(() {
+      _selectedCity = selected;
+      _cityController.text = selected.name;
+    });
   }
 
   void _onRegisterPressed() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Скоро здесь будет реальная регистрация через api-gateway'),
+      SnackBar(
+        content: Text(
+          'Город id=${_selectedCity?.id}. Регистрация через AuthClient — следующим шагом.',
+        ),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -206,6 +278,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               passwordStrength: _passwordStrength,
                               acceptedTerms: _acceptedTerms,
                               canSubmit: _canSubmit,
+                              citiesLoading: _citiesLoading,
                               onFieldsChanged: _onFieldsChanged,
                               onTogglePassword: () => setState(
                                 () => _obscurePassword = !_obscurePassword,
@@ -254,6 +327,7 @@ class _RegisterCard extends StatelessWidget {
     required this.passwordStrength,
     required this.acceptedTerms,
     required this.canSubmit,
+    required this.citiesLoading,
     required this.onFieldsChanged,
     required this.onTogglePassword,
     required this.onTogglePasswordRepeat,
@@ -275,6 +349,7 @@ class _RegisterCard extends StatelessWidget {
   final int passwordStrength;
   final bool acceptedTerms;
   final bool canSubmit;
+  final bool citiesLoading;
   final ValueChanged<String> onFieldsChanged;
   final VoidCallback onTogglePassword;
   final VoidCallback onTogglePasswordRepeat;
@@ -368,15 +443,24 @@ class _RegisterCard extends StatelessWidget {
           const SizedBox(height: 12),
           AuthTextField(
             controller: cityController,
-            hintText: 'Ваш город',
+            hintText: citiesLoading ? 'Загрузка городов…' : 'Ваш город',
             prefixIcon: Icons.location_on_outlined,
             readOnly: true,
             onTap: onPickCity,
             onChanged: onFieldsChanged,
-            suffix: const Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: AppColors.textSecondary,
-            ),
+            suffix: citiesLoading
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: AppColors.textSecondary,
+                  ),
           ),
           const SizedBox(height: 14),
           _TermsCheckbox(
@@ -539,6 +623,10 @@ class _TermsCheckbox extends StatelessWidget {
 class _SocialCircleRow extends StatelessWidget {
   const _SocialCircleRow();
 
+  bool get _isAppleOs =>
+      defaultTargetPlatform == TargetPlatform.iOS ||
+      defaultTargetPlatform == TargetPlatform.macOS;
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -549,12 +637,14 @@ class _SocialCircleRow extends StatelessWidget {
           child: const GoogleMark(),
           onTap: () {},
         ),
-        const SizedBox(width: 14),
-        _SocialCircle(
-          background: AppColors.appleButton,
-          child: const Icon(Icons.apple, color: Colors.white, size: 22),
-          onTap: () {},
-        ),
+        if (_isAppleOs) ...[
+          const SizedBox(width: 14),
+          _SocialCircle(
+            background: AppColors.appleButton,
+            child: const Icon(Icons.apple, color: Colors.white, size: 22),
+            onTap: () {},
+          ),
+        ],
         const SizedBox(width: 14),
         _SocialCircle(
           background: const Color(0xFF0077FF),
