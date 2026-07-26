@@ -20,7 +20,7 @@ import 'package:intl/intl.dart';
 /// Экран регистрации — вёрстка по макету + лёгкая UI-логика.
 ///
 /// Фон и нижняя плашка города — те же, что на логине.
-/// Города подгружаются с api-gateway `GET /cities`.
+/// Города: SQLite-кэш (cache-first) + api-gateway `GET /cities`.
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
@@ -93,7 +93,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       _citiesError = null;
     });
     try {
-      final cities = await ref.read(commonClientProvider).getCities();
+      final cities = await ref.read(citiesRepositoryProvider).getCities();
       if (!mounted) return;
       setState(() {
         _cities = cities;
@@ -114,7 +114,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
   }
 
-  /// Запрос permission → GPS → `GET /cities/nearest`.
+  /// Запрос permission → GPS → nearest (API, иначе расчёт по кэшу).
   Future<void> _detectCityFromGps() async {
     if (kIsWeb) return;
     setState(() => _detectingCity = true);
@@ -165,7 +165,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ),
       );
 
-      final nearest = await ref.read(commonClientProvider).getNearestCity(
+      final nearest = await ref.read(citiesRepositoryProvider).getNearestCity(
             lat: pos.latitude,
             lng: pos.longitude,
           );

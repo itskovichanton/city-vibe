@@ -6,6 +6,7 @@ from datetime import date, datetime, timezone
 from typing import Optional, Protocol
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
 
 from python.libs.clients.db import Database
@@ -111,7 +112,12 @@ class AccountRepoImpl(AccountRepo):
 
     async def activate(self, account_id: int, user_id: int) -> AccountModel:
         async with self.db.session() as session:
-            account = await session.get(AccountModel, account_id)
+            stmt = (
+                select(AccountModel)
+                .options(selectinload(AccountModel.identities))
+                .where(AccountModel.id == account_id)
+            )
+            account = (await session.execute(stmt)).scalar_one_or_none()
             if account is None:
                 raise ValueError("account not found")
             account.user_id = user_id

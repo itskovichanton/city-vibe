@@ -20,7 +20,7 @@ export PYTHONPATH := $(REPO_ROOT):$(USER_SERVICE)/src:$(AUTH_SERVICE)/src:$(PLAC
 
 .PHONY: help install infra-up infra-down migrate-user migrate-auth migrate-place migrate-design migrate-notification migrate-all \
         seed-user seed-place seed-design seed-nsk-places run-user run-auth run-place run-design run-milana run-notification run-gateway test-user test-auth test-place \
-        test-design test-milana test-notification test-libs test-unit test-integration test-all openapi openapi-user openapi-auth openapi-place \
+        test-design test-milana test-notification test-libs test-unit test-integration test-e2e test-all openapi openapi-user openapi-auth openapi-place \
         openapi-design openapi-milana openapi-gateway openapi-notification openapi-mobile openapi-all up-all start-all stop-all restart-all docs lint format clean
 
 help:
@@ -34,7 +34,7 @@ help:
 	@echo "  stop-all           — остановить все микросервисы"
 	@echo "  restart-all        — stop-all + start-all"
 	@echo "  run-*              — один сервис на переднем плане"
-	@echo "  test-* / openapi-all"
+	@echo "  test-unit / test-integration / test-e2e / test-all"
 	@echo "  docs               — infra/README.md"
 
 install:
@@ -170,7 +170,10 @@ test-unit: test-user test-auth test-place test-design test-milana test-notificat
 test-integration:
 	cd $(REPO_ROOT) && $(PYTHON) -m pytest python/tests/integration/ -v -m integration
 
-test-all: test-unit test-integration
+test-e2e:
+	cd $(REPO_ROOT) && $(PYTHON) -m pytest python/tests/e2e/ -v -m e2e
+
+test-all: test-unit test-integration test-e2e
 	@echo "All tests OK"
 
 openapi: openapi-all

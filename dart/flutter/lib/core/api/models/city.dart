@@ -13,6 +13,11 @@ class GeoPoint {
       longitude: (json['longitude'] as num).toDouble(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'latitude': latitude,
+        'longitude': longitude,
+      };
 }
 
 class City {
@@ -41,17 +46,31 @@ class City {
   factory City.fromJson(Map<String, dynamic> json) {
     final geoRaw = json['geo'];
     return City(
-      id: json['id'] as int,
+      id: (json['id'] as num).toInt(),
       name: json['name'] as String,
       slug: json['slug'] as String,
       region: (json['region'] as String?) ?? '',
-      geo: geoRaw is Map<String, dynamic> ? GeoPoint.fromJson(geoRaw) : null,
+      geo: geoRaw is Map
+          ? GeoPoint.fromJson(Map<String, dynamic>.from(geoRaw))
+          : null,
       isMajor: (json['is_major'] as bool?) ?? true,
-      sortOrder: (json['sort_order'] as int?) ?? 0,
+      sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
       about: (json['about'] as String?) ?? '',
       distanceM: (json['distance_m'] as num?)?.toDouble(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'slug': slug,
+        'region': region,
+        if (geo != null) 'geo': geo!.toJson(),
+        'is_major': isMajor,
+        'sort_order': sortOrder,
+        'about': about,
+        if (distanceM != null) 'distance_m': distanceM,
+      };
 
   @override
   String toString() => 'City($id, $name)';
