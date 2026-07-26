@@ -23,6 +23,11 @@ clients:
   api_gateway:
     url: http://localhost:8080
 
+loggers:
+  http:
+    backup_count: 7
+    level: INFO
+
 dev:
   server:
     port: 8085

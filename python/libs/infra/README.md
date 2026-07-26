@@ -3,6 +3,11 @@
 # В Server.init_fast_api:
 #   self.infra_support.mount(app)
 
+# HTTP-логи в файл (по умолчанию ON):
+#   CITYVIBE_HTTP_LOG_ENABLED=true
+#   Файл: <service>/<app>-<ver>/work/<profile>/logs/http-<app>-<ver>-[<profile>].txt
+#   Содержит: method, url, path, query, headers, request/response body, status, elapsed_ms, request_id
+
 # В хендлерах:
 #   from python.libs.infra.decorators import require_s2s, idempotent, rate_limit, read_validated_upload
 #

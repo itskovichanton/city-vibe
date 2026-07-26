@@ -6,6 +6,7 @@
 /// - deep links и web-URL совпадают с mobile-путями.
 library;
 
+import 'package:city_vibe/features/auth/presentation/forgot_password_screen.dart';
 import 'package:city_vibe/features/auth/presentation/login_screen.dart';
 import 'package:city_vibe/features/auth/presentation/otp_verify_screen.dart';
 import 'package:city_vibe/features/auth/presentation/register_screen.dart';
@@ -17,6 +18,7 @@ abstract final class AppRoutes {
   static const login = '/login';
   static const register = '/register';
   static const registerOtp = '/register/otp';
+  static const forgotPassword = '/forgot-password';
   // Дальше: home, places, milana…
 }
 
@@ -46,6 +48,11 @@ final GoRouter appRouter = GoRouter(
         }
         return OtpVerifyScreen(args: args);
       },
+    ),
+    GoRoute(
+      path: AppRoutes.forgotPassword,
+      name: 'forgotPassword',
+      builder: (context, state) => const ForgotPasswordScreen(),
     ),
   ],
   // Красивая заглушка, если путь не найден (особенно на web).

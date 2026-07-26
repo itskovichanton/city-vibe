@@ -14,9 +14,12 @@ from uuid import uuid4
 
 from fastapi import FastAPI
 from src.mybootstrap_core_itskovichanton.di import injector
+from src.mybootstrap_core_itskovichanton.logger import LoggerService
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
 
+from python.libs.infra.context import set_service_name
 from python.libs.infra.flags import flags
+from python.libs.infra.http_logging import DetailedHTTPLoggingMiddleware
 from python.libs.infra.idempotency import IdempotencyMiddleware
 from python.libs.infra.outbox import Outbox, OutboxImpl
 from python.libs.infra.request_id import HEADER, CorrelationIdMiddleware
@@ -35,8 +38,12 @@ logger = logging.getLogger(__name__)
 class CityVibeInfraSupport:
     """Вешает middleware согласно ENV-флагам. Вызывать один раз при создании FastAPI."""
 
+    logger_service: LoggerService
+
     def mount(self, app: FastAPI) -> None:
         f = flags()
+        set_service_name(f.otel_service_name)
+
         # Порядок: последний add_middleware = самый внешний.
         if f.idempotency:
             app.add_middleware(IdempotencyMiddleware)
@@ -53,6 +60,25 @@ class CityVibeInfraSupport:
                 validator=None,
             )
             logger.info("Infra: CorrelationIdMiddleware ON (%s)", HEADER)
+
+        if f.http_log:
+            http_logger = self.logger_service.get_file_logger(
+                "http",
+                max_line_len=max(f.http_log_max_body, 64_000),
+            )
+            app.add_middleware(
+                DetailedHTTPLoggingMiddleware,
+                logger=http_logger,
+                max_body_bytes=f.http_log_max_body,
+                log_request_body=f.http_log_request_body,
+                log_response_body=f.http_log_response_body,
+                excluded_paths=set(f.http_log_skip_paths),
+            )
+            logger.info(
+                "Infra: DetailedHTTPLoggingMiddleware ON (max_body=%s skip=%s)",
+                f.http_log_max_body,
+                ",".join(f.http_log_skip_paths) or "-",
+            )
 
         if f.tracing:
             setup_tracer_provider()
@@ -81,7 +107,8 @@ class CityVibeInfraSupport:
                 asyncio.create_task(_loop())
 
         logger.info(
-            "Infra flags: request_id=%s s2s=%s idempotency=%s rate_limit=%s upload=%s outbox=%s tracing=%s",
+            "Infra flags: request_id=%s s2s=%s idempotency=%s rate_limit=%s upload=%s "
+            "outbox=%s tracing=%s http_log=%s",
             f.request_id,
             f.s2s_auth,
             f.idempotency,
@@ -89,4 +116,5 @@ class CityVibeInfraSupport:
             f.upload_validation,
             f.outbox,
             f.tracing,
+            f.http_log,
         )

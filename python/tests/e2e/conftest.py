@@ -130,11 +130,11 @@ def _postgres_ready() -> bool:
 
 
 def _migrate_and_seed() -> None:
-    """Идемпотентные миграции + seed городов (нужен city_id для register)."""
+    """Идемпотентные миграции + seed городов/категорий/design (нужны для e2e)."""
     env = os.environ.copy()
     env["PYTHON"] = PYTHON
     subprocess.run(
-        ["make", "migrate-all", "seed-place"],
+        ["make", "migrate-all", "seed-place", "seed-design"],
         cwd=str(REPO_ROOT),
         check=True,
         timeout=180,

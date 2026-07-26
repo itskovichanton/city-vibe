@@ -49,11 +49,28 @@ class AuthClient {
     );
   }
 
-  Future<Challenge> forgotPassword({required String identifier}) {
+  Future<Challenge> forgotPassword(ForgotPasswordRequest body) {
     return _http.post(
       '/auth/password/forgot',
-      body: {'identifier': identifier},
+      body: body.toJson(),
       parse: (data) => Challenge.fromJson(Map<String, dynamic>.from(data as Map)),
+    );
+  }
+
+  Future<ResetTokenDto> forgotVerify(VerifyRequest body) {
+    return _http.post(
+      '/auth/password/forgot/verify',
+      body: body.toJson(),
+      parse: (data) =>
+          ResetTokenDto.fromJson(Map<String, dynamic>.from(data as Map)),
+    );
+  }
+
+  Future<void> resetPassword(ResetPasswordRequest body) {
+    return _http.post(
+      '/auth/password/reset',
+      body: body.toJson(),
+      parse: (_) {},
     );
   }
 

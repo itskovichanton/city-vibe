@@ -238,7 +238,7 @@ class _LoginCard extends StatelessWidget {
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: () {},
+              onPressed: () => context.push(AppRoutes.forgotPassword),
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.accent,
                 padding: EdgeInsets.zero,

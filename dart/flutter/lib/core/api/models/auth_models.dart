@@ -137,3 +137,53 @@ class AuthTokensDto {
     );
   }
 }
+
+class ForgotPasswordRequest {
+  const ForgotPasswordRequest({
+    required this.identifier,
+    this.channel,
+  });
+
+  final String identifier;
+
+  /// Подсказка канала: `email` / `phone` (опционально).
+  final String? channel;
+
+  Map<String, dynamic> toJson() => {
+        'identifier': identifier,
+        if (channel != null) 'channel': channel,
+      };
+}
+
+class ResetPasswordRequest {
+  const ResetPasswordRequest({
+    required this.resetToken,
+    required this.newPassword,
+  });
+
+  final String resetToken;
+  final String newPassword;
+
+  Map<String, dynamic> toJson() => {
+        'reset_token': resetToken,
+        'new_password': newPassword,
+      };
+}
+
+/// Ответ `POST /auth/password/forgot/verify`.
+class ResetTokenDto {
+  const ResetTokenDto({
+    required this.resetToken,
+    this.expiresIn = 300,
+  });
+
+  final String resetToken;
+  final int expiresIn;
+
+  factory ResetTokenDto.fromJson(Map<String, dynamic> json) {
+    return ResetTokenDto(
+      resetToken: json['reset_token'] as String,
+      expiresIn: (json['expires_in'] as int?) ?? 300,
+    );
+  }
+}

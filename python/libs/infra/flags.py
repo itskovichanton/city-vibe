@@ -56,6 +56,13 @@ class InfraFlags:
 
     redis_url: str
 
+    # Подробные HTTP-логи в файл loggers.http (тела запросов/ответов)
+    http_log: bool
+    http_log_max_body: int
+    http_log_request_body: bool
+    http_log_response_body: bool
+    http_log_skip_paths: tuple[str, ...]
+
 
 @lru_cache(maxsize=1)
 def flags() -> InfraFlags:
@@ -67,6 +74,10 @@ def flags() -> InfraFlags:
     mime = env_str(
         "CITYVIBE_UPLOAD_ALLOWED_MIME",
         "image/jpeg,image/png,image/webp,image/jpg",
+    )
+    http_skip = env_str(
+        "CITYVIBE_HTTP_LOG_SKIP_PATHS",
+        "/health,/docs,/redoc,/openapi.json,/favicon.ico",
     )
     return InfraFlags(
         # Request-ID почти бесплатный — по умолчанию ВКЛ
@@ -93,4 +104,10 @@ def flags() -> InfraFlags:
         # Переопределять в make run-* / start-all (иначе все сервисы свалятся в одно имя)
         otel_service_name=env_str("CITYVIBE_OTEL_SERVICE_NAME", "city-vibe"),
         redis_url=env_str("CITYVIBE_REDIS_URL", "redis://localhost:6379/0"),
+        # HTTP file logs — по умолчанию ON (подробные тела; для prod можно выключить)
+        http_log=env_bool("CITYVIBE_HTTP_LOG_ENABLED", True),
+        http_log_max_body=env_int("CITYVIBE_HTTP_LOG_MAX_BODY", 1_048_576),
+        http_log_request_body=env_bool("CITYVIBE_HTTP_LOG_REQUEST_BODY", True),
+        http_log_response_body=env_bool("CITYVIBE_HTTP_LOG_RESPONSE_BODY", True),
+        http_log_skip_paths=tuple(p.strip() for p in http_skip.split(",") if p.strip()),
     )

@@ -11,6 +11,7 @@ mkdir -p "$LOG_DIR" "$PID_DIR"
 export PYTHONPATH="${ROOT}:${ROOT}/python/user_service/src:${ROOT}/python/auth_service/src:${ROOT}/python/place_service/src:${ROOT}/python/design_service/src:${ROOT}/python/milana_service/src:${ROOT}/python/notification_service/src:${ROOT}/python/api_gateway/src:/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages"
 export CITYVIBE_TRACING_ENABLED="${CITYVIBE_TRACING_ENABLED:-true}"
 export CITYVIBE_OTEL_ENDPOINT="${CITYVIBE_OTEL_ENDPOINT:-http://localhost:4317}"
+export CITYVIBE_HTTP_LOG_ENABLED="${CITYVIBE_HTTP_LOG_ENABLED:-true}"
 
 start_one() {
   local name="$1"

@@ -32,6 +32,14 @@ redis:
   host: localhost
   port: 6379
 
+loggers:
+  http:
+    backup_count: 7
+    level: INFO
+  milana-agent:
+    backup_count: 7
+    level: INFO
+
 dev:
   server:
     port: 8086
