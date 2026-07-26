@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Optional
 
+from python.libs.entities.user import Gender
+
 
 @dataclass
 class RegisterRequest:
@@ -13,6 +15,7 @@ class RegisterRequest:
     birthdate: Optional[date]
     city_id: int
     accept_terms: bool
+    gender: Gender = Gender.MALE
 
 
 @dataclass
@@ -50,6 +53,7 @@ class GoogleAuthRequest:
     city_id: Optional[int] = None
     name: Optional[str] = None
     birthdate: Optional[date] = None
+    gender: Gender = Gender.MALE
 
 
 @dataclass

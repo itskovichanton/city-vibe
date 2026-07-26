@@ -16,6 +16,7 @@ from src.mybootstrap_mvc_itskovichanton.result_presenter import ResultPresenter
 
 from python.libs.infra import CityVibeInfraSupport
 from python.libs.infra.decorators import rate_limit
+from python.libs.entities.user import Gender
 from python.auth_service.src.auth_service.entities.common import (
     ForgotPasswordRequest,
     GoogleAuthRequest,
@@ -35,6 +36,7 @@ class RegisterBody(BaseModel):
     birthdate: Optional[date] = None
     city_id: int
     accept_terms: bool = Field(..., description="Принятие условий")
+    gender: Gender = Field(..., description="Пол")
 
 
 class VerifyBody(BaseModel):
@@ -70,6 +72,7 @@ class GoogleBody(BaseModel):
     city_id: Optional[int] = None
     name: Optional[str] = None
     birthdate: Optional[date] = None
+    gender: Gender = Field(Gender.MALE, description="Пол")
 
 
 @bean(port=("server.port", int, 8082), host=("server.host", str, "0.0.0.0"))
@@ -118,6 +121,7 @@ class Server:
                 birthdate=body.birthdate,
                 city_id=body.city_id,
                 accept_terms=body.accept_terms,
+                gender=body.gender,
             )
             return self.presenter.present(await self.action_runner.run(self.auth_uc.register, call=req))
 
@@ -180,5 +184,6 @@ class Server:
                 city_id=body.city_id,
                 name=body.name,
                 birthdate=body.birthdate,
+                gender=body.gender,
             )
             return self.presenter.present(await self.action_runner.run(self.auth_uc.google, call=req))

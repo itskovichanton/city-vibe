@@ -26,6 +26,7 @@ class CreateUserUseCaseImpl(CreateUserUseCase):
     async def execute(self, request: CreateUserRequest) -> UserResponse:
         user = await self.user_repo.create(
             name=request.name,
+            gender=request.gender,
             age=request.age,
             short_bio=request.short_bio,
             favorite_categories=request.favorite_categories,

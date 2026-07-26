@@ -1,6 +1,29 @@
 /// Auth DTO по OpenAPI `city-vibe-mobile.json`.
 library;
 
+/// Пол пользователя (`male` | `female`). По умолчанию — мужчина.
+enum Gender {
+  male,
+  female;
+
+  String get apiValue => name;
+
+  String get labelRu => switch (this) {
+        Gender.male => 'Мужчина',
+        Gender.female => 'Женщина',
+      };
+
+  static Gender fromApi(String? raw) {
+    switch (raw) {
+      case 'female':
+        return Gender.female;
+      case 'male':
+      default:
+        return Gender.male;
+    }
+  }
+}
+
 class RegisterRequest {
   const RegisterRequest({
     required this.name,
@@ -8,6 +31,7 @@ class RegisterRequest {
     required this.password,
     required this.cityId,
     required this.acceptTerms,
+    required this.gender,
     this.birthdate,
   });
 
@@ -16,6 +40,7 @@ class RegisterRequest {
   final String password;
   final int cityId;
   final bool acceptTerms;
+  final Gender gender;
 
   /// `YYYY-MM-DD` или null.
   final String? birthdate;
@@ -26,6 +51,7 @@ class RegisterRequest {
         'password': password,
         'city_id': cityId,
         'accept_terms': acceptTerms,
+        'gender': gender.apiValue,
         if (birthdate != null) 'birthdate': birthdate,
       };
 }

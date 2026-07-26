@@ -1469,6 +1469,9 @@
             "type": "string",
             "title": "Name"
           },
+          "gender": {
+            "$ref": "#/components/schemas/Gender"
+          },
           "age": {
             "anyOf": [
               {
@@ -1529,7 +1532,8 @@
         },
         "type": "object",
         "required": [
-          "name"
+          "name",
+          "gender"
         ],
         "title": "CreateUserBody"
       },
@@ -1556,6 +1560,15 @@
           "identifier"
         ],
         "title": "ForgotBody"
+      },
+      "Gender": {
+        "type": "string",
+        "enum": [
+          "male",
+          "female"
+        ],
+        "title": "Gender",
+        "description": "Пол пользователя (обязательное поле профиля)."
       },
       "GeoOut": {
         "properties": {
@@ -1614,6 +1627,10 @@
               }
             ],
             "title": "Birthdate"
+          },
+          "gender": {
+            "$ref": "#/components/schemas/Gender",
+            "default": "male"
           }
         },
         "type": "object",
@@ -1699,6 +1716,9 @@
           "accept_terms": {
             "type": "boolean",
             "title": "Accept Terms"
+          },
+          "gender": {
+            "$ref": "#/components/schemas/Gender"
           }
         },
         "type": "object",
@@ -1707,7 +1727,8 @@
           "identifier",
           "password",
           "city_id",
-          "accept_terms"
+          "accept_terms",
+          "gender"
         ],
         "title": "RegisterBody"
       },
@@ -1818,6 +1839,10 @@
           "status": {
             "type": "string",
             "title": "Status"
+          },
+          "gender": {
+            "$ref": "#/components/schemas/Gender",
+            "default": "male"
           },
           "short_bio": {
             "type": "string",

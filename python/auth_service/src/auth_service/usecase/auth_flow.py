@@ -154,6 +154,7 @@ class AuthUseCaseImpl(AuthUseCase):
             birthdate=req.birthdate,
             city_id=req.city_id,
             accept_terms=req.accept_terms,
+            gender=req.gender,
         )
         return await self._create_challenge(
             purpose="register",
@@ -191,6 +192,7 @@ class AuthUseCaseImpl(AuthUseCase):
         result = self.user_client.create_user(
             CreateUserBody(
                 name=account.name,
+                gender=account.gender,
                 auth_account_id=account.id,
                 city_id=account.city_id,
                 birthdate=account.birthdate.isoformat() if account.birthdate else None,
@@ -316,12 +318,14 @@ class AuthUseCaseImpl(AuthUseCase):
                 birthdate=req.birthdate,
                 city_id=req.city_id,
                 accept_terms=True,
+                gender=req.gender,
             )
             await self.account_repo.link_oauth(account.id, "google", sub, email)
             user_id = _user_id_from_result(
                 self.user_client.create_user(
                     CreateUserBody(
                         name=name,
+                        gender=req.gender,
                         auth_account_id=account.id,
                         city_id=req.city_id,
                         birthdate=req.birthdate.isoformat() if req.birthdate else None,

@@ -3,7 +3,7 @@
 from datetime import date
 
 from python.libs.entities.place import PlaceCategory
-from python.libs.entities.user import Status, User, UserRole
+from python.libs.entities.user import Gender, Status, User, UserRole
 from python.user_service.src.user_service.entities.common import UserResponse
 from python.user_service.src.user_service.infra.orm.models import UserModel
 
@@ -21,6 +21,17 @@ def _parse_categories(raw: list[str] | None) -> list[PlaceCategory]:
     return result
 
 
+def _coerce_gender(raw: Gender | str | None) -> Gender:
+    if isinstance(raw, Gender):
+        return raw
+    if isinstance(raw, str):
+        try:
+            return Gender(raw)
+        except ValueError:
+            pass
+    return Gender.MALE
+
+
 def user_model_to_dto(model: UserModel) -> User:
     """ORM → доменный User (shared entity)."""
     return User(
@@ -30,6 +41,7 @@ def user_model_to_dto(model: UserModel) -> User:
         updated_at=model.updated_at,
         status=Status[model.status] if model.status in Status.__members__ else Status.ACTIVE,
         name=model.name,
+        gender=_coerce_gender(model.gender),
         short_bio=model.short_bio or "",
         long_bio=model.long_bio or "",
         age=model.age,
@@ -50,6 +62,7 @@ def user_dto_to_response(user: User) -> UserResponse:
         id=user.id,
         name=user.name,
         status=user.status,
+        gender=user.gender,
         short_bio=user.short_bio,
         long_bio=user.long_bio,
         age=user.age,

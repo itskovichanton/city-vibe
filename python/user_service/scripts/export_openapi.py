@@ -15,11 +15,14 @@ from typing import List, Optional
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
+from python.libs.entities.user import Gender
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 class CreateUserBody(BaseModel):
     name: str = Field(..., description="Имя")
+    gender: Gender = Field(..., description="Пол")
     age: Optional[int] = Field(None, description="Возраст")
     short_bio: str = Field("", description="Коротко о себе")
     favorite_categories: List[str] = Field(default_factory=list, description="Коды категорий")
@@ -36,6 +39,7 @@ class UserOut(BaseModel):
     id: int
     name: str
     status: str
+    gender: Gender = Gender.MALE
     short_bio: str = ""
     long_bio: str = ""
     age: Optional[int] = None

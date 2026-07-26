@@ -40,6 +40,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _obscurePasswordRepeat = true;
   bool _acceptedTerms = false;
   DateTime? _birthday;
+  Gender _gender = Gender.male;
 
   List<City> _cities = const [];
   City? _selectedCity;
@@ -314,6 +315,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               password: _passwordController.text,
               cityId: city.id,
               acceptTerms: _acceptedTerms,
+              gender: _gender,
               birthdate: DateFormat('yyyy-MM-dd').format(birthday),
             ),
           );
@@ -392,6 +394,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               obscurePasswordRepeat: _obscurePasswordRepeat,
                               passwordStrength: _passwordStrength,
                               acceptedTerms: _acceptedTerms,
+                              gender: _gender,
                               canSubmit: _canSubmit && !_submitting,
                               citiesLoading: _citiesLoading || _detectingCity,
                               submitLabel: _submitting
@@ -407,6 +410,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               ),
                               onPickBirthday: _pickBirthday,
                               onPickCity: _pickCity,
+                              onGenderChanged: (g) => setState(() => _gender = g),
                               onAcceptedChanged: (v) =>
                                   setState(() => _acceptedTerms = v ?? false),
                               onRegisterPressed:
@@ -446,6 +450,7 @@ class _RegisterCard extends StatelessWidget {
     required this.obscurePasswordRepeat,
     required this.passwordStrength,
     required this.acceptedTerms,
+    required this.gender,
     required this.canSubmit,
     required this.citiesLoading,
     required this.submitLabel,
@@ -454,6 +459,7 @@ class _RegisterCard extends StatelessWidget {
     required this.onTogglePasswordRepeat,
     required this.onPickBirthday,
     required this.onPickCity,
+    required this.onGenderChanged,
     required this.onAcceptedChanged,
     required this.onRegisterPressed,
   });
@@ -469,6 +475,7 @@ class _RegisterCard extends StatelessWidget {
   final bool obscurePasswordRepeat;
   final int passwordStrength;
   final bool acceptedTerms;
+  final Gender gender;
   final bool canSubmit;
   final bool citiesLoading;
   final String submitLabel;
@@ -477,6 +484,7 @@ class _RegisterCard extends StatelessWidget {
   final VoidCallback onTogglePasswordRepeat;
   final VoidCallback onPickBirthday;
   final VoidCallback onPickCity;
+  final ValueChanged<Gender> onGenderChanged;
   final ValueChanged<bool?> onAcceptedChanged;
   final VoidCallback? onRegisterPressed;
 
@@ -561,6 +569,11 @@ class _RegisterCard extends StatelessWidget {
             readOnly: true,
             onTap: onPickBirthday,
             onChanged: onFieldsChanged,
+          ),
+          const SizedBox(height: 12),
+          _GenderPicker(
+            value: gender,
+            onChanged: onGenderChanged,
           ),
           const SizedBox(height: 12),
           AuthTextField(
@@ -666,6 +679,90 @@ class _PasswordStrengthRow extends StatelessWidget {
           }),
         ),
       ],
+    );
+  }
+}
+
+class _GenderPicker extends StatelessWidget {
+  const _GenderPicker({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final Gender value;
+  final ValueChanged<Gender> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Пол',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            for (final g in Gender.values) ...[
+              if (g != Gender.values.first) const SizedBox(width: 10),
+              Expanded(
+                child: _GenderChip(
+                  label: g.labelRu,
+                  selected: value == g,
+                  onTap: () => onChanged(g),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _GenderChip extends StatelessWidget {
+  const _GenderChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected
+          ? AppColors.accent.withValues(alpha: 0.22)
+          : AppColors.fieldFill,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? AppColors.accent : AppColors.fieldBorder,
+            ),
+          ),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  color: selected ? AppColors.accent : AppColors.textPrimary,
+                ),
+          ),
+        ),
+      ),
     );
   }
 }

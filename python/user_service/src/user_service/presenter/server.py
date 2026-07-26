@@ -21,6 +21,7 @@ from src.mybootstrap_mvc_itskovichanton.result_presenter import ResultPresenter
 
 from python.libs.clients.infra.s3 import FileStorage
 from python.libs.entities.place import PlaceCategory
+from python.libs.entities.user import Gender
 from python.libs.infra import CityVibeInfraSupport
 from python.libs.infra.decorators import idempotent, rate_limit, read_validated_upload, require_s2s
 from python.user_service.src.user_service.entities.common import (
@@ -37,6 +38,7 @@ from python.user_service.src.user_service.usecase.update_bio import UpdateBioUse
 
 class CreateUserBody(BaseModel):
     name: str = Field(..., description="Имя")
+    gender: Gender = Field(..., description="Пол")
     age: Optional[int] = Field(None, description="Возраст 1..120")
     short_bio: str = Field("", description="Коротко о себе")
     favorite_categories: List[str] = Field(default_factory=list, description="Любимые категории мест")
@@ -111,6 +113,7 @@ class Server:
                     continue
             req = CreateUserRequest(
                 name=body.name,
+                gender=body.gender,
                 age=body.age,
                 short_bio=body.short_bio,
                 favorite_categories=categories,

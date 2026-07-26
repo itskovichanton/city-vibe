@@ -5,7 +5,7 @@ from datetime import date
 from typing import List, Optional
 
 from python.libs.entities.place import PlaceCategory
-from python.libs.entities.user import Status, UserRole
+from python.libs.entities.user import Gender, Status, UserRole
 
 
 @dataclass
@@ -13,6 +13,7 @@ class CreateUserRequest:
     """Запрос на создание / первичное заполнение профиля (шаг 1 онбординга)."""
 
     name: str
+    gender: Gender = Gender.MALE
     age: Optional[int] = None
     short_bio: str = ""
     favorite_categories: List[PlaceCategory] = field(default_factory=list)
@@ -44,6 +45,7 @@ class UserResponse:
     id: int
     name: str
     status: Status
+    gender: Gender = Gender.MALE
     short_bio: str = ""
     long_bio: str = ""
     age: Optional[int] = None

@@ -207,6 +207,15 @@
         ],
         "title": "ChallengeOut"
       },
+      "Gender": {
+        "type": "string",
+        "enum": [
+          "male",
+          "female"
+        ],
+        "title": "Gender",
+        "description": "Пол пользователя (обязательное поле профиля)."
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -253,6 +262,9 @@
           "accept_terms": {
             "type": "boolean",
             "title": "Accept Terms"
+          },
+          "gender": {
+            "$ref": "#/components/schemas/Gender"
           }
         },
         "type": "object",
@@ -261,7 +273,8 @@
           "identifier",
           "password",
           "city_id",
-          "accept_terms"
+          "accept_terms",
+          "gender"
         ],
         "title": "RegisterBody"
       },

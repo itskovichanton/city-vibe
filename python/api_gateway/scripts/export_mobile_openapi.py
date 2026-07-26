@@ -14,6 +14,8 @@ from typing import List, Optional
 from fastapi import FastAPI, Query
 from pydantic import BaseModel, Field
 
+from python.libs.entities.user import Gender
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -46,6 +48,7 @@ class RegisterBody(BaseModel):
     birthdate: Optional[date] = None
     city_id: int
     accept_terms: bool
+    gender: Gender
 
 
 class VerifyBody(BaseModel):
@@ -81,6 +84,7 @@ class GoogleBody(BaseModel):
     city_id: Optional[int] = None
     name: Optional[str] = None
     birthdate: Optional[date] = None
+    gender: Gender = Gender.MALE
 
 
 class ChallengeOut(BaseModel):
@@ -101,6 +105,7 @@ class TokensOut(BaseModel):
 
 class CreateUserBody(BaseModel):
     name: str
+    gender: Gender
     age: Optional[int] = None
     short_bio: str = ""
     favorite_categories: List[str] = Field(default_factory=list)
@@ -117,6 +122,7 @@ class UserOut(BaseModel):
     id: int
     name: str
     status: str
+    gender: Gender = Gender.MALE
     short_bio: str = ""
     long_bio: str = ""
     age: Optional[int] = None

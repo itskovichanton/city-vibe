@@ -4,16 +4,19 @@ from python.libs.clients.domain.auth_service.entities import RegisterBody, Verif
 from python.libs.clients.domain.mock_notify.entities import EmailIn, SmsIn
 from python.libs.clients.domain.place_service.entities import CityOut, GeoOut
 from python.libs.clients.domain.user_service.entities import CreateUserBody
+from python.libs.entities.user import Gender
 
 
 def test_create_user_body_optional_fields():
     body = CreateUserBody(
         name="Test",
+        gender=Gender.MALE,
         city_id=1,
         birthdate="1990-01-15",
         auth_account_id=99,
     )
     assert body.city_id == 1
+    assert body.gender is Gender.MALE
     assert body.birthdate == "1990-01-15"
     assert body.auth_account_id == 99
 
@@ -25,8 +28,10 @@ def test_auth_entities():
         password="Pass123!",
         city_id=1,
         accept_terms=True,
+        gender=Gender.FEMALE,
     )
     assert reg.name == "Anna"
+    assert reg.gender is Gender.FEMALE
     verify = VerifyBody(challenge_id="abc", code="123456")
     assert verify.code == "123456"
 

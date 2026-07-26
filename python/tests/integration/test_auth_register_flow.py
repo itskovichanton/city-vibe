@@ -25,6 +25,7 @@ from python.auth_service.src.auth_service.infra.password import PasswordServiceI
 from python.auth_service.src.auth_service.repo.account import AccountRepoImpl
 from python.auth_service.src.auth_service.usecase.auth_flow import AuthUseCaseImpl
 from python.libs.clients.db import Database
+from python.libs.entities.user import Gender
 from python.libs.infra.redis_client import RedisClientImpl
 
 
@@ -151,6 +152,7 @@ async def test_register_otp_verify_integration(auth_stack):
             birthdate=None,
             city_id=1,
             accept_terms=True,
+            gender=Gender.MALE,
         )
     )
     assert challenge.challenge_id

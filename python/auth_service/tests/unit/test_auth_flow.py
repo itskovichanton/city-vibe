@@ -21,6 +21,7 @@ from python.auth_service.src.auth_service.infra.jwt_service import JwtServiceImp
 from python.auth_service.src.auth_service.infra.otp_common import InMemoryAuthOtpStore, OtpChallenge
 from python.auth_service.src.auth_service.infra.password import PasswordServiceImpl
 from python.auth_service.src.auth_service.usecase.auth_flow import AuthUseCaseImpl
+from python.libs.entities.user import Gender
 from python.libs.infra.saga import SagaContext
 
 
@@ -33,6 +34,7 @@ class FakeAccount:
     user_id: Optional[int] = None
     birthdate: Optional[date] = None
     city_id: Optional[int] = None
+    gender: Gender = Gender.MALE
     accept_terms: bool = True
 
 
@@ -45,12 +47,16 @@ class FakeAccountRepo:
 
     async def create_pending(self, **kwargs) -> FakeAccount:
         self._seq += 1
+        gender = kwargs.get("gender", Gender.MALE)
+        if not isinstance(gender, Gender):
+            gender = Gender(gender)
         acc = FakeAccount(
             id=self._seq,
             name=kwargs["name"],
             password_hash=kwargs["password_hash"],
             birthdate=kwargs.get("birthdate"),
             city_id=kwargs.get("city_id"),
+            gender=gender,
             accept_terms=kwargs.get("accept_terms", True),
         )
         self.accounts[acc.id] = acc

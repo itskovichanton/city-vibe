@@ -10,6 +10,8 @@ from typing import Optional
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
+from python.libs.entities.user import Gender
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -20,6 +22,7 @@ class RegisterBody(BaseModel):
     birthdate: Optional[date] = None
     city_id: int
     accept_terms: bool
+    gender: Gender
 
 
 class VerifyBody(BaseModel):

@@ -6,10 +6,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from python.libs.entities.user import Gender
+
 
 @dataclass
 class CreateUserBody:
     name: str
+    gender: Gender
     age: int | None = None
     short_bio: str | None = ''
     favorite_categories: list[str] | None = None
@@ -28,6 +31,7 @@ class UserOut:
     id: int
     name: str
     status: str
+    gender: Gender = Gender.MALE
     short_bio: str | None = ''
     long_bio: str | None = ''
     age: int | None = None
@@ -36,6 +40,9 @@ class UserOut:
     favorite_categories: list[str] | None = None
     onboarding_completed: bool | None = False
     deleted: bool | None = False
+    city_id: int | None = None
+    birthdate: str | None = None
+    auth_account_id: int | None = None
 
 
 @dataclass

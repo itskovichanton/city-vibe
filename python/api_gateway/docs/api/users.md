@@ -20,6 +20,7 @@
 | `id` | int | ID пользователя |
 | `name` | string | Имя |
 | `status` | string | Статус сущности (enum Status) |
+| `gender` | enum `Gender` | `male` \| `female` |
 | `short_bio` | string | Коротко о себе (онбординг шаг 1) |
 | `long_bio` | string | Развёрнутое «о себе» (шаг 2) |
 | `age` | int \| null | Возраст 1..120 |
@@ -62,6 +63,7 @@
 | Поле | Тип | Обяз. | Описание |
 |------|-----|-------|----------|
 | `name` | string | да | Имя |
+| `gender` | enum `Gender` | да | `male` \| `female` |
 | `age` | int \| null | нет | 1..120 |
 | `short_bio` | string | нет | Коротко о себе (default `""`) |
 | `favorite_categories` | string[] | нет | Неизвестные коды категорий пропускаются |
@@ -79,6 +81,7 @@ curl -s http://localhost:8080/users \
   -H 'Authorization: Bearer <access>' \
   -d '{
     "name": "Анна",
+    "gender": "female",
     "city_id": 1,
     "short_bio": "Люблю кофе",
     "favorite_categories": ["CAFE", "PARK"],

@@ -184,6 +184,7 @@ def test_register_new_user_otp_creates_filled_profile(live_backend):
     name = f"E2E User {unique}"
     password = "SecurePass1!"
     birthdate = "1995-04-12"
+    gender = "female"
 
     with httpx.Client(base_url=gateway, timeout=30.0) as client:
         cities = _get_json(client, "/cities")
@@ -209,6 +210,7 @@ def test_register_new_user_otp_creates_filled_profile(live_backend):
                 "city_id": city_id,
                 "accept_terms": True,
                 "birthdate": birthdate,
+                "gender": gender,
             },
         )
         assert challenge.get("channel") == "email"
@@ -219,7 +221,7 @@ def test_register_new_user_otp_creates_filled_profile(live_backend):
         pending = _psql(
             compose,
             "cityvibe_auth",
-            "SELECT a.id, a.status, a.name, a.city_id, a.birthdate, a.accept_terms "
+            "SELECT a.id, a.status, a.name, a.city_id, a.birthdate, a.accept_terms, a.gender "
             "FROM accounts a "
             f"JOIN identities i ON i.account_id = a.id "
             f"WHERE i.type='email' AND i.value='{email_addr}';",
@@ -232,6 +234,7 @@ def test_register_new_user_otp_creates_filled_profile(live_backend):
         assert int(parts[3]) == city_id
         assert parts[4] == birthdate
         assert parts[5] in {"t", "true", "1"}
+        assert parts[6] == gender
 
         otp = _wait_otp_from_mailhog(mailhog, email_addr)
         assert re.fullmatch(r"\d{6}", otp), "OTP должен быть 6 цифр"
@@ -274,23 +277,25 @@ def test_register_new_user_otp_creates_filled_profile(live_backend):
         assert user.get("onboarding_completed") is False
         assert int(user["city_id"]) == city_id
         assert str(user["birthdate"])[:10] == birthdate
+        assert user.get("gender") == gender
         assert int(user["auth_account_id"]) == account_id
 
         # Source of truth в БД — профиль заполнен верно
         db_user = _psql(
             compose,
             "cityvibe_users",
-            "SELECT name, city_id, birthdate, auth_account_id, deleted, onboarding_completed "
+            "SELECT name, city_id, birthdate, auth_account_id, deleted, onboarding_completed, gender "
             f"FROM users WHERE id={user_id};",
         )
         assert db_user, f"user id={user_id} не найден в cityvibe_users"
-        uname, ucity, ubirth, uauth, udeleted, uonb = db_user.split("|")
+        uname, ucity, ubirth, uauth, udeleted, uonb, ugender = db_user.split("|")
         assert uname == name
         assert int(ucity) == city_id
         assert ubirth == birthdate
         assert int(uauth) == account_id
         assert udeleted in {"f", "false", "0"}
         assert uonb in {"f", "false", "0"}
+        assert ugender == gender
 
         # Повторная регистрация тем же email должна падать
         r = client.post(
@@ -301,6 +306,7 @@ def test_register_new_user_otp_creates_filled_profile(live_backend):
                 "password": password,
                 "city_id": city_id,
                 "accept_terms": True,
+                "gender": gender,
             },
         )
         dup = r.json()

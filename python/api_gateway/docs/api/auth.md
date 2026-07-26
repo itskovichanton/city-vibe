@@ -60,6 +60,7 @@
 | `password` | string | да | Пароль (хеш argon2/pwdlib на сервере) |
 | `city_id` | int | да | ID города из place-service |
 | `accept_terms` | bool | да | Должен быть `true`, иначе ошибка |
+| `gender` | enum `Gender` | да | `male` \| `female` |
 | `birthdate` | date \| null | нет | `YYYY-MM-DD` |
 
 ### Поведение
@@ -83,6 +84,7 @@ curl -s http://localhost:8080/auth/register \
     "password": "Secret123!",
     "city_id": 1,
     "accept_terms": true,
+    "gender": "female",
     "birthdate": "1995-04-12"
   }'
 ```
@@ -111,7 +113,7 @@ curl -s http://localhost:8080/auth/register \
 
 1. Проверка challenge: существует, `purpose=register`, код совпадает.
 2. Загрузка pending-аккаунта.
-3. S2S `user-service` `POST /users` с `name`, `auth_account_id`, `city_id`, `birthdate`.
+3. S2S `user-service` `POST /users` с `name`, `gender`, `auth_account_id`, `city_id`, `birthdate`.
 4. При сбое после создания user — компенсация: soft-delete user.
 5. Активация аккаунта (`status=active`, привязка `user_id`).
 6. Событие `auth.user.registered` (welcome notification).
@@ -349,6 +351,7 @@ Revoke refresh по хешу. Идемпотентно с точки зрени�
 | `city_id` | int \| null | нет* | Нужен при **первой** регистрации |
 | `name` | string \| null | нет | Иначе берётся из Google profile |
 | `birthdate` | date \| null | нет | |
+| `gender` | enum `Gender` \| null | нет | `male` \| `female` (default `male`) |
 
 \*При первом входе без существующего OAuth-аккаунта `city_id` обычно обязателен бизнес-логикой онбординга (передаётся в create user).
 

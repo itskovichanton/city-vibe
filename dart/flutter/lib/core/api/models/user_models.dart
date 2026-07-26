@@ -1,10 +1,13 @@
 /// User DTO (минимально под OpenAPI).
 library;
 
+import 'package:city_vibe/core/api/models/auth_models.dart';
+
 class UserProfile {
   const UserProfile({
     required this.id,
     required this.name,
+    this.gender = Gender.male,
     this.age,
     this.shortBio = '',
     this.longBio = '',
@@ -15,6 +18,7 @@ class UserProfile {
 
   final int id;
   final String name;
+  final Gender gender;
   final int? age;
   final String shortBio;
   final String longBio;
@@ -26,6 +30,7 @@ class UserProfile {
     return UserProfile(
       id: json['id'] as int,
       name: json['name'] as String,
+      gender: Gender.fromApi(json['gender'] as String?),
       age: json['age'] as int?,
       shortBio: (json['short_bio'] as String?) ?? '',
       longBio: (json['long_bio'] as String?) ?? '',

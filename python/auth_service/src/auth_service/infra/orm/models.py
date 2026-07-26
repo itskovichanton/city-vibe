@@ -2,8 +2,10 @@
 
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, Date, DateTime, Enum as SAEnum, ForeignKey, Integer, String, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+from python.libs.entities.user import Gender
 
 
 class Base(DeclarativeBase):
@@ -20,6 +22,17 @@ class AccountModel(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     birthdate: Mapped[date | None] = mapped_column(Date, nullable=True)
     city_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    gender: Mapped[Gender] = mapped_column(
+        SAEnum(
+            Gender,
+            name="gender",
+            values_callable=lambda enum_cls: [m.value for m in enum_cls],
+            create_type=False,
+        ),
+        nullable=False,
+        default=Gender.MALE,
+        server_default="male",
+    )
     accept_terms: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

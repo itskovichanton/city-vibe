@@ -6,13 +6,14 @@ from user_service.infra.orm.mappers import user_dto_to_response, user_model_to_d
 from user_service.infra.orm.models import UserModel
 
 from python.libs.entities.place import PlaceCategory
-from python.libs.entities.user import Status
+from python.libs.entities.user import Gender, Status
 
 
 def test_user_model_to_dto():
     model = UserModel(
         id=10,
         name="Алексей",
+        gender=Gender.FEMALE,
         age=28,
         short_bio="short",
         long_bio="long",
@@ -28,10 +29,12 @@ def test_user_model_to_dto():
     dto = user_model_to_dto(model)
     assert dto.id == 10
     assert dto.name == "Алексей"
+    assert dto.gender == Gender.FEMALE
     assert dto.status == Status.ACTIVE
     assert PlaceCategory.BARS in dto.favorite_categories
     assert dto.onboarding_completed is True
 
     response = user_dto_to_response(dto)
     assert response.id == 10
+    assert response.gender == Gender.FEMALE
     assert response.avatar_url.endswith(".jpg")

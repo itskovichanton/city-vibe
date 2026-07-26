@@ -9,7 +9,7 @@ from src.mybootstrap_ioc_itskovichanton.ioc import bean
 
 from python.libs.clients.db import Database
 from python.libs.entities.place import PlaceCategory
-from python.libs.entities.user import Status, User, UserRole
+from python.libs.entities.user import Gender, Status, User, UserRole
 from python.user_service.src.user_service.infra.orm.mappers import user_model_to_dto
 from python.user_service.src.user_service.infra.orm.models import UserModel
 
@@ -24,6 +24,7 @@ class UserRepo(Protocol):
         self,
         *,
         name: str,
+        gender: Gender = Gender.MALE,
         age: Optional[int] = None,
         short_bio: str = "",
         favorite_categories: list[PlaceCategory] | None = None,
@@ -64,6 +65,7 @@ class UserRepoImpl(UserRepo):
         self,
         *,
         name: str,
+        gender: Gender = Gender.MALE,
         age: Optional[int] = None,
         short_bio: str = "",
         favorite_categories: list[PlaceCategory] | None = None,
@@ -75,6 +77,7 @@ class UserRepoImpl(UserRepo):
         categories = [c.value for c in (favorite_categories or [])]
         model = UserModel(
             name=name,
+            gender=gender if isinstance(gender, Gender) else Gender(gender),
             age=age,
             short_bio=short_bio or "",
             long_bio="",
@@ -120,6 +123,7 @@ class UserRepoImpl(UserRepo):
             if model is None:
                 raise ValueError(f"Пользователь id={user.id} не найден")
             model.name = user.name
+            model.gender = user.gender if isinstance(user.gender, Gender) else Gender(user.gender)
             model.age = user.age
             model.short_bio = user.short_bio
             model.long_bio = user.long_bio
@@ -129,6 +133,8 @@ class UserRepoImpl(UserRepo):
             model.favorite_categories = [c.value for c in user.favorite_categories]
             model.onboarding_completed = user.onboarding_completed
             model.deleted = user.deleted
+            model.city_id = user.city_id
+            model.auth_account_id = user.auth_account_id
             await session.flush()
             await session.refresh(model)
             return user_model_to_dto(model)

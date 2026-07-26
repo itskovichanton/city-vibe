@@ -16,6 +16,7 @@ from python.auth_service.src.auth_service.infra.orm.models import (
     OAuthAccountModel,
     RefreshTokenModel,
 )
+from python.libs.entities.user import Gender
 
 
 class AccountRepo(Protocol):
@@ -29,6 +30,7 @@ class AccountRepo(Protocol):
         birthdate: Optional[date],
         city_id: Optional[int],
         accept_terms: bool,
+        gender: Gender = Gender.MALE,
     ) -> AccountModel: ...
 
     async def get_by_id(self, account_id: int) -> Optional[AccountModel]: ...
@@ -66,6 +68,7 @@ class AccountRepoImpl(AccountRepo):
         birthdate: Optional[date],
         city_id: Optional[int],
         accept_terms: bool,
+        gender: Gender = Gender.MALE,
     ) -> AccountModel:
         async with self.db.session() as session:
             account = AccountModel(
@@ -74,6 +77,7 @@ class AccountRepoImpl(AccountRepo):
                 status="pending",
                 birthdate=birthdate,
                 city_id=city_id,
+                gender=gender if isinstance(gender, Gender) else Gender(gender),
                 accept_terms=accept_terms,
             )
             session.add(account)

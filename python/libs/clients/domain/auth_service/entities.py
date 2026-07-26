@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from python.libs.entities.user import Gender
+
 
 @dataclass
 class RegisterBody:
@@ -12,6 +14,7 @@ class RegisterBody:
     password: str
     city_id: int
     accept_terms: bool
+    gender: Gender
     birthdate: str | None = None
 
 
@@ -55,6 +58,7 @@ class GoogleBody:
     city_id: int | None = None
     name: str | None = None
     birthdate: str | None = None
+    gender: Gender = Gender.MALE
 
 
 @dataclass

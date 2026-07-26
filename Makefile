@@ -64,12 +64,16 @@ migrate-user:
 		psql -U cityvibe -d cityvibe_users < $(USER_SERVICE)/sql/migrations/002_outbox.sql
 	docker compose -f infra/docker-compose.yml exec -T postgres \
 		psql -U cityvibe -d cityvibe_users < $(USER_SERVICE)/sql/migrations/003_add_auth_fields.sql
+	docker compose -f infra/docker-compose.yml exec -T postgres \
+		psql -U cityvibe -d cityvibe_users < $(USER_SERVICE)/sql/migrations/004_add_gender.sql
 
 migrate-auth:
 	docker compose -f infra/docker-compose.yml exec -T postgres \
 		psql -U cityvibe -d cityvibe_auth < $(AUTH_SERVICE)/sql/migrations/001_create_auth.sql
 	docker compose -f infra/docker-compose.yml exec -T postgres \
 		psql -U cityvibe -d cityvibe_auth < $(AUTH_SERVICE)/sql/migrations/002_outbox.sql
+	docker compose -f infra/docker-compose.yml exec -T postgres \
+		psql -U cityvibe -d cityvibe_auth < $(AUTH_SERVICE)/sql/migrations/003_add_gender.sql
 
 migrate-place:
 	docker compose -f infra/docker-compose.yml exec -T postgres \

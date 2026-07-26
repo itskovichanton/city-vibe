@@ -17,6 +17,13 @@ class UserRole(StrEnum):
     ADMIN = auto()
 
 
+class Gender(StrEnum):
+    """Пол пользователя (обязательное поле профиля)."""
+
+    MALE = "male"
+    FEMALE = "female"
+
+
 @dataclass
 class UserDevice(Entity):
     """Устройство пользователя для отправки push-уведомлений."""
@@ -36,6 +43,7 @@ class User(Entity):
 
     status: Status
     name: str
+    gender: Gender = Gender.MALE
     short_bio: str = ""
     long_bio: str = ""
     age: Optional[int] = None

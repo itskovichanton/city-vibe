@@ -6,6 +6,7 @@ from sqlalchemy import (
     Boolean,
     Date,
     DateTime,
+    Enum as SAEnum,
     ForeignKey,
     Integer,
     String,
@@ -14,6 +15,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+from python.libs.entities.user import Gender
 
 
 class Base(DeclarativeBase):
@@ -45,6 +48,17 @@ class UserModel(Base):
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     city_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     birthdate: Mapped[date | None] = mapped_column(Date, nullable=True)
+    gender: Mapped[Gender] = mapped_column(
+        SAEnum(
+            Gender,
+            name="gender",
+            values_callable=lambda enum_cls: [m.value for m in enum_cls],
+            create_type=False,
+        ),
+        nullable=False,
+        default=Gender.MALE,
+        server_default="male",
+    )
     auth_account_id: Mapped[int | None] = mapped_column(Integer, unique=True, nullable=True)
     deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(

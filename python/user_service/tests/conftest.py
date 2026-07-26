@@ -19,10 +19,12 @@ for p in (REPO_ROOT, USER_SRC, SITE):
 @pytest.fixture
 def sample_create_request():
     from python.libs.entities.place import PlaceCategory
+    from python.libs.entities.user import Gender
     from user_service.entities.common import CreateUserRequest
 
     return CreateUserRequest(
         name="Алексей",
+        gender=Gender.MALE,
         age=28,
         short_bio="Люблю открывать новые места",
         favorite_categories=[PlaceCategory.BARS, PlaceCategory.THEATERS, PlaceCategory.NIGHTCLUBS],
