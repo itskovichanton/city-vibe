@@ -3,6 +3,7 @@ import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dar
 import 'package:city_vibe/features/auth/presentation/widgets/login_background.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/social_login_button.dart';
 import 'package:city_vibe/theme/app_colors.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Экран логина — вёрстка по макету + минимальная UI-логика.
@@ -79,7 +80,8 @@ class _LoginScreenState extends State<LoginScreen> {
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: ConstrainedBox(
                   // На широких устройствах / web карточка не растягивается бесконечно.
                   constraints: const BoxConstraints(maxWidth: 420),
@@ -117,27 +119,10 @@ class _BrandHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Эмблема уже на login_bg.png — здесь только название и слоган.
     return Column(
       children: [
-        // Круглый логотип (пока геометрическая заглушка под макет).
-        Container(
-          width: 72,
-          height: 72,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [AppColors.gradientStart, AppColors.gradientEnd],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.accent.withValues(alpha: 0.45),
-                blurRadius: 20,
-              ),
-            ],
-          ),
-          child: const Icon(Icons.nightlife, color: Colors.white, size: 34),
-        ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 88),
         Text('CityVibe', style: textTheme.displayLarge),
         const SizedBox(height: 8),
         Text(
@@ -252,19 +237,22 @@ class _LoginCard extends StatelessWidget {
           const _OrDivider(),
           const SizedBox(height: 14),
 
-          const SocialLoginButton(
-            label: 'Продолжить с Google',
-            background: AppColors.googleButton,
-            foreground: Colors.black87,
-            leading: GoogleMark(),
-          ),
-          const SizedBox(height: 10),
-          const SocialLoginButton(
-            label: 'Продолжить с Apple',
-            background: AppColors.appleButton,
-            foreground: Colors.white,
-            leading: Icon(Icons.apple, color: Colors.white, size: 22),
-          ),
+          // На iOS/macOS — Apple, на Android и остальных — Google.
+          if (defaultTargetPlatform == TargetPlatform.iOS ||
+              defaultTargetPlatform == TargetPlatform.macOS)
+            const SocialLoginButton(
+              label: 'Продолжить с Apple',
+              background: AppColors.appleButton,
+              foreground: Colors.white,
+              leading: Icon(Icons.apple, color: Colors.white, size: 22),
+            )
+          else
+            const SocialLoginButton(
+              label: 'Продолжить с Google',
+              background: AppColors.googleButton,
+              foreground: Colors.black87,
+              leading: GoogleMark(),
+            ),
 
           const SizedBox(height: 18),
           // RichText / Text.rich — разные стили в одной строке.
@@ -306,7 +294,8 @@ class _OrDivider extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Text(
             'или войдите с помощью',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12),
+            style:
+                Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12),
           ),
         ),
         line,
