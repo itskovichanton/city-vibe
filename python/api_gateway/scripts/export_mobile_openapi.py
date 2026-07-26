@@ -11,7 +11,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from pydantic import BaseModel, Field
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -33,6 +33,10 @@ class CityOut(BaseModel):
     about: str = ""
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    distance_m: Optional[float] = Field(
+        default=None,
+        description="Только для GET /cities/nearest — расстояние в метрах",
+    )
 
 
 class RegisterBody(BaseModel):
@@ -144,6 +148,14 @@ def build_openapi_app() -> FastAPI:
 
     @app.get("/cities", tags=["cities"], response_model=List[CityOut])
     async def list_cities():
+        raise NotImplementedError
+
+    @app.get("/cities/nearest", tags=["cities"], response_model=CityOut)
+    async def nearest_city(
+        lat: float = Query(..., description="Широта GPS"),
+        lng: float = Query(..., description="Долгота GPS"),
+    ):
+        """Ближайший крупный город к координатам (earthdistance)."""
         raise NotImplementedError
 
     @app.get("/cities/{city_id}", tags=["cities"], response_model=CityOut)

@@ -29,6 +29,15 @@ class CommonClient {
     );
   }
 
+  /// `GET /cities/nearest?lat=&lng=` — ближайший крупный город к GPS.
+  Future<City> getNearestCity({required double lat, required double lng}) {
+    return _http.get(
+      '/cities/nearest',
+      query: {'lat': lat, 'lng': lng},
+      parse: (data) => City.fromJson(Map<String, dynamic>.from(data as Map)),
+    );
+  }
+
   /// `GET /health`
   Future<Map<String, dynamic>> health() {
     return _http.get(

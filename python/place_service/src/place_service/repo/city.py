@@ -1,8 +1,8 @@
 """Репозиторий городов."""
 
-from typing import Optional, Protocol
+from typing import Optional, Protocol, Tuple
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
 
 from python.libs.clients.db import Database
@@ -18,6 +18,16 @@ class CityRepo(Protocol):
         ...
 
     async def get_by_id(self, city_id: int) -> Optional[City]:
+        ...
+
+    async def find_nearest(
+        self,
+        lat: float,
+        lng: float,
+        *,
+        major_only: bool = True,
+    ) -> Optional[Tuple[City, float]]:
+        """Ближайший город к координатам (метры). None — если справочник пуст."""
         ...
 
 
@@ -44,3 +54,36 @@ class CityRepoImpl(CityRepo):
             if model is None or model.deleted:
                 return None
             return city_model_to_dto(model)
+
+    async def find_nearest(
+        self,
+        lat: float,
+        lng: float,
+        *,
+        major_only: bool = True,
+    ) -> Optional[Tuple[City, float]]:
+        major_sql = "AND is_major = TRUE" if major_only else ""
+        sql = text(
+            f"""
+            SELECT id,
+                   earth_distance(
+                       ll_to_earth(lat, lng),
+                       ll_to_earth(:lat, :lng)
+                   ) AS distance_m
+            FROM cities
+            WHERE deleted = FALSE
+              AND lat IS NOT NULL
+              AND lng IS NOT NULL
+              {major_sql}
+            ORDER BY distance_m ASC
+            LIMIT 1
+            """
+        )
+        async with self.db.session() as session:
+            row = (await session.execute(sql, {"lat": lat, "lng": lng})).mappings().first()
+            if row is None:
+                return None
+            model = await session.get(CityModel, int(row["id"]))
+            if model is None or model.deleted:
+                return None
+            return city_model_to_dto(model), float(row["distance_m"])

@@ -23,3 +23,4 @@ class CityOut:
     about: str = ""
     created_at: str | None = None
     updated_at: str | None = None
+    distance_m: float | None = None

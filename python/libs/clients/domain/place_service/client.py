@@ -15,6 +15,8 @@ class PlaceServiceClient(Protocol):
 
     def list_cities(self) -> Any: ...
 
+    def nearest_city(self, lat: float, lng: float) -> Any: ...
+
     def get_city(self, city_id: int) -> Any: ...
 
     def list_categories(self) -> Any: ...
@@ -50,6 +52,15 @@ class PlaceServiceClientImpl(PlaceServiceClient):
     @api_call
     def list_cities(self, session=None, url=None, headers=None):
         return session.get(url=f"{url}/cities", timeout=30, headers=headers)
+
+    @api_call
+    def nearest_city(self, lat: float, lng: float, session=None, url=None, headers=None):
+        return session.get(
+            url=f"{url}/cities/nearest",
+            params={"lat": lat, "lng": lng},
+            timeout=30,
+            headers=headers,
+        )
 
     @api_call
     def get_city(self, city_id: int, session=None, url=None, headers=None):

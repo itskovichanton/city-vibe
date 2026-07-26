@@ -71,5 +71,9 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>CityVibe использует геолокацию, чтобы автоматически подставить ближайший город при регистрации.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>CityVibe использует геолокацию, чтобы автоматически подставить ближайший город при регистрации.</string>
 </dict>
 </plist>

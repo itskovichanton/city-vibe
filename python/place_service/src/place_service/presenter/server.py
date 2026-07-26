@@ -130,6 +130,31 @@ class Server:
 
             return self.presenter.present(await self.action_runner.run(_list, call=None))
 
+        @self.fast_api.get(
+            "/cities/nearest",
+            tags=["cities"],
+            summary="Ближайший крупный город к координатам",
+        )
+        @rate_limit("cities.nearest", limit=60)
+        async def nearest_city(
+            request: Request,
+            lat: float = Query(..., description="Широта"),
+            lng: float = Query(..., description="Долгота"),
+        ):
+            async def _nearest(_):
+                found = await self.city_repo.find_nearest(lat, lng, major_only=True)
+                if found is None:
+                    raise CoreException(
+                        message="Не удалось определить ближайший город",
+                        reason=ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
+                    )
+                city, distance_m = found
+                resp = city_dto_to_response(city)
+                resp.distance_m = distance_m
+                return resp
+
+            return self.presenter.present(await self.action_runner.run(_nearest, call=None))
+
         @self.fast_api.get("/cities/{city_id}", tags=["cities"], summary="Город по id")
         @rate_limit("cities.get", limit=120)
         async def get_city(request: Request, city_id: int):

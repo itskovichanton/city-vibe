@@ -25,6 +25,7 @@ class City {
     this.isMajor = true,
     this.sortOrder = 0,
     this.about = '',
+    this.distanceM,
   });
 
   final int id;
@@ -35,6 +36,7 @@ class City {
   final bool isMajor;
   final int sortOrder;
   final String about;
+  final double? distanceM;
 
   factory City.fromJson(Map<String, dynamic> json) {
     final geoRaw = json['geo'];
@@ -47,6 +49,7 @@ class City {
       isMajor: (json['is_major'] as bool?) ?? true,
       sortOrder: (json['sort_order'] as int?) ?? 0,
       about: (json['about'] as String?) ?? '',
+      distanceM: (json['distance_m'] as num?)?.toDouble(),
     );
   }
 

@@ -50,6 +50,62 @@
         }
       }
     },
+    "/cities/nearest": {
+      "get": {
+        "tags": [
+          "cities"
+        ],
+        "summary": "Nearest City",
+        "description": "Ближайший крупный город к координатам (earthdistance).",
+        "operationId": "nearest_city_cities_nearest_get",
+        "parameters": [
+          {
+            "name": "lat",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "Широта GPS",
+              "title": "Lat"
+            },
+            "description": "Широта GPS"
+          },
+          {
+            "name": "lng",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "Долгота GPS",
+              "title": "Lng"
+            },
+            "description": "Долгота GPS"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CityOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/cities/{city_id}": {
       "get": {
         "tags": [
@@ -1385,6 +1441,18 @@
               }
             ],
             "title": "Updated At"
+          },
+          "distance_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance M",
+            "description": "Только для GET /cities/nearest — расстояние в метрах"
           }
         },
         "type": "object",

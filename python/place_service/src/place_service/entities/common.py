@@ -22,3 +22,5 @@ class CityResponse:
     deleted: bool = False
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    # Заполняется в GET /cities/nearest (метры до запрошенной точки).
+    distance_m: Optional[float] = None

@@ -84,6 +84,50 @@ curl -s http://localhost:8080/cities | jq
 
 ---
 
+## `GET /cities/nearest`
+
+Ближайший **крупный** город к GPS-координатам (PostgreSQL `earthdistance`).
+
+### Rate limit (upstream)
+
+`cities.nearest` ≈ 60.
+
+### Query parameters
+
+| Параметр | Тип | Обяз. | Описание |
+|----------|-----|-------|----------|
+| `lat` | float | да | Широта |
+| `lng` | float | да | Долгота |
+
+### Response `200`
+
+Тот же `CityOut` / `CityResponse`, плюс опционально `distance_m` (метры до точки).
+
+```json
+{
+  "result": {
+    "id": 1,
+    "name": "Москва",
+    "slug": "moskva",
+    "geo": { "latitude": 55.7558, "longitude": 37.6173 },
+    "distance_m": 12450.3
+  }
+}
+```
+
+### Пример
+
+```bash
+curl -s "http://localhost:8080/cities/nearest?lat=55.75&lng=37.62" | jq
+```
+
+### Заметки для клиента
+
+- Запрашивать после выдачи permission на геолокацию.
+- Если отказали в GPS — оставить ручной выбор из `GET /cities`.
+
+---
+
 ## `GET /cities/{city_id}`
 
 Карточка одного города по id.

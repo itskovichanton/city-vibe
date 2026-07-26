@@ -11,6 +11,7 @@ import 'package:city_vibe/theme/app_colors.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -42,6 +43,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   City? _selectedCity;
   bool _citiesLoading = true;
   String? _citiesError;
+  bool _detectingCity = false;
 
   /// 0..4 сегмента силы пароля (простая эвристика для UI).
   int get _passwordStrength {
@@ -73,8 +75,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    // HTTP уходит в фоне (Future/Dio), UI не блокируем.
-    Future.microtask(_loadCities);
+    // HTTP / GPS уходят в фоне, UI не блокируем.
+    Future.microtask(() async {
+      await Future.wait([
+        _loadCities(),
+        _detectCityFromGps(),
+      ]);
+    });
   }
 
   Future<void> _loadCities() async {
@@ -101,6 +108,83 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         _citiesLoading = false;
         _citiesError = e.toString();
       });
+    }
+  }
+
+  /// Запрос permission → GPS → `GET /cities/nearest`.
+  Future<void> _detectCityFromGps() async {
+    if (kIsWeb) return;
+    setState(() => _detectingCity = true);
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Включите геолокацию, чтобы подставить город автоматически'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Без доступа к геолокации выберите город вручную'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      if (permission == LocationPermission.deniedForever) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Геолокация запрещена в настройках. Выберите город вручную',
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 12),
+        ),
+      );
+
+      final nearest = await ref.read(commonClientProvider).getNearestCity(
+            lat: pos.latitude,
+            lng: pos.longitude,
+          );
+      if (!mounted) return;
+      // Не перетираем, если пользователь уже успел выбрать город вручную.
+      if (_selectedCity != null) return;
+      setState(() {
+        _selectedCity = nearest;
+        _cityController.text = nearest.name;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Не удалось определить город: ${e.message}'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      // Timeout / unavailable — молча оставляем ручной выбор.
+    } finally {
+      if (mounted) setState(() => _detectingCity = false);
     }
   }
 
@@ -178,7 +262,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               const Padding(
                 padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
                 child: Text(
-                  'Выберите город',
+                  'Выберите Ваш город',
                   style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 18,
@@ -278,7 +362,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               passwordStrength: _passwordStrength,
                               acceptedTerms: _acceptedTerms,
                               canSubmit: _canSubmit,
-                              citiesLoading: _citiesLoading,
+                              citiesLoading: _citiesLoading || _detectingCity,
                               onFieldsChanged: _onFieldsChanged,
                               onTogglePassword: () => setState(
                                 () => _obscurePassword = !_obscurePassword,
@@ -443,7 +527,7 @@ class _RegisterCard extends StatelessWidget {
           const SizedBox(height: 12),
           AuthTextField(
             controller: cityController,
-            hintText: citiesLoading ? 'Загрузка городов…' : 'Ваш город',
+            hintText: citiesLoading ? 'Определяем город…' : 'Ваш город',
             prefixIcon: Icons.location_on_outlined,
             readOnly: true,
             onTap: onPickCity,
