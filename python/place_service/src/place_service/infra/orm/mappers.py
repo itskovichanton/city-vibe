@@ -24,10 +24,13 @@ __all__ = [
     "city_model_to_dto",
     "city_dto_to_response",
     "category_model_to_dto",
+    "category_to_api",
     "attr_schema_model_to_dto",
+    "attr_schema_to_api",
     "place_model_to_dto",
     "schedule_to_json",
     "schedule_from_json",
+    "place_to_api_dict",
 ]
 
 
@@ -78,6 +81,18 @@ def category_model_to_dto(model: PlaceCategoryModel) -> PlaceCategoryInfo:
     )
 
 
+def category_to_api(category: PlaceCategoryInfo) -> dict[str, Any]:
+    return {
+        "id": category.id,
+        "code": category.code,
+        "title": category.title,
+        "title_en": category.title_en,
+        "icon_url": category.icon_url,
+        "sort_order": category.sort_order,
+        "is_active": category.is_active,
+    }
+
+
 def attr_schema_model_to_dto(model: AttrSchemaModel) -> AttrSchema:
     return AttrSchema(
         id=model.id,
@@ -88,6 +103,22 @@ def attr_schema_model_to_dto(model: AttrSchemaModel) -> AttrSchema:
         json_schema=dict(model.json_schema or {}),
         version=model.version,
     )
+
+
+def attr_schema_to_api(
+    schema: AttrSchema,
+    *,
+    compact: bool = False,
+    json_schema: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    payload_schema = json_schema if json_schema is not None else schema.json_schema
+    return {
+        "id": schema.id,
+        "category_code": schema.category_code,
+        "version": schema.version,
+        "json_schema": payload_schema,
+        "compact": compact,
+    }
 
 
 def _parse_time(value: str | time) -> time:

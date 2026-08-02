@@ -14,8 +14,16 @@ from python.user_service.src.user_service.usecase.complete_onboarding import (  
     CompleteOnboardingUseCaseImpl,
 )
 from python.user_service.src.user_service.usecase.create_user import CreateUserUseCaseImpl  # noqa: F401
+from python.user_service.src.user_service.usecase.delete_user import DeleteUserUseCaseImpl  # noqa: F401
+from python.user_service.src.user_service.usecase.get_milana_account import (  # noqa: F401
+    GetMilanaAccountUseCaseImpl,
+)
 from python.user_service.src.user_service.usecase.get_user import GetUserUseCaseImpl  # noqa: F401
 from python.user_service.src.user_service.usecase.update_bio import UpdateBioUseCaseImpl  # noqa: F401
+from python.user_service.src.user_service.usecase.update_profile import (  # noqa: F401
+    UpdateProfileUseCaseImpl,
+)
+from python.user_service.src.user_service.usecase.upload_avatar import UploadAvatarUseCaseImpl  # noqa: F401
 
 
 @bean

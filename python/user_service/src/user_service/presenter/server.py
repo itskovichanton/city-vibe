@@ -12,31 +12,28 @@ from src.mybootstrap_ioc_itskovichanton.ioc import bean
 from src.mybootstrap_ioc_itskovichanton.utils import default_dataclass_field
 from src.mybootstrap_mvc_fastapi_itskovichanton.error_handler import ErrorHandlerFastAPISupport
 from src.mybootstrap_mvc_fastapi_itskovichanton.presenters import JSONResultPresenterImpl
-from src.mybootstrap_mvc_itskovichanton.exceptions import (
-    ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
-    CoreException,
-)
 from src.mybootstrap_mvc_itskovichanton.pipeline import ActionRunner, Result
 from src.mybootstrap_mvc_itskovichanton.result_presenter import ResultPresenter
 
-from python.libs.clients.infra.s3 import FileStorage
-from python.libs.entities.place import PlaceCategory
 from python.libs.entities.user import Gender
 from python.libs.infra import CityVibeInfraSupport
 from python.libs.infra.decorators import idempotent, rate_limit, read_validated_upload, require_s2s
-from python.user_service.src.user_service.entities.common import (
-    CompleteOnboardingRequest,
-    CreateUserRequest,
-    UpdateBioRequest,
-    UpdateProfileRequest,
+from python.user_service.src.user_service.presenter.mappers import (
+    to_complete_onboarding_request,
+    to_create_user_request,
+    to_delete_user_request,
+    to_update_bio_request,
+    to_update_profile_request,
+    to_upload_avatar_request,
 )
-from python.user_service.src.user_service.repo.user import UserRepo
 from python.user_service.src.user_service.usecase.complete_onboarding import CompleteOnboardingUseCase
 from python.user_service.src.user_service.usecase.create_user import CreateUserUseCase
+from python.user_service.src.user_service.usecase.delete_user import DeleteUserUseCase
 from python.user_service.src.user_service.usecase.get_milana_account import GetMilanaAccountUseCase
 from python.user_service.src.user_service.usecase.get_user import GetUserUseCase
 from python.user_service.src.user_service.usecase.update_bio import UpdateBioUseCase
 from python.user_service.src.user_service.usecase.update_profile import UpdateProfileUseCase
+from python.user_service.src.user_service.usecase.upload_avatar import UploadAvatarUseCase
 
 
 class CreateUserBody(BaseModel):
@@ -76,8 +73,8 @@ class Server:
     complete_onboarding_uc: CompleteOnboardingUseCase
     get_user_uc: GetUserUseCase
     get_milana_account_uc: GetMilanaAccountUseCase
-    file_storage: FileStorage
-    user_repo: UserRepo
+    upload_avatar_uc: UploadAvatarUseCase
+    delete_user_uc: DeleteUserUseCase
     logger_service: LoggerService
     presenter: ResultPresenter = default_dataclass_field(
         JSONResultPresenterImpl(exclude_unset=True),
@@ -102,7 +99,6 @@ class Server:
             openapi_url="/openapi.json",
         )
         self.error_handler_fast_api_support.mount(app)
-        # Request-ID / S2S / Idempotency middleware — по ENV-флагам
         self.infra_support.mount(app)
         return app
 
@@ -118,24 +114,11 @@ class Server:
         @idempotent("users.create")
         @rate_limit("users.create", limit=30)
         async def create_user(request: Request, body: CreateUserBody):
-            categories: list[PlaceCategory] = []
-            for code in body.favorite_categories:
-                try:
-                    categories.append(PlaceCategory(code))
-                except ValueError:
-                    continue
-            req = CreateUserRequest(
-                name=body.name,
-                gender=body.gender,
-                age=body.age,
-                short_bio=body.short_bio,
-                favorite_categories=categories,
-                city_id=body.city_id,
-                birthdate=body.birthdate,
-                auth_account_id=body.auth_account_id,
-            )
             return self.presenter.present(
-                await self.action_runner.run(self.create_user_uc.execute, call=req),
+                await self.action_runner.run(
+                    self.create_user_uc.execute,
+                    call=to_create_user_request(body),
+                ),
             )
 
         @self.fast_api.get("/users/{user_id}", tags=["users"], summary="Получить профиль")
@@ -162,21 +145,11 @@ class Server:
         @idempotent("users.update")
         @rate_limit("users.update", limit=60)
         async def update_profile(request: Request, user_id: int, body: UpdateProfileBody):
-            categories: list[PlaceCategory] | None = None
-            if body.favorite_categories is not None:
-                categories = []
-                for code in body.favorite_categories:
-                    try:
-                        categories.append(PlaceCategory(code))
-                    except ValueError:
-                        continue
-            req = UpdateProfileRequest(
-                user_id=user_id,
-                name=body.name,
-                favorite_categories=categories,
-            )
             return self.presenter.present(
-                await self.action_runner.run(self.update_profile_uc.execute, call=req),
+                await self.action_runner.run(
+                    self.update_profile_uc.execute,
+                    call=to_update_profile_request(user_id, body),
+                ),
             )
 
         @self.fast_api.put("/users/{user_id}/bio", tags=["users"], summary="Обновить bio")
@@ -184,9 +157,11 @@ class Server:
         @idempotent("users.bio")
         @rate_limit("users.bio", limit=60)
         async def update_bio(request: Request, user_id: int, body: UpdateBioBody):
-            req = UpdateBioRequest(user_id=user_id, long_bio=body.long_bio)
             return self.presenter.present(
-                await self.action_runner.run(self.update_bio_uc.execute, call=req),
+                await self.action_runner.run(
+                    self.update_bio_uc.execute,
+                    call=to_update_bio_request(user_id, body),
+                ),
             )
 
         @self.fast_api.post(
@@ -198,9 +173,11 @@ class Server:
         @idempotent("users.onboarding.complete")
         @rate_limit("users.onboarding", limit=20)
         async def complete_onboarding(request: Request, user_id: int):
-            req = CompleteOnboardingRequest(user_id=user_id)
             return self.presenter.present(
-                await self.action_runner.run(self.complete_onboarding_uc.execute, call=req),
+                await self.action_runner.run(
+                    self.complete_onboarding_uc.execute,
+                    call=to_complete_onboarding_request(user_id),
+                ),
             )
 
         @self.fast_api.post(
@@ -216,36 +193,25 @@ class Server:
             user_id: int,
             file: UploadFile = File(..., description="Файл изображения"),
         ):
-            async def _upload(_):
-                user = await self.user_repo.get_by_id(user_id)
-                if user is None:
-                    raise CoreException(
-                        message=f"Пользователь id={user_id} не найден",
-                        reason=ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
-                    )
-                data, content_type, ext = await read_validated_upload(file)
-                url = await self.file_storage.upload(
-                    data,
-                    content_type=content_type,
-                    key_prefix=f"avatars/{user_id}",
-                    extension=ext,
-                )
-                user.avatar_url = url
-                await self.user_repo.save(user)
-                return await self.get_user_uc.execute(user_id)
-
-            return self.presenter.present(await self.action_runner.run(_upload, call=None))
+            data, content_type, ext = await read_validated_upload(file)
+            return self.presenter.present(
+                await self.action_runner.run(
+                    self.upload_avatar_uc.execute,
+                    call=to_upload_avatar_request(
+                        user_id,
+                        data=data,
+                        content_type=content_type,
+                        extension=ext,
+                    ),
+                ),
+            )
 
         @self.fast_api.delete("/users/{user_id}", tags=["users"], summary="Soft-delete пользователя")
         @require_s2s
         async def delete_user(request: Request, user_id: int):
-            async def _delete(_):
-                ok = await self.user_repo.soft_delete(user_id)
-                if not ok:
-                    raise CoreException(
-                        message=f"Пользователь id={user_id} не найден",
-                        reason=ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
-                    )
-                return {"ok": True, "user_id": user_id}
-
-            return self.presenter.present(await self.action_runner.run(_delete, call=None))
+            return self.presenter.present(
+                await self.action_runner.run(
+                    self.delete_user_uc.execute,
+                    call=to_delete_user_request(user_id),
+                ),
+            )

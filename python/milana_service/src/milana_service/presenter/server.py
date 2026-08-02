@@ -9,10 +9,6 @@ from src.mybootstrap_ioc_itskovichanton.ioc import bean
 from src.mybootstrap_ioc_itskovichanton.utils import default_dataclass_field
 from src.mybootstrap_mvc_fastapi_itskovichanton.error_handler import ErrorHandlerFastAPISupport
 from src.mybootstrap_mvc_fastapi_itskovichanton.presenters import JSONResultPresenterImpl
-from src.mybootstrap_mvc_itskovichanton.exceptions import (
-    ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
-    CoreException,
-)
 from src.mybootstrap_mvc_itskovichanton.pipeline import ActionRunner, Result
 from src.mybootstrap_mvc_itskovichanton.result_presenter import ResultPresenter
 
@@ -21,6 +17,13 @@ from python.libs.infra.decorators import rate_limit
 from python.milana_service.src.milana_service.agent.places_nl_search import PlacesNlSearchAgent
 from python.milana_service.src.milana_service.entities.request import MilanaPlacesSearchRequest
 from python.milana_service.src.milana_service.usecase.get_milana_account import GetMilanaAccountUseCase
+from python.milana_service.src.milana_service.usecase.milana_catalog import (
+    GetMilanaAttrSchemaUseCase,
+    GetMilanaWorldUseCase,
+    ListMilanaCategoriesUseCase,
+    ListMilanaCitiesUseCase,
+)
+from python.milana_service.src.milana_service.usecase.milana_places_search import MilanaPlacesSearchUseCase
 
 
 @bean(port=("server.port", int, 8086), host=("server.host", str, "0.0.0.0"))
@@ -31,6 +34,11 @@ class Server:
     action_runner: ActionRunner
     places_nl_agent: PlacesNlSearchAgent
     get_milana_account_uc: GetMilanaAccountUseCase
+    get_milana_world_uc: GetMilanaWorldUseCase
+    list_milana_cities_uc: ListMilanaCitiesUseCase
+    list_milana_categories_uc: ListMilanaCategoriesUseCase
+    get_milana_attr_schema_uc: GetMilanaAttrSchemaUseCase
+    milana_places_search_uc: MilanaPlacesSearchUseCase
     presenter: ResultPresenter = default_dataclass_field(
         JSONResultPresenterImpl(exclude_unset=True),
     )
@@ -88,10 +96,9 @@ class Server:
         )
         @rate_limit("milana.world", limit=60)
         async def milana_world(request: Request):
-            async def _run(_):
-                return await self.places_nl_agent.world_digest()
-
-            return self.presenter.present(await self.action_runner.run(_run, call=None))
+            return self.presenter.present(
+                await self.action_runner.run(self.get_milana_world_uc.execute, call=None),
+            )
 
         @self.fast_api.get(
             "/milana/cities",
@@ -100,10 +107,9 @@ class Server:
         )
         @rate_limit("milana.cities", limit=60)
         async def milana_cities(request: Request):
-            async def _run(_):
-                return await self.places_nl_agent.places.list_cities_compact()
-
-            return self.presenter.present(await self.action_runner.run(_run, call=None))
+            return self.presenter.present(
+                await self.action_runner.run(self.list_milana_cities_uc.execute, call=None),
+            )
 
         @self.fast_api.get(
             "/milana/categories",
@@ -112,10 +118,9 @@ class Server:
         )
         @rate_limit("milana.categories", limit=60)
         async def milana_categories(request: Request):
-            async def _run(_):
-                return await self.places_nl_agent.places.list_categories_compact()
-
-            return self.presenter.present(await self.action_runner.run(_run, call=None))
+            return self.presenter.present(
+                await self.action_runner.run(self.list_milana_categories_uc.execute, call=None),
+            )
 
         @self.fast_api.get(
             "/milana/attr-schemas/{category_code}",
@@ -124,18 +129,12 @@ class Server:
         )
         @rate_limit("milana.attr_schema", limit=120)
         async def milana_attr_schema(request: Request, category_code: str):
-            async def _run(_):
-                try:
-                    return await self.places_nl_agent.places.get_attr_schema_compact(category_code)
-                except CoreException:
-                    raise
-                except Exception as e:
-                    raise CoreException(
-                        message=f"Schema для {category_code} не найдена: {e}",
-                        reason=ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
-                    ) from e
-
-            return self.presenter.present(await self.action_runner.run(_run, call=None))
+            return self.presenter.present(
+                await self.action_runner.run(
+                    self.get_milana_attr_schema_uc.execute,
+                    call=category_code,
+                ),
+            )
 
         @self.fast_api.post(
             "/milana/places/search",
@@ -149,8 +148,9 @@ class Server:
         )
         @rate_limit("milana.places.search", limit=20)
         async def milana_places_search(request: Request, body: MilanaPlacesSearchRequest):
-            async def _run(_):
-                result = await self.places_nl_agent.run(body)
-                return result.model_dump()
-
-            return self.presenter.present(await self.action_runner.run(_run, call=None))
+            return self.presenter.present(
+                await self.action_runner.run(
+                    self.milana_places_search_uc.execute,
+                    call=body,
+                ),
+            )

@@ -48,6 +48,29 @@ class CompleteOnboardingRequest:
 
 
 @dataclass
+class UploadAvatarRequest:
+    """Загрузка аватара в S3 и привязка к профилю."""
+
+    user_id: int
+    data: bytes
+    content_type: str
+    extension: str
+
+
+@dataclass
+class DeleteUserRequest:
+    """Soft-delete пользователя."""
+
+    user_id: int
+
+
+@dataclass
+class DeleteUserResponse:
+    ok: bool
+    user_id: int
+
+
+@dataclass
 class UserResponse:
     """Ответ API с профилем пользователя."""
 

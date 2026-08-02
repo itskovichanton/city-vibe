@@ -9,6 +9,25 @@ from python.place_service.src.place_service.repo.category import CategoryRepoImp
 from python.place_service.src.place_service.repo.city import CityRepoImpl  # noqa: F401
 from python.place_service.src.place_service.repo.place import PlaceRepoImpl  # noqa: F401
 from python.place_service.src.place_service.repo.place_search import PlaceSearchRepoImpl  # noqa: F401
+from python.place_service.src.place_service.usecase.attr_schemas import (  # noqa: F401
+    GetAttrSchemaUseCaseImpl,
+    ListAttrSchemasUseCaseImpl,
+)
+from python.place_service.src.place_service.usecase.categories import ListCategoriesUseCaseImpl  # noqa: F401
+from python.place_service.src.place_service.usecase.cities import (  # noqa: F401
+    GetCityUseCaseImpl,
+    GetNearestCityUseCaseImpl,
+    ListCitiesUseCaseImpl,
+)
+from python.place_service.src.place_service.usecase.place_attrs import PlaceAttrsValidatorImpl  # noqa: F401
+from python.place_service.src.place_service.usecase.places import (  # noqa: F401
+    CreatePlaceUseCaseImpl,
+    DeletePlaceUseCaseImpl,
+    GetPlaceUseCaseImpl,
+    ListPlacesUseCaseImpl,
+    PatchPlaceUseCaseImpl,
+)
+from python.place_service.src.place_service.usecase.search_places import SearchPlacesUseCaseImpl  # noqa: F401
 
 
 @bean
