@@ -23,6 +23,14 @@ enum UserStatus {
       _ => UserStatus.active,
     };
   }
+
+  /// Gateway иногда отдаёт `status` как int (Python Enum auto): 1=ACTIVE, 2=BANNED.
+  static UserStatus fromJson(dynamic raw) {
+    if (raw is int) {
+      return raw == 2 ? UserStatus.banned : UserStatus.active;
+    }
+    return fromApi(raw?.toString());
+  }
 }
 
 class UserProfile {
@@ -107,7 +115,7 @@ class UserProfile {
     return UserProfile(
       id: json['id'] as int,
       name: json['name'] as String,
-      status: UserStatus.fromApi(json['status'] as String?),
+      status: UserStatus.fromJson(json['status']),
       gender: Gender.fromApi(json['gender'] as String?),
       age: json['age'] as int?,
       shortBio: (json['short_bio'] as String?) ?? '',

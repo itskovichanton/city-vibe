@@ -5,7 +5,6 @@ import 'package:city_vibe/core/api/models/auth_models.dart';
 import 'package:city_vibe/core/auth/auth_providers.dart';
 import 'package:city_vibe/core/network/api_exception.dart';
 import 'package:city_vibe/core/router/app_router.dart';
-import 'package:city_vibe/core/user/user_providers.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/login_background.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/scrolling_city_decor_bar.dart';
@@ -144,11 +143,8 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
-      context.go(
-        ref.read(currentUserProvider).valueOrNull?.onboardingCompleted == true
-            ? AppRoutes.home
-            : AppRoutes.onboarding,
-      );
+      // Роутер сам решит: onboarding / milana / home по профилю.
+      context.go(AppRoutes.home);
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

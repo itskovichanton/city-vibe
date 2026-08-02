@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:city_vibe/core/auth/auth_providers.dart';
+import 'package:city_vibe/core/auth/logout_providers.dart';
 import 'package:city_vibe/core/events/app_event.dart';
 import 'package:city_vibe/core/events/event_providers.dart';
 import 'package:city_vibe/core/router/app_router.dart';
@@ -24,7 +24,11 @@ class CityVibeApp extends ConsumerWidget {
     ref.listen<AsyncValue<AppEvent>>(appEventsProvider, (previous, next) {
       next.whenData((event) {
         if (event case AppSessionExpiredEvent(:final reason)) {
-          unawaited(_forcedLogout(ref, router, reason));
+          unawaited(_onSessionEnded(ref, router, reason: reason));
+          return;
+        }
+        if (event case AppLoggedOutEvent()) {
+          router.go(AppRoutes.login);
           return;
         }
         _onAppEvent(ref, router, event);
@@ -51,6 +55,7 @@ class CityVibeApp extends ConsumerWidget {
       case AppInfoEvent(:final message):
         messenger?.showSnackBar(SnackBar(content: Text(message)));
       case AppSessionExpiredEvent():
+      case AppLoggedOutEvent():
         break;
       case AppPushEvent():
       case AppTimerEvent():
@@ -61,12 +66,15 @@ class CityVibeApp extends ConsumerWidget {
   }
 
   /// 401/403 / BANNED: очистить сессию, сбросить стек навигации, объяснить причину.
-  Future<void> _forcedLogout(
+  Future<void> _onSessionEnded(
     WidgetRef ref,
-    GoRouter router,
+    GoRouter router, {
     String? reason,
-  ) async {
-    await ref.read(authSessionProvider.notifier).clear();
+  }) async {
+    await ref.read(appLogoutProvider)(
+      notifyServer: true,
+      emitLoggedOutEvent: false,
+    );
     router.go(AppRoutes.login);
     final text = reason?.trim();
     if (text != null && text.isNotEmpty) {

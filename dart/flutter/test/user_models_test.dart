@@ -63,5 +63,17 @@ void main() {
       expect(user.status, UserStatus.banned);
       expect(user.status.isBanned, isTrue);
     });
+
+    test('fromJson parses numeric ACTIVE status from gateway', () {
+      final user = UserProfile.fromJson({
+        'id': 45,
+        'name': 'Антон',
+        'status': 1,
+        'gender': 'male',
+        'onboarding_completed': false,
+      });
+      expect(user.status, UserStatus.active);
+      expect(user.onboardingCompleted, isFalse);
+    });
   });
 }

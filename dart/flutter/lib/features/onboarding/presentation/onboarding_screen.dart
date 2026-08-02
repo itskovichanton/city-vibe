@@ -1,7 +1,9 @@
+import 'package:city_vibe/core/auth/logout_providers.dart';
 import 'package:city_vibe/core/api/api_providers.dart';
 import 'package:city_vibe/core/network/api_exception.dart';
 import 'package:city_vibe/core/router/app_router.dart';
 import 'package:city_vibe/core/user/user_providers.dart';
+import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/login_background.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/scrolling_city_decor_bar.dart';
 import 'package:city_vibe/features/onboarding/onboarding_providers.dart';
@@ -23,6 +25,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
   int _step = 0;
+  bool _isSwitchingAccount = false;
 
   @override
   void dispose() {
@@ -63,6 +66,74 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message), behavior: SnackBarBehavior.floating),
       );
+    }
+  }
+
+  Future<void> _promptSwitchAccount() async {
+    if (_isSwitchingAccount) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final dialogTheme = Theme.of(dialogContext).textTheme;
+        return AlertDialog(
+          backgroundColor: AppColors.backgroundDeep,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppColors.cardBorder),
+          ),
+          title: Text(
+            'Сменить аккаунт',
+            style: dialogTheme.titleLarge?.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            'Вы действительно хотите сменить аккаунт?',
+            style: dialogTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(
+                'Отмена',
+                style: dialogTheme.labelLarge?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(
+                'Да, сменить',
+                style: dialogTheme.labelLarge?.copyWith(
+                  color: AppColors.accent,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+    await _switchAccount();
+  }
+
+  Future<void> _switchAccount() async {
+    if (_isSwitchingAccount) return;
+    setState(() => _isSwitchingAccount = true);
+    try {
+      await ref.read(appLogoutProvider)();
+    } finally {
+      if (mounted) {
+        setState(() => _isSwitchingAccount = false);
+      }
     }
   }
 
@@ -141,38 +212,63 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   error: (e, _) => Center(child: Text('Ошибка: $e')),
                   data: (categories) => Padding(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 420),
-                        child: Container(
-                          padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
-                          decoration: BoxDecoration(
-                            color: AppColors.card,
-                            borderRadius: BorderRadius.circular(22),
-                            border: Border.all(color: AppColors.cardBorder),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.35),
-                                blurRadius: 24,
-                                offset: const Offset(0, 12),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.topCenter,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 420),
+                              child: Container(
+                                width: double.infinity,
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 22, 20, 20),
+                                decoration: BoxDecoration(
+                                  color: AppColors.card,
+                                  borderRadius: BorderRadius.circular(22),
+                                  border:
+                                      Border.all(color: AppColors.cardBorder),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.35),
+                                      blurRadius: 24,
+                                      offset: const Offset(0, 12),
+                                    ),
+                                  ],
+                                ),
+                                child: PageView(
+                                  controller: _pageController,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  children: [
+                                    OnboardingStepOnePage(
+                                      categories: categories,
+                                      onContinue: _onStepOneContinue,
+                                    ),
+                                    OnboardingStepTwoPage(
+                                      onContinue: _onStepTwoContinue,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ],
-                          ),
-                          child: PageView(
-                            controller: _pageController,
-                            physics: const NeverScrollableScrollPhysics(),
-                            children: [
-                              OnboardingStepOnePage(
-                                categories: categories,
-                                onContinue: _onStepOneContinue,
-                              ),
-                              OnboardingStepTwoPage(
-                                onContinue: _onStepTwoContinue,
-                              ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 420),
+                            child: GradientButton(
+                              label: _isSwitchingAccount
+                                  ? 'Выходим…'
+                                  : 'Сменить аккаунт',
+                              onPressed: _isSwitchingAccount
+                                  ? null
+                                  : _promptSwitchAccount,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

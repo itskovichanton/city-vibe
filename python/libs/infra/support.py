@@ -21,6 +21,7 @@ from python.libs.infra.context import set_service_name
 from python.libs.infra.flags import flags
 from python.libs.infra.http_logging import DetailedHTTPLoggingMiddleware
 from python.libs.infra.idempotency import IdempotencyMiddleware
+from python.libs.infra.pipeline import patch_action_runner_callable
 from python.libs.infra.outbox import Outbox, OutboxImpl
 from python.libs.infra.request_id import HEADER, CorrelationIdMiddleware
 from python.libs.infra.s2s import S2SAuthMiddleware
@@ -41,6 +42,7 @@ class CityVibeInfraSupport:
     logger_service: LoggerService
 
     def mount(self, app: FastAPI) -> None:
+        patch_action_runner_callable()
         f = flags()
         set_service_name(f.otel_service_name)
 

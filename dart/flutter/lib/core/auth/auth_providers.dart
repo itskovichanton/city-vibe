@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:city_vibe/core/api/api_providers.dart';
 import 'package:city_vibe/core/api/models/auth_models.dart';
 import 'package:city_vibe/core/auth/auth_session.dart';
+import 'package:city_vibe/core/auth/auth_token_coordinator.dart';
 import 'package:city_vibe/core/auth/auth_token_holder.dart';
 import 'package:city_vibe/core/auth/session_guard.dart';
 import 'package:city_vibe/core/events/app_event.dart';
@@ -21,12 +23,30 @@ final authSessionProvider =
   AuthSessionNotifier.new,
 );
 
-/// Подключает [SessionGuard] к шине событий (toast + logout).
+/// Подключает [SessionGuard] и [AuthTokenCoordinator] к Riverpod.
 final sessionGuardProvider = Provider<void>((ref) {
   SessionGuard.instance.onForceLogout = (reason) {
     ref.read(appEventBusProvider).emit(AppSessionExpiredEvent(reason: reason));
   };
-  ref.onDispose(() => SessionGuard.instance.onForceLogout = null);
+
+  final coordinator = AuthTokenCoordinator.instance;
+  coordinator.persistTokens =
+      (AuthTokensDto tokens, {bool loadProfile = true, bool forceRefreshProfile = true}) {
+    return ref.read(authSessionProvider.notifier).persistTokens(
+          tokens,
+          loadProfile: loadProfile,
+          forceRefreshProfile: forceRefreshProfile,
+        );
+  };
+  coordinator.tryRefreshSession = () {
+    return ref.read(authSessionProvider.notifier).refreshPersistedTokens();
+  };
+
+  ref.onDispose(() {
+    SessionGuard.instance.onForceLogout = null;
+    coordinator.persistTokens = null;
+    coordinator.tryRefreshSession = null;
+  });
 });
 
 class AuthSessionNotifier extends AsyncNotifier<AuthSession?> {
@@ -36,10 +56,7 @@ class AuthSessionNotifier extends AsyncNotifier<AuthSession?> {
 
     AuthSession? session;
     try {
-      session = await ref
-          .read(authSessionStoreProvider)
-          .read()
-          .timeout(const Duration(seconds: 2), onTimeout: () => null);
+      session = await ref.read(authSessionStoreProvider).read();
     } catch (_) {
       session = null;
     }
@@ -56,24 +73,29 @@ class AuthSessionNotifier extends AsyncNotifier<AuthSession?> {
 
     final userId = session.userId;
     if (userId != null && session.hasAccessToken) {
-      // Cold start: кэш сразу, сеть — в фоне (не блокируем auth/router).
-      unawaited(
-        ref.read(currentUserProvider.notifier).load(
-              userId,
-              forceRefresh: false,
-            ),
-      );
+      await ref.read(currentUserProvider.notifier).load(
+            userId,
+            forceRefresh: false,
+          );
     }
 
     return session;
   }
 
-  /// После login/register verify: сохранить токены и загрузить профиль.
-  Future<void> establish(
+  /// Сохранить JWT из любого auth-ответа с [AuthTokensDto]:
+  /// - `POST /auth/register/verify`
+  /// - `POST /auth/login/verify`
+  /// - `POST /auth/token/refresh`
+  /// - `POST /auth/social/google`
+  Future<void> persistTokens(
     AuthTokensDto tokens, {
-    bool refreshProfile = true,
+    bool loadProfile = true,
+    bool forceRefreshProfile = true,
+    bool resetSessionGuard = true,
   }) async {
-    SessionGuard.instance.reset();
+    if (resetSessionGuard) {
+      SessionGuard.instance.reset();
+    }
 
     final session = AuthSession.fromTokens(tokens);
     await ref.read(authSessionStoreProvider).write(session);
@@ -81,19 +103,62 @@ class AuthSessionNotifier extends AsyncNotifier<AuthSession?> {
     state = AsyncData(session);
 
     final userId = session.userId;
-    if (userId != null && session.hasAccessToken) {
+    if (loadProfile && userId != null && session.hasAccessToken) {
       await ref.read(currentUserProvider.notifier).load(
             userId,
-            forceRefresh: refreshProfile,
+            forceRefresh: forceRefreshProfile,
           );
-      final stillLoggedIn = await ref.read(authSessionStoreProvider).read();
-      if (stillLoggedIn == null) {
-        state = const AsyncData(null);
-      }
     }
   }
 
-  Future<void> clear() async {
+  /// После OTP verify / social login.
+  Future<void> establish(
+    AuthTokensDto tokens, {
+    bool refreshProfile = true,
+  }) {
+    return persistTokens(
+      tokens,
+      forceRefreshProfile: refreshProfile,
+    );
+  }
+
+  /// `POST /auth/token/refresh` — ротация refresh + запись в secure storage.
+  Future<bool> refreshPersistedTokens() async {
+    final session =
+        state.valueOrNull ?? await ref.read(authSessionStoreProvider).read();
+    if (session == null || !session.hasRefreshToken) {
+      return false;
+    }
+
+    try {
+      final tokens = await ref.read(authClientProvider).refreshToken(
+            refreshToken: session.refreshToken,
+          );
+      await persistTokens(
+        tokens,
+        loadProfile: false,
+        forceRefreshProfile: false,
+        resetSessionGuard: false,
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Стереть JWT и профиль локально. Для UI используй [appLogoutProvider].
+  Future<void> clear({bool notifyServer = true}) async {
+    final session =
+        state.valueOrNull ?? await ref.read(authSessionStoreProvider).read();
+    final refresh = session?.refreshToken;
+    if (notifyServer && refresh != null && refresh.isNotEmpty) {
+      try {
+        await ref.read(authClientProvider).logout(refreshToken: refresh);
+      } catch (_) {
+        // Локально всё равно чистим.
+      }
+    }
+
     await ref.read(authSessionStoreProvider).clear();
     _syncTokenHolder(null);
     state = const AsyncData(null);

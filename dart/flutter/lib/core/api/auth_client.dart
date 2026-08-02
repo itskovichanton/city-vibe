@@ -2,6 +2,13 @@ import 'package:city_vibe/core/api/models/auth_models.dart';
 import 'package:city_vibe/core/network/api_http.dart';
 
 /// Auth-методы gateway (`/auth/*`). Без Dio — только через [ApiHttp].
+///
+/// Эндпоинты, возвращающие [AuthTokensDto] (access + refresh) — сохранять через
+/// [AuthSessionNotifier.persistTokens] / [AuthSessionNotifier.establish]:
+/// - [registerVerify] → `POST /auth/register/verify`
+/// - [loginVerify] → `POST /auth/login/verify`
+/// - [refreshToken] → `POST /auth/token/refresh`
+/// - [socialGoogle] → `POST /auth/social/google`
 class AuthClient {
   AuthClient(this._http);
 

@@ -50,11 +50,16 @@ final class AppTimerEvent extends AppEvent {
   final Object? payload;
 }
 
-/// Сессия завершена (logout / refresh token expired) — навигация на login.
+/// Сессия завершена (401 / BANNED / refresh expired) — навигация на login.
 final class AppSessionExpiredEvent extends AppEvent {
   const AppSessionExpiredEvent({this.reason});
 
   final String? reason;
+}
+
+/// Явный выход пользователя — навигация на login без сообщения об ошибке.
+final class AppLoggedOutEvent extends AppEvent {
+  const AppLoggedOutEvent();
 }
 
 /// Пользователь успешно залогинился / зарегистрировался.

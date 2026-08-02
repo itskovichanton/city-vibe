@@ -2,6 +2,7 @@
 library;
 
 import 'package:city_vibe/core/app/app_identity.dart';
+import 'package:city_vibe/core/auth/auth_token_coordinator.dart';
 import 'package:city_vibe/core/auth/auth_token_holder.dart';
 import 'package:city_vibe/core/auth/session_guard.dart';
 import 'package:city_vibe/core/network/api_config.dart';
@@ -32,6 +33,59 @@ class _AuthInterceptor extends Interceptor {
       options.headers['Authorization'] = 'Bearer $token';
     }
     handler.next(options);
+  }
+}
+
+/// 401 → refresh JWT → повтор запроса; иначе [SessionGuard].
+class _TokenRefreshInterceptor extends QueuedInterceptor {
+  _TokenRefreshInterceptor(this._dio);
+
+  final Dio _dio;
+
+  bool _skipRefresh(String path) {
+    return path.startsWith('/auth/login') ||
+        path.startsWith('/auth/register') ||
+        path.startsWith('/auth/token/refresh') ||
+        path.startsWith('/auth/logout') ||
+        path.contains('/auth/password/');
+  }
+
+  @override
+  Future<void> onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
+    final status = err.response?.statusCode;
+    final path = err.requestOptions.path;
+
+    if (status != 401 || _skipRefresh(path)) {
+      handler.next(err);
+      return;
+    }
+
+    final refresh = AuthTokenCoordinator.instance.tryRefreshSession;
+    if (refresh == null) {
+      handler.next(err);
+      return;
+    }
+
+    final refreshed = await refresh();
+    if (!refreshed) {
+      handler.next(err);
+      return;
+    }
+
+    try {
+      final request = err.requestOptions;
+      final token = AuthTokenHolder.instance.accessToken;
+      if (token != null && token.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      final response = await _dio.fetch<dynamic>(request);
+      handler.resolve(response);
+    } catch (_) {
+      handler.next(err);
+    }
   }
 }
 
@@ -78,6 +132,7 @@ Dio createDio({String? baseUrl, String? userAgent}) {
 
   dio.interceptors.add(_UserAgentInterceptor(ua));
   dio.interceptors.add(_AuthInterceptor());
+  dio.interceptors.add(_TokenRefreshInterceptor(dio));
   dio.interceptors.add(_SessionErrorInterceptor());
 
   if (kDebugMode) {

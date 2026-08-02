@@ -57,13 +57,79 @@ class _OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
       _selected.isNotEmpty;
 
   Future<void> _pickAvatar() async {
-    final file = await _picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1200,
-      imageQuality: 85,
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AppColors.backgroundDeep,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Text(
+                  'Фото профиля',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_camera_outlined,
+                  color: AppColors.accent,
+                ),
+                title: const Text(
+                  'Сделать фото',
+                  style: TextStyle(color: AppColors.textPrimary),
+                ),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_library_outlined,
+                  color: AppColors.accent,
+                ),
+                title: const Text(
+                  'Выбрать из галереи',
+                  style: TextStyle(color: AppColors.textPrimary),
+                ),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
     );
-    if (file == null) return;
-    setState(() => _avatarFilePath = file.path);
+    if (source == null || !mounted) return;
+    await _pickImage(source);
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final file = await _picker.pickImage(
+        source: source,
+        maxWidth: 1200,
+        imageQuality: 85,
+        preferredCameraDevice: CameraDevice.front,
+      );
+      if (file == null || !mounted) return;
+      setState(() => _avatarFilePath = file.path);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Не удалось получить фото. Проверьте доступ к камере.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Future<void> _submit() async {
@@ -138,7 +204,12 @@ class _OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
                 ),
                 TextButton(
                   onPressed: _pickAvatar,
-                  child: const Text('Загрузить фото'),
+                  child: Text(
+                    _avatarFilePath != null ||
+                            (user?.avatarUrl?.isNotEmpty ?? false)
+                        ? 'Изменить фото'
+                        : 'Добавить фото',
+                  ),
                 ),
               ],
             ),
@@ -168,6 +239,7 @@ class _OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
               return FilterChip(
                 label: Text(cat.title),
                 selected: selected,
+                showCheckmark: false,
                 onSelected: (v) {
                   setState(() {
                     if (v) {
@@ -178,7 +250,6 @@ class _OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
                   });
                 },
                 selectedColor: AppColors.accent.withValues(alpha: 0.35),
-                checkmarkColor: AppColors.accent,
                 side: BorderSide(
                   color: selected ? AppColors.accent : AppColors.fieldBorder,
                 ),

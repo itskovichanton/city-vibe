@@ -72,5 +72,7 @@
 	<string>CityVibe использует геолокацию, чтобы автоматически подставить ближайший город при регистрации.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>CityVibe нужен доступ к фото, чтобы загрузить аватар профиля.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>CityVibe нужен доступ к камере, чтобы сделать фото для аватара профиля.</string>
 </dict>
 </plist>
