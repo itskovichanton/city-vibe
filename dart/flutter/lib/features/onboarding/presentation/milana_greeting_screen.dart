@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:city_vibe/core/api/models/user_models.dart';
 import 'package:city_vibe/core/milana/milana_account.dart';
+import 'package:city_vibe/core/audio/ambient_music.dart';
 import 'package:city_vibe/core/router/app_router.dart';
 import 'package:city_vibe/core/user/user_providers.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/login_background.dart';
@@ -68,6 +71,7 @@ class MilanaGreetingScreen extends ConsumerWidget {
                       await ref
                           .read(milanaWelcomeCompletedProvider.notifier)
                           .markCompleted();
+                      unawaited(AmbientMusic.ensurePlaying());
                       if (!context.mounted) return;
                       context.go(AppRoutes.home);
                     },

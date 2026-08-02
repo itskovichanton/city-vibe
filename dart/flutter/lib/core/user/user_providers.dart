@@ -138,7 +138,7 @@ class CurrentUserNotifier extends AsyncNotifier<UserProfile?> {
   Future<UserProfile> completeOnboarding() async {
     final userId = state.value?.id;
     if (userId == null) throw StateError('Нет текущего пользователя');
-    state = const AsyncLoading();
+
     state = await AsyncValue.guard(() async {
       final repo = await _repo;
       return repo.completeOnboarding(userId);

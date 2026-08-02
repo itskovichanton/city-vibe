@@ -2,6 +2,9 @@
 library;
 
 import 'package:city_vibe/core/app/app_bootstrap_screen.dart';
+import 'dart:async';
+
+import 'package:city_vibe/core/audio/ambient_music.dart';
 import 'package:city_vibe/core/auth/auth_providers.dart';
 import 'package:city_vibe/core/user/user_providers.dart';
 import 'package:city_vibe/core/api/models/user_models.dart';
@@ -44,25 +47,29 @@ bool _isAuthorizedShellRoute(String location) {
 
 String _authorizedDestination({
   required UserProfile? user,
-  required bool welcomePending,
+  required MilanaWelcomeState welcome,
 }) {
   if (user != null && !user.onboardingCompleted) {
     return AppRoutes.onboarding;
   }
-  if (welcomePending) {
+  if (!welcome.ready) {
+    return AppRoutes.bootstrap;
+  }
+  if (welcome.pending) {
     return AppRoutes.milanaGreeting;
   }
   return AppRoutes.home;
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  ref.watch(milanaWelcomeUserSyncProvider);
   final refresh = ValueNotifier<int>(0);
   ref.listen(authSessionProvider, (_, __) => refresh.value++);
   ref.listen(currentUserProvider, (_, __) => refresh.value++);
   ref.listen(milanaWelcomeCompletedProvider, (_, __) => refresh.value++);
   ref.onDispose(refresh.dispose);
 
-  return GoRouter(
+  final router = GoRouter(
     initialLocation: AppRoutes.bootstrap,
     refreshListenable: refresh,
     redirect: (context, state) {
@@ -70,7 +77,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final location = state.matchedLocation;
       final userAsync = ref.read(currentUserProvider);
       final user = userAsync.valueOrNull;
-      final welcomePending = ref.read(milanaWelcomePendingProvider);
+      final welcome = ref.read(milanaWelcomeCompletedProvider);
 
       // Cold start: secure storage + локальный профиль — splash, не login.
       if (auth.isLoading) {
@@ -90,9 +97,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return location == AppRoutes.bootstrap ? null : AppRoutes.bootstrap;
       }
 
+      if (user != null &&
+          user.onboardingCompleted &&
+          !welcome.ready &&
+          location != AppRoutes.bootstrap) {
+        return AppRoutes.bootstrap;
+      }
+
       final authorizedDest = _authorizedDestination(
         user: user,
-        welcomePending: welcomePending,
+        welcome: welcome,
       );
 
       if (location == AppRoutes.bootstrap ||
@@ -105,7 +119,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      if (welcomePending) {
+      if (!welcome.ready) {
+        return location == AppRoutes.bootstrap ? null : AppRoutes.bootstrap;
+      }
+
+      if (welcome.pending) {
         if (location != AppRoutes.milanaGreeting) {
           return AppRoutes.milanaGreeting;
         }
@@ -181,4 +199,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       body: Center(child: Text('Страница не найдена: ${state.uri}')),
     ),
   );
+
+  router.routerDelegate.addListener(() {
+    unawaited(AmbientMusic.ensurePlaying());
+  });
+
+  return router;
 });

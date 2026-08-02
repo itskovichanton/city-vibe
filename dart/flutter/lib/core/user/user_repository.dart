@@ -104,6 +104,13 @@ class UserRepository {
   }
 
   Future<UserProfile> completeOnboarding(int userId) async {
+    final cached = await readCached();
+    if (cached != null &&
+        cached.id == userId &&
+        !cached.onboardingCompleted) {
+      await save(cached.copyWith(onboardingCompleted: true));
+    }
+
     final user = await _client.completeOnboarding(userId);
     return save(user);
   }

@@ -1,3 +1,4 @@
+import 'package:city_vibe/core/audio/ambient_music.dart';
 import 'package:city_vibe/core/auth/logout_providers.dart';
 import 'package:city_vibe/core/api/api_providers.dart';
 import 'package:city_vibe/core/network/api_exception.dart';
@@ -61,6 +62,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         await ref.read(currentUserProvider.notifier).uploadAvatar(
               filePath: avatarFilePath,
             );
+        unawaited(AmbientMusic.ensurePlaying());
       }
       await _goToStep(1);
     } on ApiException catch (e) {
@@ -144,6 +146,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       await ref.read(currentUserProvider.notifier).updateBio(longBio: longBio);
       await ref.read(currentUserProvider.notifier).completeOnboarding();
       unawaited(ref.read(milanaAccountProvider.future));
+      unawaited(AmbientMusic.ensurePlaying());
       if (!mounted) return;
       context.go(AppRoutes.milanaGreeting);
     } on ApiException catch (e) {

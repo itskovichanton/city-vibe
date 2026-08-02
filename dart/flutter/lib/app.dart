@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:city_vibe/core/audio/ambient_music.dart';
 import 'package:city_vibe/core/auth/logout_providers.dart';
 import 'package:city_vibe/core/events/app_event.dart';
 import 'package:city_vibe/core/events/event_providers.dart';
@@ -14,11 +15,36 @@ import 'package:go_router/go_router.dart';
 /// [ProviderScope] создаётся в `main.dart`.
 /// [MaterialApp.router] + [GoRouter] — декларативные маршруты.
 /// Здесь же глобальная подписка на [appEventsProvider] (ошибки, пуши, …).
-class CityVibeApp extends ConsumerWidget {
+class CityVibeApp extends ConsumerStatefulWidget {
   const CityVibeApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CityVibeApp> createState() => _CityVibeAppState();
+}
+
+class _CityVibeAppState extends ConsumerState<CityVibeApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(AmbientMusic.ensurePlaying());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
 
     ref.listen<AsyncValue<AppEvent>>(appEventsProvider, (previous, next) {
