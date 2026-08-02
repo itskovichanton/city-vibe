@@ -1,9 +1,11 @@
+import 'package:city_vibe/core/api/models/user_models.dart';
 import 'package:city_vibe/core/milana/milana_account.dart';
 import 'package:city_vibe/core/router/app_router.dart';
 import 'package:city_vibe/core/user/user_providers.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/login_background.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/scrolling_city_decor_bar.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dart';
+import 'package:city_vibe/features/chat/domain/chat_models.dart';
 import 'package:city_vibe/features/chat/presentation/widgets/chat_bubble.dart';
 import 'package:city_vibe/features/onboarding/onboarding_providers.dart';
 import 'package:city_vibe/features/onboarding/presentation/widgets/milana_hero_header.dart';
@@ -53,6 +55,7 @@ class MilanaGreetingScreen extends ConsumerWidget {
                 Expanded(
                   child: _ChatBody(
                     milana: milana,
+                    user: user,
                     timeLabel: timeLabel,
                     loadingMilana: milanaAsync.isLoading,
                   ),
@@ -87,19 +90,31 @@ class MilanaGreetingScreen extends ConsumerWidget {
 class _ChatBody extends StatelessWidget {
   const _ChatBody({
     required this.milana,
+    required this.user,
     required this.timeLabel,
     required this.loadingMilana,
   });
 
+  static const _settings = ChatDisplaySettings(
+    showAvatars: true,
+    showAuthorNames: false,
+    showCurrentUserAvatar: true,
+  );
+
   final MilanaAccount? milana;
+  final UserProfile? user;
   final String timeLabel;
   final bool loadingMilana;
 
   @override
   Widget build(BuildContext context) {
-    final milanaName = milana?.name ?? 'Милана';
-    final avatarLocalPath = milana?.avatarLocalPath;
-    final avatarStorageKey = milana?.avatarStorageKey;
+    final currentUserId = user?.id ?? 0;
+    final milanaAuthor = milana != null
+        ? ChatMessageAuthor.fromMilanaAccount(milana!)
+        : const ChatMessageAuthor(id: 40, name: 'Милана');
+    final userAuthor = user != null
+        ? ChatMessageAuthor.fromUserProfile(user!)
+        : const ChatMessageAuthor(id: 0, name: 'Вы');
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, MilanaGreetingScreen._bottomReserve),
@@ -116,28 +131,36 @@ class _ChatBody extends StatelessWidget {
             ),
           ),
         ChatBubble(
-          senderName: milanaName,
-          avatarUrl: avatarStorageKey,
-          avatarLocalPath: avatarLocalPath,
-          text:
-              'Я — $milanaName, ваш персональный гид по городу. '
-              'Я буду подбирать для вас лучшие места, события и скидки '
-              'на основе ваших интересов.',
+          message: ChatMessage(
+            author: milanaAuthor,
+            text:
+                'Я — ${milanaAuthor.name}, ваш персональный гид по городу. '
+                'Я буду подбирать для вас лучшие места, события и скидки '
+                'на основе ваших интересов.',
+          ),
+          currentUserId: currentUserId,
+          settings: _settings,
         ),
         ChatBubble(
-          isOutgoing: true,
-          showReadReceipt: true,
-          text:
-              'Отличный выбор категорий! 🎉 '
-              'Давайте вместе найдём места, которые вам точно понравятся.',
-          time: timeLabel,
+          message: ChatMessage(
+            author: userAuthor,
+            text:
+                'Привет, Милана! 🎉 '
+                'Давай вместе найдём места, которые мне точно понравятся.',
+            time: timeLabel,
+            showReadReceipt: true,
+          ),
+          currentUserId: currentUserId,
+          settings: _settings,
         ),
         ChatBubble(
-          senderName: milanaName,
-          avatarUrl: avatarStorageKey,
-          avatarLocalPath: avatarLocalPath,
-          text: 'Я рядом и готова помочь вам в любое время. Поехали? 🚀',
-          time: timeLabel,
+          message: ChatMessage(
+            author: milanaAuthor,
+            text: 'Я рядом и готова помочь вам в любое время. Поехали? 🚀',
+            time: timeLabel,
+          ),
+          currentUserId: currentUserId,
+          settings: _settings,
         ),
       ],
     );
