@@ -15,7 +15,7 @@ class UserRepository {
   final UserClient _client;
   final UserLocalStore _store;
 
-  Future<void>? _refreshInFlight;
+  Future<UserProfile>? _fetchInFlight;
 
   UserProfile? _memoryCache;
 
@@ -50,7 +50,10 @@ class UserRepository {
     return save(mutate(current));
   }
 
-  /// GET /users/{id} + сохранить. С кэшем — отдаём сразу и обновляем в фоне.
+  /// GET /users/{id} + сохранить.
+  ///
+  /// При [forceRefresh: false] и валидном кэше — только кэш (фоновый refresh в
+  /// [CurrentUserNotifier.refreshFromServer]).
   Future<UserProfile> fetchAndCache(
     int userId, {
     bool forceRefresh = false,
@@ -60,32 +63,26 @@ class UserRepository {
         cached != null &&
         cached.id == userId &&
         !cached.deleted) {
-      unawaited(_refreshFromNetwork(userId));
       return cached;
     }
 
-    return _fetchAndSave(userId);
+    return fetchFromServer(userId);
+  }
+
+  /// GET /users/{id} с сервера (401 пробрасывается наверх).
+  Future<UserProfile> fetchFromServer(int userId) {
+    final inFlight = _fetchInFlight;
+    if (inFlight != null) return inFlight;
+    final future = _fetchAndSave(userId).whenComplete(() {
+      _fetchInFlight = null;
+    });
+    _fetchInFlight = future;
+    return future;
   }
 
   Future<UserProfile> _fetchAndSave(int userId) async {
     final remote = await _client.getUser(userId);
     return save(remote);
-  }
-
-  Future<void> _refreshFromNetwork(int userId) {
-    final inFlight = _refreshInFlight;
-    if (inFlight != null) return inFlight;
-    final future = () async {
-      try {
-        await _fetchAndSave(userId);
-      } catch (_) {
-        // Тихий refresh — оставляем старый кэш.
-      }
-    }().whenComplete(() {
-      _refreshInFlight = null;
-    });
-    _refreshInFlight = future;
-    return future;
   }
 
   Future<UserProfile> updateBio(int userId, {required String longBio}) async {

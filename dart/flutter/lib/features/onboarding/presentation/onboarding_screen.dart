@@ -62,7 +62,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       }
       await _goToStep(1);
     } on ApiException catch (e) {
-      if (!mounted) return;
+      if (!mounted || e.requiresReLogin) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message), behavior: SnackBarBehavior.floating),
       );
@@ -145,7 +145,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       if (!mounted) return;
       context.go(AppRoutes.milanaGreeting);
     } on ApiException catch (e) {
-      if (!mounted) return;
+      if (!mounted || e.requiresReLogin) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message), behavior: SnackBarBehavior.floating),
       );

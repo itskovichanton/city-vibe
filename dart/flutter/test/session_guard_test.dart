@@ -62,6 +62,25 @@ void main() {
     });
   });
 
+  group('SessionGuard.handleUnauthorized', () {
+    test('401 triggers forceLogout once', () {
+      SessionGuard.instance.reset();
+      final reasons = <String>[];
+      SessionGuard.instance.onForceLogout = reasons.add;
+
+      SessionGuard.instance.handleUnauthorized(
+        ApiException(message: 'expired', statusCode: 401),
+      );
+      SessionGuard.instance.handleUnauthorized(
+        ApiException(message: 'expired', statusCode: 401),
+      );
+
+      expect(reasons, hasLength(1));
+      SessionGuard.instance.onForceLogout = null;
+      SessionGuard.instance.reset();
+    });
+  });
+
   group('SessionGuard.handleAuthHttpError', () {
     test('401 triggers forceLogout once', () {
       SessionGuard.instance.reset();

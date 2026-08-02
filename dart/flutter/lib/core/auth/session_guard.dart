@@ -1,8 +1,9 @@
 import 'package:city_vibe/core/api/models/user_models.dart';
 import 'package:city_vibe/core/network/api_exception.dart';
 
-/// Принудительный выход: 401/403, BANNED и т.п.
+/// Принудительный выход: refresh исчерпан, BANNED и т.п.
 ///
+/// HTTP 401 обрабатывается в Dio [createDio] (refresh → retry → logout).
 /// Callback регистрируется из [sessionGuardProvider] при старте приложения.
 class SessionGuard {
   SessionGuard._();
@@ -24,9 +25,19 @@ class SessionGuard {
     onForceLogout?.call(reason);
   }
 
+  /// Любой HTTP 401 — принудительный logout (базовое правило клиента).
+  void handleUnauthorized([ApiException? error]) {
+    forceLogout(
+      messageForAuthHttpError(
+        error ?? ApiException(message: '', statusCode: 401),
+      ),
+    );
+  }
+
   void handleAuthHttpError(ApiException error) {
-    final code = error.statusCode;
-    if (code == 401 || code == 403) {
+    if (error.statusCode == 401) {
+      handleUnauthorized(error);
+    } else if (error.statusCode == 403) {
       forceLogout(messageForAuthHttpError(error));
     }
   }

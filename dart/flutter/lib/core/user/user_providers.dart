@@ -4,7 +4,6 @@ import 'package:city_vibe/core/api/api_providers.dart';
 import 'package:city_vibe/core/api/models/user_models.dart';
 import 'package:city_vibe/core/auth/auth_token_holder.dart';
 import 'package:city_vibe/core/auth/session_guard.dart';
-import 'package:city_vibe/core/network/api_exception.dart';
 import 'package:city_vibe/core/user/user_local_store.dart';
 import 'package:city_vibe/core/user/user_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,6 +40,7 @@ class CurrentUserNotifier extends AsyncNotifier<UserProfile?> {
     return repo.readCached();
   }
 
+  /// Кэш для быстрого роутинга + фоновый GET /users/{id} при наличии токена.
   Future<UserProfile?> load(int userId, {bool forceRefresh = false}) async {
     final repo = await _repo;
     final hasToken = AuthTokenHolder.instance.hasAccessToken;
@@ -50,7 +50,7 @@ class CurrentUserNotifier extends AsyncNotifier<UserProfile?> {
       if (cached != null && cached.id == userId && !cached.deleted) {
         state = AsyncData(cached);
         if (hasToken) {
-          unawaited(_refreshProfile(userId, forceRefresh: false));
+          unawaited(refreshFromServer(userId));
         }
         return cached;
       }
@@ -62,30 +62,23 @@ class CurrentUserNotifier extends AsyncNotifier<UserProfile?> {
 
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      final user = await repo.fetchAndCache(userId, forceRefresh: forceRefresh);
+      final user = await repo.fetchAndCache(userId, forceRefresh: true);
       SessionGuard.instance.rejectIfBanned(user);
       return user;
     });
-    final error = state.error;
-    if (error is ApiException && error.requiresReLogin) {
-      SessionGuard.instance.handleAuthHttpError(error);
-    }
     return state.value;
   }
 
-  Future<void> _refreshProfile(int userId, {required bool forceRefresh}) async {
+  /// Фоновая синхронизация профиля с сервером (cold start и после кэша).
+  Future<void> refreshFromServer(int userId) async {
     if (!AuthTokenHolder.instance.hasAccessToken) return;
 
     state = await AsyncValue.guard(() async {
       final repo = await _repo;
-      final user = await repo.fetchAndCache(userId, forceRefresh: forceRefresh);
+      final user = await repo.fetchFromServer(userId);
       SessionGuard.instance.rejectIfBanned(user);
       return user;
     });
-    final error = state.error;
-    if (error is ApiException && error.requiresReLogin) {
-      SessionGuard.instance.handleAuthHttpError(error);
-    }
   }
 
   /// Применить профиль из ответа API (bio, avatar, onboarding…).

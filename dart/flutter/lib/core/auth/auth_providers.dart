@@ -50,6 +50,8 @@ final sessionGuardProvider = Provider<void>((ref) {
 });
 
 class AuthSessionNotifier extends AsyncNotifier<AuthSession?> {
+  Future<bool>? _refreshInFlight;
+
   @override
   Future<AuthSession?> build() async {
     ref.watch(sessionGuardProvider);
@@ -73,6 +75,7 @@ class AuthSessionNotifier extends AsyncNotifier<AuthSession?> {
 
     final userId = session.userId;
     if (userId != null && session.hasAccessToken) {
+      // Кэш для мгновенного роутинга, GET /users — в фоне (401 → logout).
       await ref.read(currentUserProvider.notifier).load(
             userId,
             forceRefresh: false,
@@ -123,7 +126,22 @@ class AuthSessionNotifier extends AsyncNotifier<AuthSession?> {
   }
 
   /// `POST /auth/token/refresh` — ротация refresh + запись в secure storage.
-  Future<bool> refreshPersistedTokens() async {
+  ///
+  /// Single-flight: параллельные 401 ждут один refresh. Logout — в Dio interceptor.
+  Future<bool> refreshPersistedTokens() {
+    final inFlight = _refreshInFlight;
+    if (inFlight != null) return inFlight;
+
+    final future = _refreshPersistedTokensImpl();
+    _refreshInFlight = future;
+    return future.whenComplete(() {
+      if (identical(_refreshInFlight, future)) {
+        _refreshInFlight = null;
+      }
+    });
+  }
+
+  Future<bool> _refreshPersistedTokensImpl() async {
     final session =
         state.valueOrNull ?? await ref.read(authSessionStoreProvider).read();
     if (session == null || !session.hasRefreshToken) {
