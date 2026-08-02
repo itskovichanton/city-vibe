@@ -46,8 +46,8 @@ def test_get_milana_account(live_backend):
     with httpx.Client(base_url=gateway, timeout=30.0) as client:
         milana = get_json(client, "/milana/account")
         assert isinstance(milana, dict)
+        assert milana.get("id") == 40
         assert milana.get("name") == "Милана"
-        assert str(milana.get("role", "")).upper() == "MILANA"
         assert milana.get("onboarding_completed") is True
 
 

@@ -154,7 +154,7 @@ class Server:
         @self.fast_api.get(
             "/users/system/milana",
             tags=["users", "system"],
-            summary="Служебный аккаунт Миланы (role=MILANA)",
+            summary="Служебный аккаунт Миланы (milana.user_id из config)",
         )
         @rate_limit("users.milana", limit=120)
         async def get_milana_account(request: Request):

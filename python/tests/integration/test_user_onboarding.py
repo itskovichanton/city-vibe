@@ -125,6 +125,7 @@ async def user_stack(postgres_container):
 
     get_milana_uc = object.__new__(GetMilanaAccountUseCaseImpl)
     get_milana_uc.user_repo = repo
+    get_milana_uc.milana_user_id = 40
 
     try:
         yield {
@@ -171,6 +172,7 @@ async def test_update_profile_name_and_categories(user_stack):
 
 async def test_get_milana_service_account(user_stack):
     milana = await user_stack["get_milana_uc"].execute()
+    assert milana.id == 40
     assert milana.name == "Милана"
     assert milana.role == UserRole.ASSISTANT
     assert milana.onboarding_completed is True

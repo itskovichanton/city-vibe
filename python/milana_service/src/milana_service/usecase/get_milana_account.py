@@ -12,9 +12,12 @@ class GetMilanaAccountUseCase(Protocol):
         ...
 
 
-@bean
+@bean(milana_user_id=("milana.user_id", int, 40))
 class GetMilanaAccountUseCaseImpl(GetMilanaAccountUseCase):
     user_client: UserServiceClient
 
+    def init(self, **kwargs):
+        self.milana_user_id = int(kwargs.get("milana_user_id") or 40)
+
     async def execute(self) -> Any:
-        return self.user_client.get_milana_account()
+        return self.user_client.get_user(self.milana_user_id)

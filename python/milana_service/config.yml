@@ -16,6 +16,7 @@ deepseek:
   timeout_sec: 90
 
 milana:
+  user_id: 40
   default_city_id: 3
   places_per_step: 5
   max_steps: 5

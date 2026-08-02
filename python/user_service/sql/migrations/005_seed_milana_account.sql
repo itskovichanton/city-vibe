@@ -1,5 +1,6 @@
--- Служебный аккаунт ИИ-гида Миланы (полноценный user с role=MILANA).
+-- Служебный аккаунт ИИ-гида Миланы (id закреплён в config milana.user_id).
 INSERT INTO users (
+    id,
     name,
     short_bio,
     long_bio,
@@ -10,16 +11,31 @@ INSERT INTO users (
     gender,
     favorite_categories
 )
-SELECT
+VALUES (
+    40,
     'Милана',
     'Ваш персональный гид по городу',
     'Я подбираю лучшие места, события и скидки на основе ваших интересов.',
     'ACTIVE',
-    'MILANA',
+    'ASSISTANT',
     TRUE,
     FALSE,
     'female'::gender,
     '{}'::varchar[]
-WHERE NOT EXISTS (
-    SELECT 1 FROM users WHERE role = 'MILANA' AND deleted = FALSE
+)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    short_bio = EXCLUDED.short_bio,
+    long_bio = EXCLUDED.long_bio,
+    status = EXCLUDED.status,
+    role = EXCLUDED.role,
+    onboarding_completed = EXCLUDED.onboarding_completed,
+    deleted = EXCLUDED.deleted,
+    gender = EXCLUDED.gender,
+    favorite_categories = EXCLUDED.favorite_categories,
+    updated_at = NOW();
+
+SELECT setval(
+    pg_get_serial_sequence('users', 'id'),
+    GREATEST((SELECT COALESCE(MAX(id), 1) FROM users), 40)
 );

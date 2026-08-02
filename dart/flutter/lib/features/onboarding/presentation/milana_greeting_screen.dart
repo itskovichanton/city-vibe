@@ -70,16 +70,7 @@ class MilanaGreetingScreen extends ConsumerWidget {
                     },
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'Я всегда с вами',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
+
               ],
             ),
           ),

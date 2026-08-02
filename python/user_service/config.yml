@@ -27,6 +27,10 @@ redis:
   host: localhost
   port: 6379
 
+# Служебный аккаунт ИИ-гида Миланы (см. sql/migrations/005_seed_milana_account.sql)
+milana:
+  user_id: 40
+
 # HTTP-клиенты к нашим микросервисам (on_mbclient_api → MBClientConfig)
 # session_token уходит как sessionToken — S2S middleware его принимает
 clients:

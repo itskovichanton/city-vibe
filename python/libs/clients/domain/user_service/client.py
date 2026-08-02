@@ -46,7 +46,7 @@ class UserServiceClient(Protocol):
         ...
 
     def get_milana_account(self) -> Any:
-        """Служебный аккаунт Миланы (role=MILANA)."""
+        """Служебный аккаунт Миланы (GET /users/system/milana, id из config user-service)."""
         ...
 
     def complete_onboarding(self, user_id: int) -> Any:

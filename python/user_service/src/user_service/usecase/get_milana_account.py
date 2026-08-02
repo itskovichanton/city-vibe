@@ -1,4 +1,4 @@
-"""Use-case: служебный аккаунт Миланы (role=MILANA)."""
+"""Use-case: служебный аккаунт Миланы (milana.user_id из config)."""
 
 from typing import Protocol
 
@@ -18,12 +18,15 @@ class GetMilanaAccountUseCase(Protocol):
         ...
 
 
-@bean
+@bean(milana_user_id=("milana.user_id", int, 40))
 class GetMilanaAccountUseCaseImpl(GetMilanaAccountUseCase):
     user_repo: UserRepo
 
+    def init(self, **kwargs):
+        self.milana_user_id = int(kwargs.get("milana_user_id") or 40)
+
     async def execute(self) -> UserResponse:
-        user = await self.user_repo.get_milana_account()
+        user = await self.user_repo.get_by_id(self.milana_user_id)
         if user is None:
             raise CoreException(
                 message="Служебный аккаунт Миланы не найден",

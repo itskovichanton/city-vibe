@@ -47,9 +47,6 @@ class UserRepo(Protocol):
     ) -> Optional[User]:
         ...
 
-    async def get_milana_account(self) -> Optional[User]:
-        ...
-
     async def complete_onboarding(self, user_id: int) -> Optional[User]:
         ...
 
@@ -136,20 +133,6 @@ class UserRepoImpl(UserRepo):
                 model.favorite_categories = [c.value for c in favorite_categories]
             await session.flush()
             await session.refresh(model)
-            return user_model_to_dto(model)
-
-    async def get_milana_account(self) -> Optional[User]:
-        async with self.db.session() as session:
-            stmt = (
-                select(UserModel)
-                .where(UserModel.deleted.is_(False))
-                .where(UserModel.role == UserRole.ASSISTANT.name)
-                .order_by(UserModel.id)
-                .limit(1)
-            )
-            model = (await session.execute(stmt)).scalar_one_or_none()
-            if model is None:
-                return None
             return user_model_to_dto(model)
 
     async def complete_onboarding(self, user_id: int) -> Optional[User]:
