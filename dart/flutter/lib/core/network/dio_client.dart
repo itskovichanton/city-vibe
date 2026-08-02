@@ -63,8 +63,9 @@ Dio createDio({String? baseUrl, String? userAgent}) {
   final dio = Dio(
     BaseOptions(
       baseUrl: baseUrl ?? ApiConfig.baseUrl,
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 60),
+      connectTimeout: ApiConfig.httpTimeout,
+      receiveTimeout: ApiConfig.httpTimeout,
+      sendTimeout: ApiConfig.httpTimeout,
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',

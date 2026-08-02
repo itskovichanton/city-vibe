@@ -18,12 +18,21 @@ class AmbientMusic {
 
   static final AudioPlayer _player = AudioPlayer();
 
-  /// Запуск при старте приложения: lofi1 по кругу.
+  /// Запуск при старте приложения: lofi2 по кругу.
   static Future<void> start() async {
     await _player.setAsset(startupTrack);
     await _player.setLoopMode(LoopMode.one);
     await _player.setVolume(0.55);
     await _player.play();
+  }
+
+  /// Не роняет приложение, если аудио-движок недоступен (эмулятор, MIUI).
+  static Future<void> startSafely() async {
+    try {
+      await start();
+    } catch (_) {
+      // ignore
+    }
   }
 
   static Future<void> stop() => _player.stop();

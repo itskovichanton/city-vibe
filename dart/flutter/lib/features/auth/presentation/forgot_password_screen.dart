@@ -420,7 +420,7 @@ class _StepIndicator extends StatelessWidget {
 
   final int current;
 
-  static const _labels = ['Пользователь', 'Проверка', 'Новый пароль'];
+  static const _labels = ['Email или телефон', 'Проверка', 'Новый пароль'];
 
   @override
   Widget build(BuildContext context) {

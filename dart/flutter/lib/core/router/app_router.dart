@@ -50,18 +50,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: AppRoutes.login,
     refreshListenable: refresh,
     redirect: (context, state) {
-      final auth = ref.read(authSessionProvider);
-      if (auth.isLoading) return null;
-
-      final session = auth.valueOrNull;
+      // Пока secure storage читается — нет сессии → login уже виден, не блокируем redirect.
+      final session = ref.read(authSessionProvider).valueOrNull;
       final location = state.matchedLocation;
 
       if (session == null) {
         return _isPublicAuthRoute(location) ? null : AppRoutes.login;
-      }
-
-      if (_isPublicAuthRoute(location)) {
-        // После OTP редирект определится по профилю ниже.
       }
 
       final user = ref.read(currentUserProvider).valueOrNull;

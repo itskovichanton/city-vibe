@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:city_vibe/core/api/api_providers.dart';
 import 'package:city_vibe/core/api/models/user_models.dart';
+import 'package:city_vibe/core/auth/auth_token_holder.dart';
 import 'package:city_vibe/core/auth/session_guard.dart';
 import 'package:city_vibe/core/network/api_exception.dart';
 import 'package:city_vibe/core/user/user_local_store.dart';
@@ -31,12 +34,48 @@ class CurrentUserNotifier extends AsyncNotifier<UserProfile?> {
 
   @override
   Future<UserProfile?> build() async {
+    if (!AuthTokenHolder.instance.hasAccessToken) {
+      return null;
+    }
     final repo = await _repo;
     return repo.readCached();
   }
 
   Future<UserProfile?> load(int userId, {bool forceRefresh = false}) async {
+    final repo = await _repo;
+    final hasToken = AuthTokenHolder.instance.hasAccessToken;
+
+    if (!forceRefresh) {
+      final cached = await repo.readCached();
+      if (cached != null && cached.id == userId && !cached.deleted) {
+        state = AsyncData(cached);
+        if (hasToken) {
+          unawaited(_refreshProfile(userId, forceRefresh: false));
+        }
+        return cached;
+      }
+    }
+
+    if (!hasToken) {
+      return state.value;
+    }
+
     state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final user = await repo.fetchAndCache(userId, forceRefresh: forceRefresh);
+      SessionGuard.instance.rejectIfBanned(user);
+      return user;
+    });
+    final error = state.error;
+    if (error is ApiException && error.requiresReLogin) {
+      SessionGuard.instance.handleAuthHttpError(error);
+    }
+    return state.value;
+  }
+
+  Future<void> _refreshProfile(int userId, {required bool forceRefresh}) async {
+    if (!AuthTokenHolder.instance.hasAccessToken) return;
+
     state = await AsyncValue.guard(() async {
       final repo = await _repo;
       final user = await repo.fetchAndCache(userId, forceRefresh: forceRefresh);
@@ -47,7 +86,6 @@ class CurrentUserNotifier extends AsyncNotifier<UserProfile?> {
     if (error is ApiException && error.requiresReLogin) {
       SessionGuard.instance.handleAuthHttpError(error);
     }
-    return state.value;
   }
 
   /// Применить профиль из ответа API (bio, avatar, onboarding…).

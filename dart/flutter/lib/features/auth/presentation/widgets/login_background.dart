@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class LoginBackground extends StatelessWidget {
   const LoginBackground({super.key});
 
-  static const assetPath = 'assets/images/login_bg.png';
+  static const assetPath = 'assets/images/bg.png';
 
   @override
   Widget build(BuildContext context) {

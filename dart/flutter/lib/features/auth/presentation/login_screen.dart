@@ -140,7 +140,7 @@ class _BrandHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Эмблема уже на login_bg.png — здесь только название и слоган.
+    // Эмблема на bg.png — здесь только название и слоган.
     return Column(
       children: [
         const SizedBox(height: 88),

@@ -34,19 +34,35 @@ class AuthSessionNotifier extends AsyncNotifier<AuthSession?> {
   Future<AuthSession?> build() async {
     ref.watch(sessionGuardProvider);
 
-    final session = await ref.read(authSessionStoreProvider).read();
+    AuthSession? session;
+    try {
+      session = await ref
+          .read(authSessionStoreProvider)
+          .read()
+          .timeout(const Duration(seconds: 2), onTimeout: () => null);
+    } catch (_) {
+      session = null;
+    }
+
     _syncTokenHolder(session);
-    if (session == null) return null;
+
+    if (session == null || !session.isAuthorized) {
+      if (session != null && !session.isAuthorized) {
+        unawaited(ref.read(authSessionStoreProvider).clear());
+        _syncTokenHolder(null);
+      }
+      return null;
+    }
 
     final userId = session.userId;
-    if (userId != null) {
-      // Cold start: всегда свежий профиль с сервера.
-      await ref.read(currentUserProvider.notifier).load(
-            userId,
-            forceRefresh: true,
-          );
-      final stillLoggedIn = await ref.read(authSessionStoreProvider).read();
-      if (stillLoggedIn == null) return null;
+    if (userId != null && session.hasAccessToken) {
+      // Cold start: кэш сразу, сеть — в фоне (не блокируем auth/router).
+      unawaited(
+        ref.read(currentUserProvider.notifier).load(
+              userId,
+              forceRefresh: false,
+            ),
+      );
     }
 
     return session;
@@ -65,7 +81,7 @@ class AuthSessionNotifier extends AsyncNotifier<AuthSession?> {
     state = AsyncData(session);
 
     final userId = session.userId;
-    if (userId != null) {
+    if (userId != null && session.hasAccessToken) {
       await ref.read(currentUserProvider.notifier).load(
             userId,
             forceRefresh: refreshProfile,
@@ -86,6 +102,8 @@ class AuthSessionNotifier extends AsyncNotifier<AuthSession?> {
   }
 
   void _syncTokenHolder(AuthSession? session) {
-    AuthTokenHolder.instance.accessToken = session?.accessToken;
+    final token = session?.accessToken;
+    AuthTokenHolder.instance.accessToken =
+        (token != null && token.isNotEmpty) ? token : null;
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:city_vibe/core/api/models/auth_models.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 const _kAccessToken = 'cityvibe.auth.access_token';
@@ -24,6 +25,12 @@ class AuthSession {
   final int expiresIn;
   final int? userId;
   final int? accountId;
+
+  bool get hasAccessToken => accessToken.isNotEmpty;
+
+  bool get hasRefreshToken => refreshToken.isNotEmpty;
+
+  bool get isAuthorized => hasAccessToken && hasRefreshToken;
 
   factory AuthSession.fromTokens(AuthTokensDto tokens) {
     return AuthSession(
@@ -64,30 +71,44 @@ abstract class AuthSessionStore {
 
 class SecureAuthSessionStore implements AuthSessionStore {
   SecureAuthSessionStore([FlutterSecureStorage? storage])
-      : _storage = storage ??
-            const FlutterSecureStorage(
-              aOptions: AndroidOptions(encryptedSharedPreferences: true),
-            );
+      : _storage = storage ?? _defaultStorage;
+
+  /// Без EncryptedSharedPreferences — стабильнее на MIUI/Redmi.
+  static const _defaultStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(resetOnError: true),
+  );
 
   final FlutterSecureStorage _storage;
 
   @override
   Future<AuthSession?> read() async {
-    final access = await _storage.read(key: _kAccessToken);
-    final refresh = await _storage.read(key: _kRefreshToken);
-    if (access == null || refresh == null) return null;
+    try {
+      final access = await _storage.read(key: _kAccessToken);
+      if (access == null || access.isEmpty) {
+        return null;
+      }
 
-    final userIdRaw = await _storage.read(key: _kUserId);
-    final accountIdRaw = await _storage.read(key: _kAccountId);
-    final expiresRaw = await _storage.read(key: _kExpiresIn);
+      final refresh = await _storage.read(key: _kRefreshToken);
+      if (refresh == null || refresh.isEmpty) {
+        return null;
+      }
 
-    return AuthSession(
-      accessToken: access,
-      refreshToken: refresh,
-      expiresIn: int.tryParse(expiresRaw ?? '') ?? 900,
-      userId: userIdRaw != null ? int.tryParse(userIdRaw) : null,
-      accountId: accountIdRaw != null ? int.tryParse(accountIdRaw) : null,
-    );
+      final userIdRaw = await _storage.read(key: _kUserId);
+      final accountIdRaw = await _storage.read(key: _kAccountId);
+      final expiresRaw = await _storage.read(key: _kExpiresIn);
+
+      return AuthSession(
+        accessToken: access,
+        refreshToken: refresh,
+        expiresIn: int.tryParse(expiresRaw ?? '') ?? 900,
+        userId: userIdRaw != null ? int.tryParse(userIdRaw) : null,
+        accountId: accountIdRaw != null ? int.tryParse(accountIdRaw) : null,
+      );
+    } on PlatformException {
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -118,13 +139,18 @@ class SecureAuthSessionStore implements AuthSessionStore {
 
   @override
   Future<void> clear() async {
-    await _storage.delete(key: _kAccessToken);
-    await _storage.delete(key: _kRefreshToken);
-    await _storage.delete(key: _kUserId);
-    await _storage.delete(key: _kAccountId);
-    await _storage.delete(key: _kExpiresIn);
+    try {
+      await _storage.delete(key: _kAccessToken);
+      await _storage.delete(key: _kRefreshToken);
+      await _storage.delete(key: _kUserId);
+      await _storage.delete(key: _kAccountId);
+      await _storage.delete(key: _kExpiresIn);
+    } on PlatformException {
+      // ignore
+    } catch (_) {
+      // ignore
+    }
   }
 }
 
-/// JSON snapshot для отладки / миграций (не используется в prod path).
 String encodeAuthSession(AuthSession session) => jsonEncode(session.toJson());

@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Глобальная тема MaterialApp.
-///
-/// ThemeData — «скин» всего приложения: цвета, шрифты, стили кнопок по умолчанию.
-/// Экраны могут переопределять стили локально, но база живёт здесь.
 ThemeData buildAppTheme() {
-  // Базовая тёмная тема Material 3.
   final base = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
@@ -18,20 +14,16 @@ ThemeData buildAppTheme() {
     ),
   );
 
-  // google_fonts подгружает TTF при первом запуске (нужен интернет один раз /
-  // либо кэш). Pacifico ≈ рукописный логотип с макета.
   final display = GoogleFonts.pacificoTextTheme(base.textTheme);
   final body = GoogleFonts.interTextTheme(base.textTheme);
 
   return base.copyWith(
     textTheme: body.copyWith(
-      // Крупный бренд «CityVibe».
       displayLarge: display.displayLarge?.copyWith(
         color: AppColors.textPrimary,
         fontSize: 42,
         height: 1.1,
         shadows: const [
-          // Лёгкое «neon glow», как на макете.
           Shadow(color: AppColors.accent, blurRadius: 18),
           Shadow(color: Colors.white24, blurRadius: 4),
         ],

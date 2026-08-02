@@ -94,92 +94,92 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           SafeArea(
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 4, 16, 0),
-                  child: Row(
-                    children: [
-                      if (_step > 0)
-                        IconButton(
-                          onPressed: () => _goToStep(_step - 1),
-                          icon: const Icon(Icons.chevron_left_rounded, size: 32),
-                          color: AppColors.textPrimary,
-                        )
-                      else
-                        const SizedBox(width: 48),
-                      Expanded(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(2, (i) {
-                            final active = i <= _step;
-                            return Container(
-                              width: i == _step ? 28 : 18,
-                              height: 4,
-                              margin: const EdgeInsets.symmetric(horizontal: 3),
-                              decoration: BoxDecoration(
-                                color: active
-                                    ? AppColors.accent
-                                    : AppColors.fieldBorder,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            );
-                          }),
-                        ),
-                      ),
-                      Text(
-                        '${_step + 1} из 2',
-                        style: textTheme.labelMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: categoriesAsync.when(
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (e, _) => Center(child: Text('Ошибка: $e')),
-                    data: (categories) => Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 420),
-                          child: Container(
-                            padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 4, 16, 0),
+                child: Row(
+                  children: [
+                    if (_step > 0)
+                      IconButton(
+                        onPressed: () => _goToStep(_step - 1),
+                        icon: const Icon(Icons.chevron_left_rounded, size: 32),
+                        color: AppColors.textPrimary,
+                      )
+                    else
+                      const SizedBox(width: 48),
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(2, (i) {
+                          final active = i <= _step;
+                          return Container(
+                            width: i == _step ? 28 : 18,
+                            height: 4,
+                            margin: const EdgeInsets.symmetric(horizontal: 3),
                             decoration: BoxDecoration(
-                              color: AppColors.card,
-                              borderRadius: BorderRadius.circular(22),
-                              border: Border.all(color: AppColors.cardBorder),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.35),
-                                  blurRadius: 24,
-                                  offset: const Offset(0, 12),
-                                ),
-                              ],
+                              color: active
+                                  ? AppColors.accent
+                                  : AppColors.fieldBorder,
+                              borderRadius: BorderRadius.circular(4),
                             ),
-                            child: PageView(
-                              controller: _pageController,
-                              physics: const NeverScrollableScrollPhysics(),
-                              children: [
-                                OnboardingStepOnePage(
-                                  categories: categories,
-                                  onContinue: _onStepOneContinue,
-                                ),
-                                OnboardingStepTwoPage(
-                                  onContinue: _onStepTwoContinue,
-                                ),
-                              ],
-                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                    Text(
+                      '${_step + 1} из 2',
+                      style: textTheme.labelMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: categoriesAsync.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Center(child: Text('Ошибка: $e')),
+                  data: (categories) => Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: Container(
+                          padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
+                          decoration: BoxDecoration(
+                            color: AppColors.card,
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(color: AppColors.cardBorder),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.35),
+                                blurRadius: 24,
+                                offset: const Offset(0, 12),
+                              ),
+                            ],
+                          ),
+                          child: PageView(
+                            controller: _pageController,
+                            physics: const NeverScrollableScrollPhysics(),
+                            children: [
+                              OnboardingStepOnePage(
+                                categories: categories,
+                                onContinue: _onStepOneContinue,
+                              ),
+                              OnboardingStepTwoPage(
+                                onContinue: _onStepTwoContinue,
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+        ),
           const Align(
             alignment: Alignment.bottomCenter,
             child: ScrollingCityDecorBar(),

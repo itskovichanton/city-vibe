@@ -372,7 +372,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         constraints: const BoxConstraints(maxWidth: 420),
                         child: Column(
                           children: [
-                            // Место под эмблему на login_bg.png.
+                            // Место под эмблему на bg.png.
                             const SizedBox(height: 56),
                             Text('Регистрация', style: textTheme.headlineMedium),
                             const SizedBox(height: 8),

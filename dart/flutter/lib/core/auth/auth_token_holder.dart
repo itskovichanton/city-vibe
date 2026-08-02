@@ -7,4 +7,7 @@ class AuthTokenHolder {
   static final AuthTokenHolder instance = AuthTokenHolder._();
 
   String? accessToken;
+
+  bool get hasAccessToken =>
+      accessToken != null && accessToken!.trim().isNotEmpty;
 }

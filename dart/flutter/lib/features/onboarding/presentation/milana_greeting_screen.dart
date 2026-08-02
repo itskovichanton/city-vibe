@@ -1,8 +1,8 @@
 import 'package:city_vibe/core/router/app_router.dart';
 import 'package:city_vibe/core/user/user_providers.dart';
-import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/login_background.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/scrolling_city_decor_bar.dart';
+import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dart';
 import 'package:city_vibe/features/chat/presentation/widgets/chat_bubble.dart';
 import 'package:city_vibe/features/onboarding/onboarding_providers.dart';
 import 'package:city_vibe/theme/app_colors.dart';
@@ -29,50 +29,50 @@ class MilanaGreetingScreen extends ConsumerWidget {
           SafeArea(
             child: Column(
               children: [
-                const SizedBox(height: 12),
-                Text(
-                  'Привет, $userName! 👋',
-                  style: textTheme.headlineMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: milanaAsync.when(
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (_, __) => _ChatBody(
-                      milanaName: 'Милана',
-                      milanaAvatarUrl: null,
-                      userName: userName,
-                    ),
-                    data: (milana) => _ChatBody(
-                      milanaName: milana.name,
-                      milanaAvatarUrl: milana.avatarUrl,
-                      userName: userName,
-                    ),
+              const SizedBox(height: 12),
+              Text(
+                'Привет, $userName! 👋',
+                style: textTheme.headlineMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: milanaAsync.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (_, __) => _ChatBody(
+                    milanaName: 'Милана',
+                    milanaAvatarUrl: null,
+                    userName: userName,
+                  ),
+                  data: (milana) => _ChatBody(
+                    milanaName: milana.name,
+                    milanaAvatarUrl: milana.avatarUrl,
+                    userName: userName,
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
-                  child: GradientButton(
-                    label: 'Начать путешествие с Миланой',
-                    onPressed: () {
-                      ref.read(milanaWelcomePendingProvider.notifier).state =
-                          false;
-                      context.go(AppRoutes.home);
-                    },
-                  ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+                child: GradientButton(
+                  label: 'Начать путешествие с Миланой',
+                  onPressed: () {
+                    ref.read(milanaWelcomePendingProvider.notifier).state =
+                        false;
+                    context.go(AppRoutes.home);
+                  },
                 ),
-                Text(
-                  'Я всегда с вами',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+              ),
+              Text(
+                'Я всегда с вами',
+                style: textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
                 ),
-                const SizedBox(height: 8),
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
+            ],
           ),
+        ),
           const Align(
             alignment: Alignment.bottomCenter,
             child: ScrollingCityDecorBar(),

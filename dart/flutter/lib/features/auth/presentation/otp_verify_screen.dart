@@ -214,241 +214,240 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
           SafeArea(
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: IconButton(
-                      onPressed: () => context.pop(),
-                      tooltip: 'Назад',
-                      icon: const Icon(Icons.chevron_left_rounded, size: 32),
-                      color: AppColors.textPrimary,
-                    ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    onPressed: () => context.pop(),
+                    tooltip: 'Назад',
+                    icon: const Icon(Icons.chevron_left_rounded, size: 32),
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                Expanded(
-                  child: Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 180),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 420),
-                        child: Column(
-                          children: [
-                            const SizedBox(height: 40),
-                            Text(
-                              'Двухфакторная аутентификация',
-                              textAlign: TextAlign.center,
-                              style: textTheme.headlineMedium,
+              ),
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 180),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 40),
+                          Text(
+                            'Двухфакторная аутентификация',
+                            textAlign: TextAlign.center,
+                            style: textTheme.headlineMedium,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            _headerSubtitle,
+                            textAlign: TextAlign.center,
+                            style: textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 24),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
+                            decoration: BoxDecoration(
+                              color: AppColors.card,
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(color: AppColors.cardBorder),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.35),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 12),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 10),
-                            Text(
-                              _headerSubtitle,
-                              textAlign: TextAlign.center,
-                              style: textTheme.bodyMedium,
-                            ),
-                            const SizedBox(height: 24),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
-                              decoration: BoxDecoration(
-                                color: AppColors.card,
-                                borderRadius: BorderRadius.circular(22),
-                                border: Border.all(color: AppColors.cardBorder),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.35),
-                                    blurRadius: 24,
-                                    offset: const Offset(0, 12),
+                            child: Column(
+                              children: [
+                                Container(
+                                  width: 56,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accent.withValues(alpha: 0.18),
+                                    shape: BoxShape.circle,
                                   ),
-                                ],
-                              ),
-                              child: Column(
-                                children: [
-                                  Container(
-                                    width: 56,
-                                    height: 56,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.accent.withValues(alpha: 0.18),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      _challenge.channel == 'sms'
-                                          ? Icons.sms_outlined
-                                          : Icons.mail_outline_rounded,
-                                      color: AppColors.accent,
-                                      size: 28,
-                                    ),
+                                  child: Icon(
+                                    _challenge.channel == 'sms'
+                                        ? Icons.sms_outlined
+                                        : Icons.mail_outline_rounded,
+                                    color: AppColors.accent,
+                                    size: 28,
                                   ),
-                                  const SizedBox(height: 14),
-                                  Text(
-                                    _channelTitle,
-                                    style: textTheme.headlineMedium?.copyWith(
-                                      fontSize: 18,
-                                    ),
+                                ),
+                                const SizedBox(height: 14),
+                                Text(
+                                  _channelTitle,
+                                  style: textTheme.headlineMedium?.copyWith(
+                                    fontSize: 18,
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    _sentAtLabel,
-                                    style: textTheme.bodyMedium?.copyWith(
-                                      fontSize: 12,
-                                    ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  _sentAtLabel,
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    fontSize: 12,
                                   ),
-                                  const SizedBox(height: 20),
-                                  // Скрытое поле + визуальные 6 ячеек.
-                                  Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: List.generate(6, (i) {
-                                          final ch = digits[i].trim();
-                                          final filled =
-                                              ch.isNotEmpty && ch != ' ';
-                                          final focused =
-                                              _focusNode.hasFocus &&
-                                              _codeController.text.length == i;
-                                          return Container(
-                                            width: 44,
-                                            height: 52,
-                                            alignment: Alignment.center,
-                                            decoration: BoxDecoration(
-                                              color: AppColors.fieldFill,
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              border: Border.all(
-                                                color: focused || filled
-                                                    ? AppColors.accent
-                                                    : AppColors.fieldBorder,
-                                                width: focused ? 1.6 : 1,
-                                              ),
+                                ),
+                                const SizedBox(height: 20),
+                                Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: List.generate(6, (i) {
+                                        final ch = digits[i].trim();
+                                        final filled =
+                                            ch.isNotEmpty && ch != ' ';
+                                        final focused =
+                                            _focusNode.hasFocus &&
+                                            _codeController.text.length == i;
+                                        return Container(
+                                          width: 44,
+                                          height: 52,
+                                          alignment: Alignment.center,
+                                          decoration: BoxDecoration(
+                                            color: AppColors.fieldFill,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: focused || filled
+                                                  ? AppColors.accent
+                                                  : AppColors.fieldBorder,
+                                              width: focused ? 1.6 : 1,
                                             ),
-                                            child: Text(
-                                              filled ? ch : '',
-                                              style: const TextStyle(
-                                                color: AppColors.textPrimary,
-                                                fontSize: 22,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          );
-                                        }),
-                                      ),
-                                      Opacity(
-                                        opacity: 0.01,
-                                        child: TextField(
-                                          controller: _codeController,
-                                          focusNode: _focusNode,
-                                          keyboardType: TextInputType.number,
-                                          maxLength: 6,
-                                          autofillHints: const [
-                                            AutofillHints.oneTimeCode,
-                                          ],
-                                          inputFormatters: [
-                                            FilteringTextInputFormatter
-                                                .digitsOnly,
-                                          ],
-                                          decoration: const InputDecoration(
-                                            counterText: '',
-                                            border: InputBorder.none,
                                           ),
-                                          onChanged: (_) => setState(() {}),
-                                          onSubmitted: (_) => _onConfirm(),
+                                          child: Text(
+                                            filled ? ch : '',
+                                            style: const TextStyle(
+                                              color: AppColors.textPrimary,
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                    ),
+                                    Opacity(
+                                      opacity: 0.01,
+                                      child: TextField(
+                                        controller: _codeController,
+                                        focusNode: _focusNode,
+                                        keyboardType: TextInputType.number,
+                                        maxLength: 6,
+                                        autofillHints: const [
+                                          AutofillHints.oneTimeCode,
+                                        ],
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter
+                                              .digitsOnly,
+                                        ],
+                                        decoration: const InputDecoration(
+                                          counterText: '',
+                                          border: InputBorder.none,
+                                        ),
+                                        onChanged: (_) => setState(() {}),
+                                        onSubmitted: (_) => _onConfirm(),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                Text.rich(
+                                  TextSpan(
+                                    style: textTheme.bodyMedium
+                                        ?.copyWith(fontSize: 13),
+                                    children: [
+                                      const TextSpan(
+                                        text: 'Код действителен еще ',
+                                      ),
+                                      TextSpan(
+                                        text: _timerLabel,
+                                        style: const TextStyle(
+                                          color: AppColors.accent,
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 14),
-                                  Text.rich(
-                                    TextSpan(
-                                      style: textTheme.bodyMedium
-                                          ?.copyWith(fontSize: 13),
-                                      children: [
-                                        const TextSpan(
-                                          text: 'Код действителен еще ',
-                                        ),
-                                        TextSpan(
-                                          text: _timerLabel,
-                                          style: const TextStyle(
-                                            color: AppColors.accent,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 18),
-                                  GradientButton(
-                                    label: _submitting
-                                        ? 'Проверяем…'
-                                        : 'Подтвердить',
-                                    onPressed: _canConfirm ? _onConfirm : null,
-                                  ),
-                                  const SizedBox(height: 14),
-                                  Text.rich(
-                                    TextSpan(
-                                      style: textTheme.bodyMedium
-                                          ?.copyWith(fontSize: 13),
-                                      children: [
-                                        const TextSpan(
-                                          text: 'Не получили код? ',
-                                        ),
-                                        WidgetSpan(
-                                          alignment:
-                                              PlaceholderAlignment.baseline,
-                                          baseline: TextBaseline.alphabetic,
-                                          child: GestureDetector(
-                                            onTap: _resending ? null : _onResend,
-                                            child: Text(
-                                              _resending
-                                                  ? 'Отправляем…'
-                                                  : 'Отправить повторно',
-                                              style: TextStyle(
-                                                color: _resending
-                                                    ? AppColors.textSecondary
-                                                    : AppColors.accent,
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 13,
-                                              ),
+                                ),
+                                const SizedBox(height: 18),
+                                GradientButton(
+                                  label: _submitting
+                                      ? 'Проверяем…'
+                                      : 'Подтвердить',
+                                  onPressed: _canConfirm ? _onConfirm : null,
+                                ),
+                                const SizedBox(height: 14),
+                                Text.rich(
+                                  TextSpan(
+                                    style: textTheme.bodyMedium
+                                        ?.copyWith(fontSize: 13),
+                                    children: [
+                                      const TextSpan(
+                                        text: 'Не получили код? ',
+                                      ),
+                                      WidgetSpan(
+                                        alignment:
+                                            PlaceholderAlignment.baseline,
+                                        baseline: TextBaseline.alphabetic,
+                                        child: GestureDetector(
+                                          onTap: _resending ? null : _onResend,
+                                          child: Text(
+                                            _resending
+                                                ? 'Отправляем…'
+                                                : 'Отправить повторно',
+                                            style: TextStyle(
+                                              color: _resending
+                                                  ? AppColors.textSecondary
+                                                  : AppColors.accent,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 13,
                                             ),
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.verified_user_outlined,
-                                  size: 18,
-                                  color: AppColors.accent.withValues(alpha: 0.9),
-                                ),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(
-                                    'Это дополнительный уровень защиты вашего аккаунта',
-                                    textAlign: TextAlign.center,
-                                    style: textTheme.bodyMedium?.copyWith(
-                                      fontSize: 12,
-                                    ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.verified_user_outlined,
+                                size: 18,
+                                color: AppColors.accent.withValues(alpha: 0.9),
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  'Это дополнительный уровень защиты вашего аккаунта',
+                                  textAlign: TextAlign.center,
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+        ),
           const Align(
             alignment: Alignment.bottomCenter,
             child: ScrollingCityDecorBar(),

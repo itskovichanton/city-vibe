@@ -1,14 +1,11 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
-import 'package:city_vibe/core/device/device_capability.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 /// Нижняя декоративная полоса: контейнер зафиксирован у низа экрана,
 /// а бесшовная картинка города едет с постоянной скоростью слева направо.
-///
-/// На слабых устройствах ([isWeakDevice]) анимация отключена — статичный кадр.
 ///
 /// Рисуем одну декодированную [ui.Image] многократно подряд
 /// (`… | city | city | city | …`), чтобы ширины экрана всегда хватало.
@@ -34,19 +31,15 @@ class _ScrollingCityDecorBarState extends State<ScrollingCityDecorBar>
   Ticker? _ticker;
   late final _ScrollPhase _phase;
   ui.Image? _image;
-  late final bool _animate;
 
   @override
   void initState() {
     super.initState();
     _phase = _ScrollPhase();
-    _animate = !isWeakDevice();
-    if (_animate) {
-      _ticker = createTicker((elapsed) {
-        // Линейный рост времени → одинаковая скорость; стык через % в painter.
-        _phase.value = elapsed.inMicroseconds / 1e6 * widget.speed;
-      })..start();
-    }
+    _ticker = createTicker((elapsed) {
+      // Линейный рост времени → одинаковая скорость; стык через % в painter.
+      _phase.value = elapsed.inMicroseconds / 1e6 * widget.speed;
+    })..start();
     _loadImage();
   }
 
@@ -101,10 +94,9 @@ class _ScrollingCityDecorBarState extends State<ScrollingCityDecorBar>
                     image: image,
                     phase: _phase,
                     leftToRight: true,
-                    animate: _animate,
                   ),
                   isComplex: true,
-                  willChange: _animate,
+                  willChange: true,
                 ),
               ),
       ),
@@ -130,13 +122,11 @@ class _SeamlessCityPainter extends CustomPainter {
     required this.image,
     required this.phase,
     required this.leftToRight,
-    required this.animate,
-  }) : super(repaint: animate ? phase : null);
+  }) : super(repaint: phase);
 
   final ui.Image image;
   final _ScrollPhase phase;
   final bool leftToRight;
-  final bool animate;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -147,8 +137,7 @@ class _SeamlessCityPainter extends CustomPainter {
     if (tileW <= 0) return;
 
     // Фаза внутри одной плитки — непрерывная, без прыжка на цикле.
-    // На слабых устройствах phase.value == 0 → статичный город.
-    final scrolled = animate ? (phase.value % tileW) : 0.0;
+    final scrolled = phase.value % tileW;
 
     // LTR: содержимое уезжает вправо.
     // Слева всегда дорисовываем предыдущую копию той же картинки.
@@ -156,7 +145,7 @@ class _SeamlessCityPainter extends CustomPainter {
 
     final paint = Paint()
       ..isAntiAlias = true
-      ..filterQuality = animate ? FilterQuality.medium : FilterQuality.low;
+      ..filterQuality = FilterQuality.medium;
 
     final src = Rect.fromLTWH(
       0,
@@ -179,7 +168,6 @@ class _SeamlessCityPainter extends CustomPainter {
   bool shouldRepaint(covariant _SeamlessCityPainter oldDelegate) {
     return oldDelegate.image != image ||
         oldDelegate.leftToRight != leftToRight ||
-        oldDelegate.animate != animate ||
         oldDelegate.phase != phase;
   }
 }
