@@ -1,6 +1,8 @@
 import 'package:city_vibe/core/auth/logout_providers.dart';
 import 'package:city_vibe/core/api/api_providers.dart';
 import 'package:city_vibe/core/network/api_exception.dart';
+import 'dart:async';
+
 import 'package:city_vibe/core/router/app_router.dart';
 import 'package:city_vibe/core/user/user_providers.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dart';
@@ -141,7 +143,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     try {
       await ref.read(currentUserProvider.notifier).updateBio(longBio: longBio);
       await ref.read(currentUserProvider.notifier).completeOnboarding();
-      ref.read(milanaWelcomePendingProvider.notifier).state = true;
+      unawaited(ref.read(milanaAccountProvider.future));
       if (!mounted) return;
       context.go(AppRoutes.milanaGreeting);
     } on ApiException catch (e) {

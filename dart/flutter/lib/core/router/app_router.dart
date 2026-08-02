@@ -10,7 +10,7 @@ import 'package:city_vibe/features/auth/presentation/login_screen.dart';
 import 'package:city_vibe/features/auth/presentation/otp_verify_screen.dart';
 import 'package:city_vibe/features/auth/presentation/register_screen.dart';
 import 'package:city_vibe/features/home/presentation/home_screen.dart';
-import 'package:city_vibe/features/onboarding/onboarding_providers.dart';
+import 'package:city_vibe/features/onboarding/milana_welcome_pending.dart';
 import 'package:city_vibe/features/onboarding/presentation/milana_greeting_screen.dart';
 import 'package:city_vibe/features/onboarding/presentation/onboarding_screen.dart';
 import 'package:flutter/material.dart';
@@ -59,7 +59,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   ref.listen(authSessionProvider, (_, __) => refresh.value++);
   ref.listen(currentUserProvider, (_, __) => refresh.value++);
-  ref.listen(milanaWelcomePendingProvider, (_, __) => refresh.value++);
+  ref.listen(milanaWelcomeCompletedProvider, (_, __) => refresh.value++);
   ref.onDispose(refresh.dispose);
 
   return GoRouter(

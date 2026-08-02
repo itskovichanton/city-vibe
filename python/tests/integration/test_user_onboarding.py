@@ -172,7 +172,7 @@ async def test_update_profile_name_and_categories(user_stack):
 async def test_get_milana_service_account(user_stack):
     milana = await user_stack["get_milana_uc"].execute()
     assert milana.name == "Милана"
-    assert milana.role == UserRole.MILANA
+    assert milana.role == UserRole.ASSISTANT
     assert milana.onboarding_completed is True
 
 

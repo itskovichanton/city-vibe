@@ -113,8 +113,8 @@ class _OnboardingStepTwoPageState extends ConsumerState<OnboardingStepTwoPage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Чем больше вы расскажете о себе, тем точнее ИИ-Ассистент Милана '
-                    'подберёт места и события под ваши интересы.',
+                    'Чем больше Вы расскажете о себе, тем точнее ИИ-Ассистент Милана '
+                    'подберёт места и события под Ваши интересы.',
                     style: textTheme.bodySmall,
                   ),
                 ),

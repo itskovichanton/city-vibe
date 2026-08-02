@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:city_vibe/core/network/media_url_resolver.dart';
 import 'package:city_vibe/theme/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -10,19 +13,24 @@ class ChatBubble extends StatelessWidget {
     this.isOutgoing = false,
     this.senderName,
     this.avatarUrl,
+    this.avatarLocalPath,
     this.time,
+    this.showReadReceipt = false,
   });
 
   final String text;
   final bool isOutgoing;
   final String? senderName;
   final String? avatarUrl;
+  final String? avatarLocalPath;
   final String? time;
+  final bool showReadReceipt;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final imageUrl = MediaUrlResolver.resolve(avatarUrl);
+    final localAvatar = avatarLocalPath;
     final bubbleColor = isOutgoing
         ? AppColors.accent.withValues(alpha: 0.35)
         : AppColors.card;
@@ -59,11 +67,13 @@ class ChatBubble extends StatelessWidget {
                 CircleAvatar(
                   radius: 16,
                   backgroundColor: AppColors.accent.withValues(alpha: 0.25),
-                  backgroundImage:
-                      imageUrl != null ? NetworkImage(imageUrl) : null,
-                  child: imageUrl == null
-                      ? Icon(Icons.smart_toy_outlined,
-                          size: 18, color: AppColors.accent)
+                  backgroundImage: _avatarImage(localAvatar, imageUrl),
+                  child: _avatarImage(localAvatar, imageUrl) == null
+                      ? Icon(
+                          Icons.smart_toy_outlined,
+                          size: 18,
+                          color: AppColors.accent,
+                        )
                       : null,
                 ),
                 const SizedBox(width: 8),
@@ -89,12 +99,27 @@ class ChatBubble extends StatelessWidget {
                         const SizedBox(height: 6),
                         Align(
                           alignment: Alignment.bottomRight,
-                          child: Text(
-                            time!,
-                            style: textTheme.labelSmall?.copyWith(
-                              color: AppColors.textSecondary,
-                              fontSize: 11,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                time!,
+                                style: textTheme.labelSmall?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              if (showReadReceipt) ...[
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.done_all_rounded,
+                                  size: 14,
+                                  color: Colors.lightBlueAccent.withValues(
+                                    alpha: 0.9,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                       ],
@@ -107,5 +132,17 @@ class ChatBubble extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  ImageProvider? _avatarImage(String? localPath, String? remoteUrl) {
+    if (localPath != null &&
+        localPath.isNotEmpty &&
+        File(localPath).existsSync()) {
+      return FileImage(File(localPath));
+    }
+    if (remoteUrl != null) {
+      return CachedNetworkImageProvider(remoteUrl);
+    }
+    return null;
   }
 }

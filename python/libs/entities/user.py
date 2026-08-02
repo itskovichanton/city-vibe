@@ -15,7 +15,7 @@ class UserRole(StrEnum):
     REGULAR = auto()
     MODERATOR = auto()
     ADMIN = auto()
-    MILANA = auto()
+    ASSISTANT = auto()
 
 
 class Gender(StrEnum):

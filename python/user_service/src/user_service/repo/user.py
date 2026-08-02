@@ -143,7 +143,7 @@ class UserRepoImpl(UserRepo):
             stmt = (
                 select(UserModel)
                 .where(UserModel.deleted.is_(False))
-                .where(UserModel.role == UserRole.MILANA.name)
+                .where(UserModel.role == UserRole.ASSISTANT.name)
                 .order_by(UserModel.id)
                 .limit(1)
             )

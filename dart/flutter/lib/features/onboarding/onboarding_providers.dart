@@ -1,9 +1,9 @@
-import 'package:city_vibe/core/api/api_providers.dart';
+import 'package:city_vibe/core/milana/milana_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// После завершения онбординга — показать экран приветствия Миланы один раз.
-final milanaWelcomePendingProvider = StateProvider<bool>((ref) => false);
+export 'milana_welcome_pending.dart';
 
 final milanaAccountProvider = FutureProvider((ref) async {
-  return ref.watch(milanaClientProvider).getAccount();
+  final repo = await ref.watch(milanaRepositoryProvider.future);
+  return repo.loadAccount();
 });
