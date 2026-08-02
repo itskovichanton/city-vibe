@@ -14,7 +14,7 @@ from python.place_service.src.place_service.repo.city import CityRepo
 
 
 class ListCitiesUseCase(Protocol):
-    async def execute(self) -> list[CityResponse]:
+    async def execute(self, _call: None = None) -> list[CityResponse]:
         ...
 
 
@@ -32,7 +32,7 @@ class GetCityUseCase(Protocol):
 class ListCitiesUseCaseImpl(ListCitiesUseCase):
     city_repo: CityRepo
 
-    async def execute(self) -> list[CityResponse]:
+    async def execute(self, _call: None = None) -> list[CityResponse]:
         cities = await self.city_repo.list_major()
         return [city_dto_to_response(c) for c in cities]
 

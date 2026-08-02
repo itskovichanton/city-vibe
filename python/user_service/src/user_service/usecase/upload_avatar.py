@@ -37,13 +37,13 @@ class UploadAvatarUseCaseImpl(UploadAvatarUseCase):
                 reason=ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
             )
 
-        url = await self.file_storage.upload(
+        storage_key = await self.file_storage.upload(
             request.data,
             content_type=request.content_type,
             key_prefix=f"avatars/{request.user_id}",
             extension=request.extension,
         )
-        user.avatar_url = url
+        user.avatar_url = storage_key
         saved = await self.user_repo.save(user)
         await self.outbox.publish(TOPIC_USER_UPDATED, UserUpdatedEvent(user=saved))
         return user_dto_to_response(saved)

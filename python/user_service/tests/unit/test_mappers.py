@@ -17,7 +17,7 @@ def test_user_model_to_dto():
         age=28,
         short_bio="short",
         long_bio="long",
-        avatar_url="http://localhost:9000/city-vibe/avatars/1.jpg",
+        avatar_url="avatars/1.jpg",
         status="ACTIVE",
         role="REGULAR",
         favorite_categories=["bars", "theaters"],

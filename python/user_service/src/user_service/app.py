@@ -18,6 +18,7 @@ from python.user_service.src.user_service.usecase.delete_user import DeleteUserU
 from python.user_service.src.user_service.usecase.get_milana_account import (  # noqa: F401
     GetMilanaAccountUseCaseImpl,
 )
+from python.user_service.src.user_service.usecase.get_media import GetMediaUseCaseImpl  # noqa: F401
 from python.user_service.src.user_service.usecase.get_user import GetUserUseCaseImpl  # noqa: F401
 from python.user_service.src.user_service.usecase.update_bio import UpdateBioUseCaseImpl  # noqa: F401
 from python.user_service.src.user_service.usecase.update_profile import (  # noqa: F401

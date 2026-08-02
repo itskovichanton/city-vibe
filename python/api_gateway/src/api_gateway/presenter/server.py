@@ -122,6 +122,10 @@ class Server:
                 return err
             return await self._proxy(request, self._auth_url, f"/auth/{path}")
 
+        @self.fast_api.api_route("/media/{path:path}", methods=["GET", "HEAD"])
+        async def proxy_media(request: Request, path: str):
+            return await self._proxy(request, self._users_url, f"/media/{path}")
+
         @self.fast_api.api_route("/users", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
         async def proxy_users_root(request: Request):
             err = self._validate_jwt_optional(request)

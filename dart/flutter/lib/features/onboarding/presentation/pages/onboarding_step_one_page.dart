@@ -199,7 +199,7 @@ class _OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
                       color: AppColors.fieldFill,
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: _buildAvatar(user?.avatarUrl),
+                    child: _buildAvatar(user?.avatarDisplayUrl),
                   ),
                 ),
                 TextButton(

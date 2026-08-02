@@ -47,7 +47,7 @@ class MilanaGreetingScreen extends ConsumerWidget {
                   ),
                   data: (milana) => _ChatBody(
                     milanaName: milana.name,
-                    milanaAvatarUrl: milana.avatarUrl,
+                    milanaAvatarUrl: milana.avatarDisplayUrl,
                     userName: userName,
                   ),
                 ),

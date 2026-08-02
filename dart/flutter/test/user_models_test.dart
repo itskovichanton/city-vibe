@@ -27,7 +27,7 @@ void main() {
         longBio: 'Люблю парки',
         favoriteCategories: ['bars', 'cafes'],
         onboardingCompleted: false,
-        avatarUrl: 'http://localhost/avatar.jpg',
+        avatarUrl: 'avatars/42/photo.jpg',
         cityId: 3,
       );
 
@@ -38,7 +38,7 @@ void main() {
       expect(restored.longBio, 'Люблю парки');
       expect(restored.favoriteCategories, ['bars', 'cafes']);
       expect(restored.onboardingCompleted, false);
-      expect(restored.avatarUrl, 'http://localhost/avatar.jpg');
+      expect(restored.avatarUrl, 'avatars/42/photo.jpg');
       expect(restored.cityId, 3);
     });
 

@@ -71,6 +71,14 @@ class DeleteUserResponse:
 
 
 @dataclass
+class MediaContent:
+    """Бинарное содержимое файла из S3."""
+
+    data: bytes
+    content_type: str
+
+
+@dataclass
 class UserResponse:
     """Ответ API с профилем пользователя."""
 

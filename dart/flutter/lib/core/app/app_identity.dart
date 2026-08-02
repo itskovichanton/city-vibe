@@ -45,7 +45,7 @@ class AppIdentity {
   }
 
   static String _buildUserAgent(String os, String version) {
-    return 'cityvibe-official-client:<os=$os>:v$version';
+    return 'cityvibe-official-client:os=$os:v=$version';
   }
 
   static String _detectOs() {

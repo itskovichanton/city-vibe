@@ -8,9 +8,14 @@ from uuid import uuid4
 
 import boto3
 from botocore.client import BaseClient
+from botocore.exceptions import ClientError
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
 
 logger = logging.getLogger(__name__)
+
+
+class FileNotFoundInStorageError(FileNotFoundError):
+    """Объект не найден в bucket."""
 
 
 class FileStorage(Protocol):
@@ -24,11 +29,15 @@ class FileStorage(Protocol):
         key_prefix: str = "avatars",
         extension: str = "jpg",
     ) -> str:
-        """Загружает файл и возвращает публичный URL."""
+        """Загружает файл и возвращает S3-ключ (не публичный URL)."""
+        ...
+
+    async def download(self, key: str) -> tuple[bytes, str]:
+        """Читает объект по ключу: (body, content_type)."""
         ...
 
     async def delete(self, key_or_url: str) -> None:
-        """Удаляет объект по ключу или полному URL."""
+        """Удаляет объект по ключу или legacy URL."""
         ...
 
 
@@ -38,7 +47,6 @@ class FileStorage(Protocol):
     secret_key=("s3.secret_key", str, "minioadmin"),
     bucket=("s3.bucket", str, "city-vibe"),
     region=("s3.region", str, "us-east-1"),
-    public_base_url=("s3.public_base_url", str, "http://localhost:9000/city-vibe"),
 )
 class S3FileStorage(FileStorage):
     """
@@ -56,10 +64,6 @@ class S3FileStorage(FileStorage):
         self.secret_key = kwargs.get("secret_key", getattr(self, "secret_key", None))
         self.bucket = kwargs.get("bucket", getattr(self, "bucket", "city-vibe"))
         self.region = kwargs.get("region", getattr(self, "region", "us-east-1"))
-        self.public_base_url = kwargs.get(
-            "public_base_url",
-            getattr(self, "public_base_url", ""),
-        ).rstrip("/")
 
         self._client = boto3.client(
             "s3",
@@ -83,6 +87,22 @@ class S3FileStorage(FileStorage):
                 # Не валим старт сервиса — bucket создадим при первой загрузке
                 logger.warning("Не удалось подготовить S3 bucket '%s': %s", self.bucket, e)
 
+    @staticmethod
+    def normalize_key(key_or_url: str, *, bucket: str) -> str:
+        """S3-ключ из ключа или legacy URL (`http://host:9000/bucket/avatars/...`)."""
+        raw = (key_or_url or "").strip()
+        if not raw:
+            return raw
+        if raw.startswith("http://") or raw.startswith("https://"):
+            from urllib.parse import urlparse
+
+            path = urlparse(raw).path.lstrip("/")
+            bucket_prefix = f"{bucket.strip('/')}/"
+            if path.startswith(bucket_prefix):
+                return path[len(bucket_prefix) :]
+            return path
+        return raw.lstrip("/")
+
     async def upload(
         self,
         data: bytes,
@@ -105,18 +125,33 @@ class S3FileStorage(FileStorage):
             )
 
         await asyncio.to_thread(_put)
-        url = f"{self.public_base_url}/{key}"
-        logger.debug("Файл загружен в S3: %s", url)
-        return url
+        logger.debug("Файл загружен в S3: %s", key)
+        return key
+
+    async def download(self, key: str) -> tuple[bytes, str]:
+        import asyncio
+
+        normalized = self.normalize_key(key, bucket=self.bucket)
+
+        def _get() -> tuple[bytes, str]:
+            assert self._client is not None
+            try:
+                resp = self._client.get_object(Bucket=self.bucket, Key=normalized)
+            except ClientError as e:
+                code = e.response.get("Error", {}).get("Code", "")
+                if code in {"NoSuchKey", "404", "NotFound"}:
+                    raise FileNotFoundInStorageError(normalized) from e
+                raise
+            body = resp["Body"].read()
+            content_type = resp.get("ContentType") or "application/octet-stream"
+            return body, content_type
+
+        return await asyncio.to_thread(_get)
 
     async def delete(self, key_or_url: str) -> None:
         import asyncio
 
-        key = key_or_url
-        if key_or_url.startswith("http"):
-            # Вытаскиваем ключ из URL: .../bucket/avatars/xxx.jpg → avatars/xxx.jpg
-            prefix = f"{self.public_base_url}/"
-            key = key_or_url[len(prefix):] if key_or_url.startswith(prefix) else key_or_url.rsplit("/", 2)[-1]
+        key = self.normalize_key(key_or_url, bucket=self.bucket)
 
         def _delete() -> None:
             assert self._client is not None

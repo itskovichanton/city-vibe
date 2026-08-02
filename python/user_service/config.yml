@@ -21,7 +21,7 @@ s3:
   secret_key: minioadmin
   bucket: city-vibe
   region: us-east-1
-  public_base_url: http://localhost:9000/city-vibe
+  # avatar_url в БД — S3-ключ (avatars/...). Файлы: GET /media/{key} через gateway.
 
 redis:
   host: localhost

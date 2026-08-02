@@ -2,6 +2,7 @@
 library;
 
 import 'package:city_vibe/core/api/models/auth_models.dart';
+import 'package:city_vibe/core/network/media_url_resolver.dart';
 
 /// Статус пользователя (`Status` на бэкенде).
 enum UserStatus {
@@ -132,6 +133,9 @@ class UserProfile {
       authAccountId: json['auth_account_id'] as int?,
     );
   }
+
+  /// URL для загрузки аватара через gateway (`GET /media/...`).
+  String? get avatarDisplayUrl => MediaUrlResolver.resolve(avatarUrl);
 
   Map<String, dynamic> toJson() => {
         'id': id,

@@ -1,3 +1,4 @@
+import 'package:city_vibe/core/network/media_url_resolver.dart';
 import 'package:city_vibe/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
@@ -21,6 +22,7 @@ class ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final imageUrl = MediaUrlResolver.resolve(avatarUrl);
     final bubbleColor = isOutgoing
         ? AppColors.accent.withValues(alpha: 0.35)
         : AppColors.card;
@@ -58,8 +60,8 @@ class ChatBubble extends StatelessWidget {
                   radius: 16,
                   backgroundColor: AppColors.accent.withValues(alpha: 0.25),
                   backgroundImage:
-                      avatarUrl != null ? NetworkImage(avatarUrl!) : null,
-                  child: avatarUrl == null
+                      imageUrl != null ? NetworkImage(imageUrl) : null,
+                  child: imageUrl == null
                       ? Icon(Icons.smart_toy_outlined,
                           size: 18, color: AppColors.accent)
                       : null,

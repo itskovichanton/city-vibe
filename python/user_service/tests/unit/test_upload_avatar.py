@@ -33,7 +33,7 @@ async def test_upload_avatar_success():
         name="Тест",
         gender=Gender.MALE,
         role=UserRole.REGULAR,
-        avatar_url="http://localhost:9000/city-vibe/avatars/5/abc.png",
+        avatar_url="avatars/5/abc.png",
     )
 
     repo = AsyncMock()
@@ -41,7 +41,7 @@ async def test_upload_avatar_success():
     repo.save = AsyncMock(return_value=saved)
 
     storage = AsyncMock()
-    storage.upload = AsyncMock(return_value=saved.avatar_url)
+    storage.upload = AsyncMock(return_value="avatars/5/abc.png")
 
     outbox = AsyncMock()
     uc = object.__new__(UploadAvatarUseCaseImpl)

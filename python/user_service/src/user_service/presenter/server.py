@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import uvicorn
 from fastapi import FastAPI, File, Request, UploadFile
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from src.mybootstrap_core_itskovichanton.logger import LoggerService
 from src.mybootstrap_ioc_itskovichanton.config import ConfigService
@@ -30,6 +31,7 @@ from python.user_service.src.user_service.usecase.complete_onboarding import Com
 from python.user_service.src.user_service.usecase.create_user import CreateUserUseCase
 from python.user_service.src.user_service.usecase.delete_user import DeleteUserUseCase
 from python.user_service.src.user_service.usecase.get_milana_account import GetMilanaAccountUseCase
+from python.user_service.src.user_service.usecase.get_media import GetMediaUseCase
 from python.user_service.src.user_service.usecase.get_user import GetUserUseCase
 from python.user_service.src.user_service.usecase.update_bio import UpdateBioUseCase
 from python.user_service.src.user_service.usecase.update_profile import UpdateProfileUseCase
@@ -73,6 +75,7 @@ class Server:
     complete_onboarding_uc: CompleteOnboardingUseCase
     get_user_uc: GetUserUseCase
     get_milana_account_uc: GetMilanaAccountUseCase
+    get_media_uc: GetMediaUseCase
     upload_avatar_uc: UploadAvatarUseCase
     delete_user_uc: DeleteUserUseCase
     logger_service: LoggerService
@@ -107,6 +110,25 @@ class Server:
         async def health():
             return self.presenter.present(
                 Result(result={"status": "ok", "service": "user-service"}),
+            )
+
+        @self.fast_api.get(
+            "/media/{path:path}",
+            tags=["media"],
+            summary="Файл из S3 (аватар и др.)",
+            response_class=Response,
+        )
+        @rate_limit("media.get", limit=300)
+        async def get_media(request: Request, path: str):
+            presented = await self.action_runner.run(
+                self.get_media_uc.execute,
+                call=path,
+            )
+            content = presented.result
+            return Response(
+                content=content.data,
+                media_type=content.content_type,
+                headers={"Cache-Control": "public, max-age=86400"},
             )
 
         @self.fast_api.post("/users", tags=["users"], summary="Создать пользователя (онбординг, шаг 1)")

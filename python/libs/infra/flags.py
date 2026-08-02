@@ -69,7 +69,7 @@ def flags() -> InfraFlags:
     """Читает ENV один раз. Для тестов: flags.cache_clear()."""
     skip = env_str(
         "CITYVIBE_S2S_SKIP_PATHS",
-        "/health,/docs,/redoc,/openapi.json",
+        "/health,/docs,/redoc,/openapi.json,/media",
     )
     mime = env_str(
         "CITYVIBE_UPLOAD_ALLOWED_MIME",
