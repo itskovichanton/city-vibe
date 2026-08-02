@@ -38,6 +38,18 @@ class UserRepo(Protocol):
     async def update_bio(self, user_id: int, long_bio: str) -> Optional[User]:
         ...
 
+    async def update_profile(
+        self,
+        user_id: int,
+        *,
+        name: str | None = None,
+        favorite_categories: list[PlaceCategory] | None = None,
+    ) -> Optional[User]:
+        ...
+
+    async def get_milana_account(self) -> Optional[User]:
+        ...
+
     async def complete_onboarding(self, user_id: int) -> Optional[User]:
         ...
 
@@ -105,6 +117,39 @@ class UserRepoImpl(UserRepo):
             model.long_bio = long_bio
             await session.flush()
             await session.refresh(model)
+            return user_model_to_dto(model)
+
+    async def update_profile(
+        self,
+        user_id: int,
+        *,
+        name: str | None = None,
+        favorite_categories: list[PlaceCategory] | None = None,
+    ) -> Optional[User]:
+        async with self.db.session() as session:
+            model = await session.get(UserModel, user_id)
+            if model is None or model.deleted:
+                return None
+            if name is not None:
+                model.name = name
+            if favorite_categories is not None:
+                model.favorite_categories = [c.value for c in favorite_categories]
+            await session.flush()
+            await session.refresh(model)
+            return user_model_to_dto(model)
+
+    async def get_milana_account(self) -> Optional[User]:
+        async with self.db.session() as session:
+            stmt = (
+                select(UserModel)
+                .where(UserModel.deleted.is_(False))
+                .where(UserModel.role == UserRole.MILANA.name)
+                .order_by(UserModel.id)
+                .limit(1)
+            )
+            model = (await session.execute(stmt)).scalar_one_or_none()
+            if model is None:
+                return None
             return user_model_to_dto(model)
 
     async def complete_onboarding(self, user_id: int) -> Optional[User]:

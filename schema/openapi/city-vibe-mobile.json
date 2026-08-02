@@ -561,6 +561,28 @@
         }
       }
     },
+    "/milana/account": {
+      "get": {
+        "tags": [
+          "milana",
+          "account"
+        ],
+        "summary": "Публичный профиль служебного аккаунта Миланы",
+        "operationId": "milana_account_milana_account_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/milana/world": {
       "get": {
         "tags": [
@@ -1183,6 +1205,79 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Update Profile",
+        "description": "Обновление имени и любимых категорий (онбординг, шаг 1)",
+        "operationId": "update_profile_users__user_id__patch",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/system/milana": {
+      "get": {
+        "tags": [
+          "users",
+          "system"
+        ],
+        "summary": "Milana service account",
+        "operationId": "get_milana_account_users_system_milana_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
                 }
               }
             }
@@ -1825,6 +1920,23 @@
           "long_bio"
         ],
         "title": "UpdateBioBody"
+      },
+      "UpdateProfileBody": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "favorite_categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Favorite Categories"
+          }
+        },
+        "type": "object",
+        "title": "UpdateProfileBody"
       },
       "UserOut": {
         "properties": {

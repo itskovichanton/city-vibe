@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:city_vibe/core/api/auth_client.dart';
 import 'package:city_vibe/core/api/common_client.dart';
+import 'package:city_vibe/core/api/milana_client.dart';
 import 'package:city_vibe/core/api/user_client.dart';
+import 'package:city_vibe/core/app/app_identity.dart';
 import 'package:city_vibe/core/cache/cities_repository.dart';
 import 'package:city_vibe/core/cache/city_local_store.dart';
 import 'package:city_vibe/core/network/api_http.dart';
@@ -11,7 +13,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final dioProvider = Provider<Dio>((ref) {
-  final dio = createDio();
+  final dio = createDio(userAgent: AppIdentity.userAgentValue);
   ref.onDispose(dio.close);
   return dio;
 });
@@ -30,6 +32,15 @@ final authClientProvider = Provider<AuthClient>((ref) {
 
 final userClientProvider = Provider<UserClient>((ref) {
   return UserClient(ref.watch(apiHttpProvider));
+});
+
+final milanaClientProvider = Provider<MilanaClient>((ref) {
+  return MilanaClient(ref.watch(apiHttpProvider));
+});
+
+/// Первые 10 категорий для онбординга.
+final onboardingCategoriesProvider = FutureProvider((ref) async {
+  return ref.watch(commonClientProvider).getCategories(limit: 10);
 });
 
 final cityLocalStoreProvider = Provider<CityLocalStore>((ref) {

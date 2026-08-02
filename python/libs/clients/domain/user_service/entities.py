@@ -27,6 +27,12 @@ class UpdateBioBody:
 
 
 @dataclass
+class UpdateProfileBody:
+    name: str | None = None
+    favorite_categories: list[str] | None = None
+
+
+@dataclass
 class UserOut:
     id: int
     name: str

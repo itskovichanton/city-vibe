@@ -16,8 +16,25 @@ class UserClient {
     );
   }
 
-  Future<UserProfile> updateBio(int userId, {required String longBio}) {
+  Future<UserProfile> updateProfile(
+    int userId, {
+    String? name,
+    List<String>? favoriteCategories,
+  }) {
     return _http.patch(
+      '/users/$userId',
+      body: {
+        if (name != null) 'name': name,
+        if (favoriteCategories != null)
+          'favorite_categories': favoriteCategories,
+      },
+      parse: (data) =>
+          UserProfile.fromJson(Map<String, dynamic>.from(data as Map)),
+    );
+  }
+
+  Future<UserProfile> updateBio(int userId, {required String longBio}) {
+    return _http.put(
       '/users/$userId/bio',
       body: {'long_bio': longBio},
       parse: (data) =>

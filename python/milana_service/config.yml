@@ -23,6 +23,8 @@ milana:
 clients:
   place_service:
     url: http://localhost:8083
+  user_service:
+    url: http://localhost:8081
   milana_service:
     url: http://localhost:8086
   api_gateway:

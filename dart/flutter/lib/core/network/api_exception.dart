@@ -28,6 +28,10 @@ class ApiException implements Exception {
   bool get isUnauthorized =>
       statusCode == 401 || reason == 'invalid_token';
 
+  bool get isForbidden => statusCode == 403;
+
+  bool get requiresReLogin => isUnauthorized || isForbidden;
+
   bool get isNotFound =>
       statusCode == 404 ||
       (reason?.contains('NOT_FOUND') ?? false);

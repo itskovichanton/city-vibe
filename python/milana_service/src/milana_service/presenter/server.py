@@ -20,6 +20,7 @@ from python.libs.infra import CityVibeInfraSupport
 from python.libs.infra.decorators import rate_limit
 from python.milana_service.src.milana_service.agent.places_nl_search import PlacesNlSearchAgent
 from python.milana_service.src.milana_service.entities.request import MilanaPlacesSearchRequest
+from python.milana_service.src.milana_service.usecase.get_milana_account import GetMilanaAccountUseCase
 
 
 @bean(port=("server.port", int, 8086), host=("server.host", str, "0.0.0.0"))
@@ -29,6 +30,7 @@ class Server:
     infra_support: CityVibeInfraSupport
     action_runner: ActionRunner
     places_nl_agent: PlacesNlSearchAgent
+    get_milana_account_uc: GetMilanaAccountUseCase
     presenter: ResultPresenter = default_dataclass_field(
         JSONResultPresenterImpl(exclude_unset=True),
     )
@@ -66,6 +68,17 @@ class Server:
                         "deepseek_configured": self.places_nl_agent.deepseek.configured,
                     }
                 ),
+            )
+
+        @self.fast_api.get(
+            "/milana/account",
+            tags=["milana", "account"],
+            summary="Публичный профиль служебного аккаунта Миланы",
+        )
+        @rate_limit("milana.account", limit=120)
+        async def milana_account(request: Request):
+            return self.presenter.present(
+                await self.action_runner.run(self.get_milana_account_uc.execute, call=None),
             )
 
         @self.fast_api.get(

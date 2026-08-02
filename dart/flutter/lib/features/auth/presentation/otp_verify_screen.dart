@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:city_vibe/core/api/api_providers.dart';
 import 'package:city_vibe/core/api/models/auth_models.dart';
+import 'package:city_vibe/core/auth/auth_providers.dart';
 import 'package:city_vibe/core/network/api_exception.dart';
 import 'package:city_vibe/core/router/app_router.dart';
+import 'package:city_vibe/core/user/user_providers.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/login_background.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/scrolling_city_decor_bar.dart';
@@ -125,17 +127,28 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
           ? await client.registerVerify(body)
           : await client.loginVerify(body);
       if (!mounted) return;
+
+      await ref.read(authSessionProvider.notifier).establish(tokens);
+
+      if (!mounted) return;
+      final session = ref.read(authSessionProvider).valueOrNull;
+      if (session == null) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             widget.args.purpose == OtpPurpose.register
-                ? 'Аккаунт создан (user_id=${tokens.userId}). Войдите.'
+                ? 'Аккаунт создан. Добро пожаловать!'
                 : 'Вход выполнен',
           ),
           behavior: SnackBarBehavior.floating,
         ),
       );
-      context.go(AppRoutes.login);
+      context.go(
+        ref.read(currentUserProvider).valueOrNull?.onboardingCompleted == true
+            ? AppRoutes.home
+            : AppRoutes.onboarding,
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

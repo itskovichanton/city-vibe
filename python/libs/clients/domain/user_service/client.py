@@ -16,7 +16,7 @@ from src.mybootstrap_core_itskovichanton.utils import to_dict
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
 from src.mybootstrap_mvc_fastapi_itskovichanton.client.http import on_mbclient_api
 
-from python.libs.clients.domain.user_service.entities import CreateUserBody, UpdateBioBody
+from python.libs.clients.domain.user_service.entities import CreateUserBody, UpdateBioBody, UpdateProfileBody
 
 # Имя секции в config.yml → clients.user_service.url
 api_call = on_mbclient_api(_name="clients.user_service")
@@ -39,6 +39,14 @@ class UserServiceClient(Protocol):
 
     def update_bio(self, user_id: int, body: UpdateBioBody) -> Any:
         """Обновить развёрнутое bio (онбординг, шаг 2)."""
+        ...
+
+    def update_profile(self, user_id: int, body: UpdateProfileBody) -> Any:
+        """Обновить имя и категории профиля."""
+        ...
+
+    def get_milana_account(self) -> Any:
+        """Служебный аккаунт Миланы (role=MILANA)."""
         ...
 
     def complete_onboarding(self, user_id: int) -> Any:
@@ -96,6 +104,19 @@ class UserServiceClientImpl(UserServiceClient):
             headers=headers,
             json=to_dict(body, remove_none_values=True),
         )
+
+    @api_call
+    def update_profile(self, user_id: int, body: UpdateProfileBody, session=None, url=None, headers=None):
+        return session.patch(
+            url=f"{url}/users/{user_id}",
+            timeout=30,
+            headers=headers,
+            json=to_dict(body, remove_none_values=True),
+        )
+
+    @api_call
+    def get_milana_account(self, session=None, url=None, headers=None):
+        return session.get(url=f"{url}/users/system/milana", timeout=30, headers=headers)
 
     @api_call
     def complete_onboarding(self, user_id: int, session=None, url=None, headers=None):

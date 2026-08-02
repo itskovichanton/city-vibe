@@ -28,12 +28,15 @@ from python.user_service.src.user_service.entities.common import (
     CompleteOnboardingRequest,
     CreateUserRequest,
     UpdateBioRequest,
+    UpdateProfileRequest,
 )
 from python.user_service.src.user_service.repo.user import UserRepo
 from python.user_service.src.user_service.usecase.complete_onboarding import CompleteOnboardingUseCase
 from python.user_service.src.user_service.usecase.create_user import CreateUserUseCase
+from python.user_service.src.user_service.usecase.get_milana_account import GetMilanaAccountUseCase
 from python.user_service.src.user_service.usecase.get_user import GetUserUseCase
 from python.user_service.src.user_service.usecase.update_bio import UpdateBioUseCase
+from python.user_service.src.user_service.usecase.update_profile import UpdateProfileUseCase
 
 
 class CreateUserBody(BaseModel):
@@ -51,6 +54,14 @@ class UpdateBioBody(BaseModel):
     long_bio: str = Field(..., description="О себе в свободной форме")
 
 
+class UpdateProfileBody(BaseModel):
+    name: Optional[str] = Field(None, description="Имя пользователя")
+    favorite_categories: Optional[List[str]] = Field(
+        None,
+        description="Коды любимых категорий мест (PlaceCategory)",
+    )
+
+
 @bean(port=("server.port", int, 8081), host=("server.host", str, "0.0.0.0"))
 class Server:
     """FastAPI-сервер user-service."""
@@ -61,8 +72,10 @@ class Server:
     action_runner: ActionRunner
     create_user_uc: CreateUserUseCase
     update_bio_uc: UpdateBioUseCase
+    update_profile_uc: UpdateProfileUseCase
     complete_onboarding_uc: CompleteOnboardingUseCase
     get_user_uc: GetUserUseCase
+    get_milana_account_uc: GetMilanaAccountUseCase
     file_storage: FileStorage
     user_repo: UserRepo
     logger_service: LoggerService
@@ -131,6 +144,39 @@ class Server:
         async def get_user(request: Request, user_id: int):
             return self.presenter.present(
                 await self.action_runner.run(self.get_user_uc.execute, call=user_id),
+            )
+
+        @self.fast_api.get(
+            "/users/system/milana",
+            tags=["users", "system"],
+            summary="Служебный аккаунт Миланы (role=MILANA)",
+        )
+        @rate_limit("users.milana", limit=120)
+        async def get_milana_account(request: Request):
+            return self.presenter.present(
+                await self.action_runner.run(self.get_milana_account_uc.execute, call=None),
+            )
+
+        @self.fast_api.patch("/users/{user_id}", tags=["users"], summary="Обновить профиль")
+        @require_s2s
+        @idempotent("users.update")
+        @rate_limit("users.update", limit=60)
+        async def update_profile(request: Request, user_id: int, body: UpdateProfileBody):
+            categories: list[PlaceCategory] | None = None
+            if body.favorite_categories is not None:
+                categories = []
+                for code in body.favorite_categories:
+                    try:
+                        categories.append(PlaceCategory(code))
+                    except ValueError:
+                        continue
+            req = UpdateProfileRequest(
+                user_id=user_id,
+                name=body.name,
+                favorite_categories=categories,
+            )
+            return self.presenter.present(
+                await self.action_runner.run(self.update_profile_uc.execute, call=req),
             )
 
         @self.fast_api.put("/users/{user_id}/bio", tags=["users"], summary="Обновить bio")

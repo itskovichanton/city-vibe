@@ -32,6 +32,15 @@ class UpdateBioRequest:
 
 
 @dataclass
+class UpdateProfileRequest:
+    """Обновление профиля (имя, категории) — онбординг, шаг 1."""
+
+    user_id: int
+    name: str | None = None
+    favorite_categories: List[PlaceCategory] | None = None
+
+
+@dataclass
 class CompleteOnboardingRequest:
     """Завершение онбординга (шаг 3)."""
 
