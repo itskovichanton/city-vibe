@@ -28,4 +28,6 @@ Enum в коде (`python.libs.entities.place.PlaceCategory`) остаётся �
 
 Query: `?compact=true` — без `description`, только type/enum/min/max (для LLM / milana).
 
+Категории товаров и услуг — отдельный справочник: [products.md](products.md) — `GET /product-categories`.
+
 См. также LLM-справочники: [milana.md](milana.md) — `GET /milana/world`, `/milana/attr-schemas/{code}`.

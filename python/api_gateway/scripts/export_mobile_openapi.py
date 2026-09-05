@@ -144,7 +144,7 @@ class AvatarUploadOut(BaseModel):
 def build_openapi_app() -> FastAPI:
     app = FastAPI(
         title="City Vibe — Mobile API",
-        description="Агрегированная схема auth + users + cities + places + design (через api-gateway)",
+        description="Агрегированная схема auth + users + cities + places + products + design (через api-gateway)",
         version="1.0.0",
     )
 
@@ -172,6 +172,10 @@ def build_openapi_app() -> FastAPI:
     async def list_categories():
         raise NotImplementedError
 
+    @app.get("/product-categories", tags=["products"])
+    async def list_product_categories():
+        raise NotImplementedError
+
     @app.get("/attr-schemas/{category_code}", tags=["attrs"])
     async def get_attr_schema(category_code: str):
         raise NotImplementedError
@@ -189,9 +193,9 @@ def build_openapi_app() -> FastAPI:
         tags=["places", "search"],
         summary="Многокритериальный поиск мест",
         description=(
-            "Обязательны city_id, category. Опционально name, limit=20, page=1, "
-            "sort_by=rating|distance (+my_geo), open_at, attrs (exact|between|or|and|not_in). "
-            "Для мобильного клиента и ИИ-команд."
+            "Обязателен city_id; якорь category / name / open_at. "
+            "Опционально timezone, exclude_ids, sort_by=rating|distance|created_at, "
+            "open_at, attrs. Для мобильного клиента и ИИ-команд."
         ),
     )
     async def search_places(body: dict):
@@ -209,6 +213,39 @@ def build_openapi_app() -> FastAPI:
     async def delete_place(place_id: int):
         raise NotImplementedError
 
+    @app.get("/products", tags=["products"])
+    async def list_products(place_id: Optional[int] = None, category: Optional[str] = None):
+        raise NotImplementedError
+
+    @app.post("/products", tags=["products"])
+    async def create_product(body: dict):
+        raise NotImplementedError
+
+    @app.post(
+        "/products/search",
+        tags=["products", "search"],
+        summary="Многокритериальный поиск продуктов",
+        description=(
+            "Обязателен city_id; якорь category / q / place_id / place_name / "
+            "place_category / date_from. q — продукт и имя места. "
+            "exclude_ids vs exclude_place_ids, one_per_place, events, include_past."
+        ),
+    )
+    async def search_products(body: dict):
+        raise NotImplementedError
+
+    @app.get("/products/{product_id}", tags=["products"])
+    async def get_product(product_id: int):
+        raise NotImplementedError
+
+    @app.patch("/products/{product_id}", tags=["products"])
+    async def patch_product(product_id: int, body: dict):
+        raise NotImplementedError
+
+    @app.delete("/products/{product_id}", tags=["products"])
+    async def delete_product(product_id: int):
+        raise NotImplementedError
+
     @app.get("/pin-styles/default", tags=["design"])
     async def default_pin():
         raise NotImplementedError
@@ -222,15 +259,15 @@ def build_openapi_app() -> FastAPI:
         tags=["milana", "places"],
         summary="NL-поиск мест (ИИ-агент Милана)",
         description=(
-            "Произвольный русский текст q. Variant B: plan(world) → build(compact schemas) → "
-            "places/search × N → message от Миланы. Также: GET /milana/world, /milana/cities, "
-            "/milana/categories, /milana/attr-schemas/{code}."
+            "Произвольный русский текст q. Variant B: plan(world) → build → "
+            "places/search и/или products/search × N → message от Миланы. Также: GET /milana/world, "
+            "/milana/cities, /milana/categories, /milana/product-categories, /milana/attr-schemas/{code}."
         ),
     )
     async def milana_places_search(body: dict):
         raise NotImplementedError
 
-    @app.get("/milana/world", tags=["milana", "world"], summary="Справочник мира (города+категории)")
+    @app.get("/milana/world", tags=["milana", "world"], summary="Справочник мира (города+категории мест и продуктов)")
     async def milana_world():
         raise NotImplementedError
 
@@ -240,6 +277,10 @@ def build_openapi_app() -> FastAPI:
 
     @app.get("/milana/categories", tags=["milana", "world"])
     async def milana_categories():
+        raise NotImplementedError
+
+    @app.get("/milana/product-categories", tags=["milana", "world"])
+    async def milana_product_categories():
         raise NotImplementedError
 
     @app.get("/milana/attr-schemas/{category_code}", tags=["milana", "world"])

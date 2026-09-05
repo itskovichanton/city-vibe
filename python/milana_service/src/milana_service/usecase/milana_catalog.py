@@ -26,6 +26,11 @@ class ListMilanaCategoriesUseCase(Protocol):
         ...
 
 
+class ListMilanaProductCategoriesUseCase(Protocol):
+    async def execute(self) -> Any:
+        ...
+
+
 class GetMilanaAttrSchemaUseCase(Protocol):
     async def execute(self, category_code: str) -> Any:
         ...
@@ -53,6 +58,14 @@ class ListMilanaCategoriesUseCaseImpl(ListMilanaCategoriesUseCase):
 
     async def execute(self) -> Any:
         return await self.places_nl_agent.places.list_categories_compact()
+
+
+@bean
+class ListMilanaProductCategoriesUseCaseImpl(ListMilanaProductCategoriesUseCase):
+    places_nl_agent: PlacesNlSearchAgent
+
+    async def execute(self) -> Any:
+        return await self.places_nl_agent.places.list_product_categories_compact()
 
 
 @bean

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import httpx
 from src.mybootstrap_core_itskovichanton.logger import LoggerService
@@ -38,23 +38,30 @@ class PlaceSearchHttpClient:
         return data.get("result", data) if isinstance(data, dict) else data
 
     async def search(self, body: Dict[str, Any]) -> Dict[str, Any]:
-        url = f"{self.base_url}/places/search"
-        self._log("place_search_request", body=body)
+        return await self._post_search("/places/search", body)
+
+    async def search_products(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        return await self._post_search("/products/search", body)
+
+    async def _post_search(self, path: str, body: Dict[str, Any]) -> Dict[str, Any]:
+        url = f"{self.base_url}{path}"
+        self._log("place_search_request", path=path, body=body)
         async with httpx.AsyncClient(timeout=60.0) as client:
             resp = await client.post(url, json=body)
             self._log(
                 "place_search_response",
+                path=path,
                 status=resp.status_code,
                 body_preview=resp.text[:4000],
             )
             if resp.status_code >= 400:
                 raise CoreException(
-                    message=f"places/search HTTP {resp.status_code}: {resp.text[:300]}",
+                    message=f"{path.lstrip('/')} HTTP {resp.status_code}: {resp.text[:300]}",
                 )
             data = resp.json()
         payload = data.get("result", data) if isinstance(data, dict) else data
         if not isinstance(payload, dict):
-            raise CoreException(message="Неожиданный ответ places/search")
+            raise CoreException(message=f"Неожиданный ответ {path}")
         return payload
 
     async def list_cities_compact(self) -> List[Dict[str, Any]]:
@@ -78,7 +85,13 @@ class PlaceSearchHttpClient:
         return out
 
     async def list_categories_compact(self) -> List[Dict[str, Any]]:
-        raw = await self._get_json("/categories")
+        return await self._list_category_catalog("/categories")
+
+    async def list_product_categories_compact(self) -> List[Dict[str, Any]]:
+        return await self._list_category_catalog("/product-categories")
+
+    async def _list_category_catalog(self, path: str) -> List[Dict[str, Any]]:
+        raw = await self._get_json(path)
         items = raw if isinstance(raw, list) else []
         out: List[Dict[str, Any]] = []
         for c in items:
@@ -134,6 +147,33 @@ class PlaceSearchHttpClient:
                     "contacts": it.get("contacts"),
                     "rating_up": it.get("rating_up"),
                     "rating_down": it.get("rating_down"),
+                }
+            )
+        return out
+
+    @staticmethod
+    def slim_products(items: List[Dict[str, Any]], limit: int) -> List[Dict[str, Any]]:
+        out: List[Dict[str, Any]] = []
+        for it in (items or [])[:limit]:
+            if not isinstance(it, dict):
+                continue
+            place = it.get("place") if isinstance(it.get("place"), dict) else {}
+            out.append(
+                {
+                    "id": it.get("id"),
+                    "name": it.get("name"),
+                    "description": it.get("description"),
+                    "price": it.get("price"),
+                    "category": it.get("category") or it.get("category_code"),
+                    "place_id": it.get("place_id"),
+                    "place": {
+                        "id": place.get("id"),
+                        "name": place.get("name"),
+                        "city_id": place.get("city_id"),
+                    }
+                    if place
+                    else None,
+                    "distance_m": it.get("distance_m"),
                 }
             )
         return out

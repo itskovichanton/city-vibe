@@ -4,13 +4,22 @@ from __future__ import annotations
 
 from python.place_service.src.place_service.entities.common import (
     CreatePlaceRequest,
+    CreateProductRequest,
     DeletePlaceRequest,
+    DeleteProductRequest,
     GetAttrSchemaRequest,
     ListPlacesRequest,
+    ListProductsRequest,
     NearestCityRequest,
     PatchPlaceRequest,
+    PatchProductRequest,
 )
-from python.place_service.src.place_service.presenter.models import PlaceCreateBody, PlacePatchBody
+from python.place_service.src.place_service.presenter.models import (
+    PlaceCreateBody,
+    PlacePatchBody,
+    ProductCreateBody,
+    ProductPatchBody,
+)
 
 
 def to_nearest_city_request(lat: float, lng: float) -> NearestCityRequest:
@@ -59,7 +68,7 @@ def to_list_places_request(
     )
 
 
-def _body_fields_set(body: PlacePatchBody) -> frozenset[str]:
+def _body_fields_set(body) -> frozenset[str]:
     return frozenset(
         getattr(body, "model_fields_set", None)
         or getattr(body, "__fields_set__", set())
@@ -90,3 +99,39 @@ def to_patch_place_request(place_id: int, body: PlacePatchBody) -> PatchPlaceReq
 
 def to_delete_place_request(place_id: int) -> DeletePlaceRequest:
     return DeletePlaceRequest(place_id=place_id)
+
+
+def to_create_product_request(body: ProductCreateBody) -> CreateProductRequest:
+    return CreateProductRequest(
+        place_id=body.place_id,
+        name=body.name,
+        description=body.description or "",
+        price=body.price,
+        category=body.category,
+        schedule=body.schedule,
+    )
+
+
+def to_list_products_request(
+    *,
+    place_id: int | None,
+    category: str | None,
+    limit: int,
+) -> ListProductsRequest:
+    return ListProductsRequest(place_id=place_id, category=category, limit=limit)
+
+
+def to_patch_product_request(product_id: int, body: ProductPatchBody) -> PatchProductRequest:
+    return PatchProductRequest(
+        product_id=product_id,
+        name=body.name,
+        description=body.description,
+        price=body.price,
+        category=body.category,
+        schedule=body.schedule,
+        fields_set=_body_fields_set(body),
+    )
+
+
+def to_delete_product_request(product_id: int) -> DeleteProductRequest:
+    return DeleteProductRequest(product_id=product_id)

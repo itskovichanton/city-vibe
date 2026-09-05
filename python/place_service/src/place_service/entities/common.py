@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any, Optional
 
 from python.libs.entities.geo import GeoLocation
-from python.place_service.src.place_service.entities.search import PlaceSearchRequest
+from python.place_service.src.place_service.entities.search import PlaceSearchRequest, ProductSearchRequest
 
 
 @dataclass
@@ -93,4 +93,44 @@ class DeletePlaceResponse:
 
 # Re-export для use-case слоя (search body уже валидируется pydantic в presenter).
 SearchPlacesRequest = PlaceSearchRequest
+SearchProductsRequest = ProductSearchRequest
+
+
+@dataclass
+class CreateProductRequest:
+    place_id: int
+    name: str
+    description: str
+    category: str
+    price: Optional[float] = None
+    schedule: Optional[dict[str, Any]] = None
+
+
+@dataclass
+class ListProductsRequest:
+    place_id: Optional[int] = None
+    category: Optional[str] = None
+    limit: int = 100
+
+
+@dataclass
+class PatchProductRequest:
+    product_id: int
+    name: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    category: Optional[str] = None
+    schedule: Optional[dict[str, Any]] = None
+    fields_set: frozenset[str] = field(default_factory=frozenset)
+
+
+@dataclass
+class DeleteProductRequest:
+    product_id: int
+
+
+@dataclass
+class DeleteProductResponse:
+    ok: bool
+    product_id: int
 

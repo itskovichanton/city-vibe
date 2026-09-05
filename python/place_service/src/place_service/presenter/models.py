@@ -37,3 +37,24 @@ class PlacePatchBody(BaseModel):
     chat_theme_id: Optional[int] = None
     city_id: Optional[int] = None
     contacts: Optional[List[Dict[str, Any]]] = None
+
+
+class ProductCreateBody(BaseModel):
+    place_id: int
+    name: str
+    description: str = ""
+    price: Optional[float] = Field(
+        None,
+        ge=0,
+        description="Цена в рублях; null = бесплатно / см. описание",
+    )
+    category: str = Field(..., description="Код категории (ProductCategory)")
+    schedule: Optional[Dict[str, Any]] = None
+
+
+class ProductPatchBody(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = Field(None, ge=0)
+    category: Optional[str] = None
+    schedule: Optional[Dict[str, Any]] = None

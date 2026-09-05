@@ -1,9 +1,9 @@
-"""Расписание работы места (WeeklySchedule → jsonb)."""
+"""Расписание работы места / продукта (WeeklySchedule → jsonb)."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date, time
+from datetime import date, datetime, time
 from typing import List, Optional
 
 
@@ -35,9 +35,19 @@ class ScheduleException:
 
 
 @dataclass
+class ScheduleEvent:
+    """Разовый слот: naive local datetime в timezone расписания."""
+
+    start: datetime
+    end: datetime
+    note: Optional[str] = None
+
+
+@dataclass
 class WeeklySchedule:
-    """Недельное расписание + исключения."""
+    """Недельные periods + exceptions (override дня) + разовые events."""
 
     timezone: str = "Europe/Moscow"
     periods: List[DaySchedule] = field(default_factory=list)
     exceptions: List[ScheduleException] = field(default_factory=list)
+    events: List[ScheduleEvent] = field(default_factory=list)

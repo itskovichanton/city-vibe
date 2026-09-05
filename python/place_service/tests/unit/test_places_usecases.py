@@ -149,3 +149,27 @@ async def test_search_places_use_case():
     assert result["total"] == 1
     assert result["items"][0]["id"] == 99
     assert result["items"][0]["distance_m"] == 123.5
+
+
+@pytest.mark.asyncio
+async def test_search_places_without_category():
+    category_repo = AsyncMock()
+    city_repo = AsyncMock()
+    city_repo.get_by_id = AsyncMock(return_value=object())
+    search_result = MagicMock()
+    search_result.items = []
+    search_result.distances_m = {}
+    search_result.total = 0
+    search_result.page = 1
+    search_result.limit = 20
+    place_search_repo = AsyncMock()
+    place_search_repo.search = AsyncMock(return_value=search_result)
+
+    uc = object.__new__(SearchPlacesUseCaseImpl)
+    uc.category_repo = category_repo
+    uc.city_repo = city_repo
+    uc.attr_schema_repo = AsyncMock()
+    uc.place_search_repo = place_search_repo
+
+    await uc.execute(PlaceSearchRequest(city_id=1, name="Мечта"))
+    category_repo.get_by_code.assert_not_called()

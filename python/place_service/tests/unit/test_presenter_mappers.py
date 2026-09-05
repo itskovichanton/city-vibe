@@ -4,12 +4,20 @@ from __future__ import annotations
 
 from python.place_service.src.place_service.presenter.mappers import (
     to_create_place_request,
+    to_create_product_request,
     to_delete_place_request,
     to_list_places_request,
     to_nearest_city_request,
     to_patch_place_request,
+    to_patch_product_request,
 )
-from python.place_service.src.place_service.presenter.models import PlaceCreateBody, GeoIn, PlacePatchBody
+from python.place_service.src.place_service.presenter.models import (
+    GeoIn,
+    PlaceCreateBody,
+    PlacePatchBody,
+    ProductCreateBody,
+    ProductPatchBody,
+)
 
 
 def test_to_nearest_city_request():
@@ -58,3 +66,35 @@ def test_to_patch_place_request_fields_set():
 def test_to_delete_place_request():
     req = to_delete_place_request(42)
     assert req.place_id == 42
+
+
+def test_to_create_product_request():
+    body = ProductCreateBody(
+        place_id=7,
+        name="Сет роллов",
+        description="Филадельфия",
+        price=890,
+        category="food",
+    )
+    req = to_create_product_request(body)
+    assert req.place_id == 7
+    assert req.category == "food"
+    assert req.price == 890
+
+
+def test_to_create_product_request_null_price():
+    body = ProductCreateBody(
+        place_id=7,
+        name="Гостевой визит",
+        category="fitness_class",
+    )
+    req = to_create_product_request(body)
+    assert req.price is None
+
+
+def test_to_patch_product_request_schedule_null():
+    body = ProductPatchBody(schedule=None)
+    req = to_patch_product_request(3, body)
+    assert req.product_id == 3
+    assert "schedule" in req.fields_set
+    assert req.schedule is None

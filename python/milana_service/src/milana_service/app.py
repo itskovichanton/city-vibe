@@ -13,6 +13,7 @@ from python.milana_service.src.milana_service.usecase.milana_catalog import (  #
     GetMilanaWorldUseCaseImpl,
     ListMilanaCategoriesUseCaseImpl,
     ListMilanaCitiesUseCaseImpl,
+    ListMilanaProductCategoriesUseCaseImpl,
 )
 from python.milana_service.src.milana_service.usecase.milana_places_search import (  # noqa: F401
     MilanaPlacesSearchUseCaseImpl,

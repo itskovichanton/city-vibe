@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
+from zoneinfo import ZoneInfo
 
 
 class MilanaGeo(BaseModel):
@@ -13,7 +14,7 @@ class MilanaGeo(BaseModel):
 
 
 class MilanaPlacesSearchRequest(BaseModel):
-    """NL-запрос пользователя → агент строит и вызывает places/search."""
+    """NL-запрос пользователя → агент строит и вызывает places/search и/или products/search."""
 
     q: str = Field(..., min_length=2, description="Произвольный текст пожеланий на русском")
     city_id: Optional[int] = Field(
@@ -30,6 +31,10 @@ class MilanaPlacesSearchRequest(BaseModel):
         le=6,
         description="День недели 0=пн…6=вс, если в тексте день не указан явно",
     )
+    timezone: Optional[str] = Field(
+        None,
+        description="IANA TZ (напр. Asia/Novosibirsk) для now / events / open_at",
+    )
     limit_per_step: Optional[int] = Field(
         None,
         ge=1,
@@ -45,19 +50,38 @@ class MilanaPlacesSearchRequest(BaseModel):
             raise ValueError("q слишком короткий")
         return s
 
+    @field_validator("timezone")
+    @classmethod
+    def _tz(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        s = v.strip()
+        if not s:
+            return None
+        try:
+            ZoneInfo(s)
+        except Exception as e:
+            raise ValueError(f"Неизвестная таймзона: {s}") from e
+        return s
+
 
 class MilanaPlanStep(BaseModel):
+    domain: str = Field("place", description="place | product")
     intent: str
-    category: str
+    category: str = ""
     why: str = ""
+    place_name: Optional[str] = None
+    place_category: Optional[str] = None
 
 
 class MilanaSearchStepResult(BaseModel):
+    domain: str = "place"
     intent: str
     why: str = ""
     search: Dict[str, Any]
     total: int = 0
     places: List[Dict[str, Any]] = Field(default_factory=list)
+    products: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class MilanaPlacesSearchResponse(BaseModel):

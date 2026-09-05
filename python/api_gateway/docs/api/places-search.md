@@ -8,28 +8,32 @@
 
 ## Назначение
 
-Гибкий поиск мест в городе по категории с опциональными фильтрами:
-имя, расписание (`open_at`), кастомные `attrs` (exact / between / or / and / not_in),
-сортировка по рейтингу или расстоянию.
+Гибкий поиск мест в городе. Обязателен только `city_id`. Нужен хотя бы один якорь:
+`category`, `name` или `open_at`.
+
+Фильтры: имя, расписание (`open_at`), кастомные `attrs` (exact / between / or / and / not_in),
+исключение уже показанных id, сортировка по рейтингу / расстоянию / дате создания.
 
 ## Обязательные поля
 
 | Поле | Тип | Описание |
 |------|-----|----------|
 | `city_id` | int | ID города |
-| `category` | string | Код категории (`restaurants`, `bars`, …) |
 
 ## Опциональные поля
 
 | Поле | Default | Описание |
 |------|---------|----------|
+| `category` | — | Код категории (`restaurants`, `cafes`, …). Нужен для `attrs` |
 | `name` | — | Подстрока в `name` (ILIKE, без регистра) |
 | `limit` | `20` | Размер страницы (1…100) |
 | `page` | `1` | Номер страницы |
-| `sort_by` | — | `rating` \| `distance` |
-| `my_geo` | — | `{lat, lng}` — обязателен при `sort_by=distance`; также добавляет `distance_m` в ответ |
+| `sort_by` | — | `rating` \| `distance` \| `created_at` |
+| `exclude_ids` | `[]` | Не возвращать эти id мест (max 200) |
+| `timezone` | — | IANA TZ для интерпретации `open_at` / now |
+| `my_geo` | — | `{lat, lng}` — обязателен при `sort_by=distance`; также добавляет `distance_m` |
 | `open_at` | — | Список моментов; место должно быть открыто во **все** (AND) |
-| `attrs` | — | Фильтры по JSON attrs категории |
+| `attrs` | — | Фильтры по JSON attrs категории (требуют `category`) |
 
 ## Пример тела (рестораны)
 
@@ -41,6 +45,8 @@
   "limit": 20,
   "page": 1,
   "sort_by": "distance",
+  "exclude_ids": [101, 102],
+  "timezone": "Asia/Novosibirsk",
   "open_at": [
     {"weekday": 6, "intervals": [{"open": "09:00"}]},
     {"weekday": 3, "intervals": [{"open": "18:00"}]}
@@ -55,6 +61,12 @@
     "cuisine": {"operation": "not_in", "args": {"list": ["fast_food"]}}
   }
 }
+```
+
+Резолв имени без категории (Милана ищет «Кафе Мечта»):
+
+```json
+{ "city_id": 3, "name": "Мечта", "limit": 1 }
 ```
 
 ## Операции attrs (ООП)
@@ -77,9 +89,12 @@
 Место открыто, если в `schedule.periods` есть день с `closed=false` и интервал, покрывающий это время (в т.ч. через полночь).  
 Несколько элементов — **AND**.
 
+Разовые слоты (`schedule.events`) учитываются в **products/search**, не здесь.
+
 ## Сортировка и гео
 
 - `rating` — по `(rating_up - rating_down)`, затем `rating_up`
+- `created_at` — новые сначала
 - `distance` — метры через Postgres `earthdistance` (`cube` + `earthdistance`); нужен `my_geo`
 
 ## Ответ
@@ -101,5 +116,5 @@
 ```bash
 curl -s http://localhost:8080/places/search \
   -H 'Content-Type: application/json' \
-  -d '{"city_id":3,"category":"restaurants","limit":5,"sort_by":"rating"}' | jq
+  -d '{"city_id":3,"name":"Мечта","limit":5}' | jq
 ```

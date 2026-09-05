@@ -22,6 +22,7 @@ from python.milana_service.src.milana_service.usecase.milana_catalog import (
     GetMilanaWorldUseCase,
     ListMilanaCategoriesUseCase,
     ListMilanaCitiesUseCase,
+    ListMilanaProductCategoriesUseCase,
 )
 from python.milana_service.src.milana_service.usecase.milana_places_search import MilanaPlacesSearchUseCase
 
@@ -37,6 +38,7 @@ class Server:
     get_milana_world_uc: GetMilanaWorldUseCase
     list_milana_cities_uc: ListMilanaCitiesUseCase
     list_milana_categories_uc: ListMilanaCategoriesUseCase
+    list_milana_product_categories_uc: ListMilanaProductCategoriesUseCase
     get_milana_attr_schema_uc: GetMilanaAttrSchemaUseCase
     milana_places_search_uc: MilanaPlacesSearchUseCase
     presenter: ResultPresenter = default_dataclass_field(
@@ -55,7 +57,7 @@ class Server:
     def init_fast_api(self) -> FastAPI:
         app = FastAPI(
             title="City Vibe — Milana Service",
-            description="ИИ-агент Милана: NL → places/search (DeepSeek, variant B)",
+            description="ИИ-агент Милана: NL → places/search и products/search (DeepSeek, variant B)",
             version="1.1.0",
             docs_url="/docs",
             redoc_url="/redoc",
@@ -92,7 +94,7 @@ class Server:
         @self.fast_api.get(
             "/milana/world",
             tags=["milana", "world"],
-            summary="Справочник мира для Миланы (города + категории)",
+            summary="Справочник мира для Миланы (города + категории мест и продуктов)",
         )
         @rate_limit("milana.world", limit=60)
         async def milana_world(request: Request):
@@ -123,6 +125,20 @@ class Server:
             )
 
         @self.fast_api.get(
+            "/milana/product-categories",
+            tags=["milana", "world"],
+            summary="Категории товаров и услуг (compact) для знакомства ИИ с миром",
+        )
+        @rate_limit("milana.product_categories", limit=60)
+        async def milana_product_categories(request: Request):
+            return self.presenter.present(
+                await self.action_runner.run(
+                    self.list_milana_product_categories_uc.execute,
+                    call=None,
+                ),
+            )
+
+        @self.fast_api.get(
             "/milana/attr-schemas/{category_code}",
             tags=["milana", "world"],
             summary="Compact JSON Schema attrs категории (для LLM)",
@@ -141,9 +157,9 @@ class Server:
             tags=["milana", "places"],
             summary="NL-поиск мест через ИИ-агента Милану (variant B)",
             description=(
-                "q — произвольный русский текст. Милана: (1) план по справочникам мира, "
-                "(2) сборка тел places/search по compact schema выбранных категорий, "
-                "(3) исполнение search, (4) message от Миланы. Требует DEEPSEEK_API_KEY."
+                "q — произвольный русский текст. Милана: plan → build → "
+                "резолв place_name → place_id, exclude между шагами, default distance, "
+                "places/search и/или products/search, message. Требует DEEPSEEK_API_KEY."
             ),
         )
         @rate_limit("milana.places.search", limit=20)

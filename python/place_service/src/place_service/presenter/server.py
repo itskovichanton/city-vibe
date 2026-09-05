@@ -16,16 +16,25 @@ from src.mybootstrap_mvc_itskovichanton.result_presenter import ResultPresenter
 
 from python.libs.infra import CityVibeInfraSupport
 from python.libs.infra.decorators import rate_limit
-from python.place_service.src.place_service.entities.search import PlaceSearchRequest
+from python.place_service.src.place_service.entities.search import PlaceSearchRequest, ProductSearchRequest
 from python.place_service.src.place_service.presenter.mappers import (
     to_create_place_request,
+    to_create_product_request,
     to_delete_place_request,
+    to_delete_product_request,
     to_get_attr_schema_request,
     to_list_places_request,
+    to_list_products_request,
     to_nearest_city_request,
     to_patch_place_request,
+    to_patch_product_request,
 )
-from python.place_service.src.place_service.presenter.models import PlaceCreateBody, PlacePatchBody
+from python.place_service.src.place_service.presenter.models import (
+    PlaceCreateBody,
+    PlacePatchBody,
+    ProductCreateBody,
+    ProductPatchBody,
+)
 from python.place_service.src.place_service.usecase.attr_schemas import (
     GetAttrSchemaUseCase,
     ListAttrSchemasUseCase,
@@ -43,7 +52,16 @@ from python.place_service.src.place_service.usecase.places import (
     ListPlacesUseCase,
     PatchPlaceUseCase,
 )
+from python.place_service.src.place_service.usecase.product_categories import ListProductCategoriesUseCase
+from python.place_service.src.place_service.usecase.products import (
+    CreateProductUseCase,
+    DeleteProductUseCase,
+    GetProductUseCase,
+    ListProductsUseCase,
+    PatchProductUseCase,
+)
 from python.place_service.src.place_service.usecase.search_places import SearchPlacesUseCase
+from python.place_service.src.place_service.usecase.search_products import SearchProductsUseCase
 
 
 @bean(port=("server.port", int, 8083), host=("server.host", str, "0.0.0.0"))
@@ -64,6 +82,13 @@ class Server:
     get_place_uc: GetPlaceUseCase
     patch_place_uc: PatchPlaceUseCase
     delete_place_uc: DeletePlaceUseCase
+    list_product_categories_uc: ListProductCategoriesUseCase
+    create_product_uc: CreateProductUseCase
+    list_products_uc: ListProductsUseCase
+    search_products_uc: SearchProductsUseCase
+    get_product_uc: GetProductUseCase
+    patch_product_uc: PatchProductUseCase
+    delete_product_uc: DeleteProductUseCase
     presenter: ResultPresenter = default_dataclass_field(
         JSONResultPresenterImpl(exclude_unset=True),
     )
@@ -80,7 +105,7 @@ class Server:
     def init_fast_api(self) -> FastAPI:
         app = FastAPI(
             title="City Vibe — Place Service",
-            description="Города, категории, attrs-схемы, места на карте",
+            description="Города, категории, attrs-схемы, места и продукты",
             version="1.0.0",
             docs_url="/docs",
             redoc_url="/redoc",
@@ -203,9 +228,9 @@ class Server:
             tags=["places", "search"],
             summary="Многокритериальный поиск мест",
             description=(
-                "Гибкий поиск по city_id + category с фильтрами name / open_at / attrs "
-                "(exact|between|or|and) и сортировкой rating|distance. "
-                "Предназначен для мобильного клиента и вызова ИИ-агентом."
+                "Обязателен city_id; нужен якорь category / name / open_at. "
+                "Опционально timezone, exclude_ids, sort_by=rating|distance|created_at, "
+                "open_at, attrs. Для мобильного клиента и ИИ-агента."
             ),
         )
         @rate_limit("places.search", limit=60)
@@ -238,5 +263,89 @@ class Server:
                 await self.action_runner.run(
                     self.delete_place_uc.execute,
                     call=to_delete_place_request(place_id),
+                ),
+            )
+
+        @self.fast_api.get(
+            "/product-categories",
+            tags=["products"],
+            summary="Справочник категорий товаров и услуг",
+        )
+        @rate_limit("product_categories.list", limit=120)
+        async def list_product_categories(request: Request):
+            return self.presenter.present(
+                await self.action_runner.run(self.list_product_categories_uc.execute, call=None),
+            )
+
+        @self.fast_api.post("/products", tags=["products"], summary="Создать продукт")
+        @rate_limit("products.create", limit=30)
+        async def create_product(request: Request, body: ProductCreateBody):
+            return self.presenter.present(
+                await self.action_runner.run(
+                    self.create_product_uc.execute,
+                    call=to_create_product_request(body),
+                ),
+            )
+
+        @self.fast_api.get("/products", tags=["products"], summary="Список продуктов")
+        @rate_limit("products.list", limit=120)
+        async def list_products(
+            request: Request,
+            place_id: Optional[int] = Query(None),
+            category: Optional[str] = Query(None),
+            limit: int = Query(100, ge=1, le=500),
+        ):
+            return self.presenter.present(
+                await self.action_runner.run(
+                    self.list_products_uc.execute,
+                    call=to_list_products_request(
+                        place_id=place_id,
+                        category=category,
+                        limit=limit,
+                    ),
+                ),
+            )
+
+        @self.fast_api.post(
+            "/products/search",
+            tags=["products", "search"],
+            summary="Многокритериальный поиск продуктов",
+            description=(
+                "Обязателен city_id; якорь category / q / place_id / place_name / "
+                "place_category / date_from. q ищет по продукту и имени места. "
+                "exclude_ids vs exclude_place_ids, one_per_place, events, include_past=false, "
+                "sort_by=price|distance|created_at|event_start (NULL price — NULLS LAST)."
+            ),
+        )
+        @rate_limit("products.search", limit=60)
+        async def search_products(request: Request, body: ProductSearchRequest):
+            return self.presenter.present(
+                await self.action_runner.run(self.search_products_uc.execute, call=body),
+            )
+
+        @self.fast_api.get("/products/{product_id}", tags=["products"], summary="Продукт по id")
+        @rate_limit("products.get", limit=120)
+        async def get_product(request: Request, product_id: int):
+            return self.presenter.present(
+                await self.action_runner.run(self.get_product_uc.execute, call=product_id),
+            )
+
+        @self.fast_api.patch("/products/{product_id}", tags=["products"], summary="Обновить продукт")
+        @rate_limit("products.patch", limit=60)
+        async def patch_product(request: Request, product_id: int, body: ProductPatchBody):
+            return self.presenter.present(
+                await self.action_runner.run(
+                    self.patch_product_uc.execute,
+                    call=to_patch_product_request(product_id, body),
+                ),
+            )
+
+        @self.fast_api.delete("/products/{product_id}", tags=["products"], summary="Soft-delete продукта")
+        @rate_limit("products.delete", limit=30)
+        async def delete_product(request: Request, product_id: int):
+            return self.presenter.present(
+                await self.action_runner.run(
+                    self.delete_product_uc.execute,
+                    call=to_delete_product_request(product_id),
                 ),
             )

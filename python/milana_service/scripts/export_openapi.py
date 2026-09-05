@@ -22,21 +22,27 @@ class MilanaPlacesSearchIn(BaseModel):
     city_id: Optional[int] = Field(None, description="ID города (default из config)")
     my_geo: Optional[MilanaGeo] = None
     weekday: Optional[int] = Field(None, ge=0, le=6)
+    timezone: Optional[str] = Field(None, description="IANA TZ для now / events")
     limit_per_step: Optional[int] = Field(None, ge=1, le=20)
 
 
 class MilanaPlanStepOut(BaseModel):
+    domain: str = "place"
     intent: str
-    category: str
+    category: str = ""
     why: str = ""
+    place_name: Optional[str] = None
+    place_category: Optional[str] = None
 
 
 class MilanaStepOut(BaseModel):
+    domain: str = "place"
     intent: str
     why: str = ""
     search: Dict[str, Any]
     total: int = 0
     places: List[Dict[str, Any]] = []
+    products: List[Dict[str, Any]] = []
 
 
 class MilanaPlacesSearchOut(BaseModel):
@@ -50,7 +56,7 @@ class MilanaPlacesSearchOut(BaseModel):
 def build_openapi_app() -> FastAPI:
     app = FastAPI(
         title="City Vibe — Milana Service",
-        description="ИИ-агент Милана: NL → places/search (DeepSeek, variant B)",
+        description="ИИ-агент Милана: NL → places/search и products/search (DeepSeek, variant B)",
         version="1.1.0",
     )
 
@@ -58,7 +64,7 @@ def build_openapi_app() -> FastAPI:
     async def health():
         return {"status": "ok", "service": "milana-service"}
 
-    @app.get("/milana/world", tags=["world"], summary="Города + категории (compact)")
+    @app.get("/milana/world", tags=["world"], summary="Города + категории мест и продуктов (compact)")
     async def world():
         raise NotImplementedError
 
@@ -66,8 +72,12 @@ def build_openapi_app() -> FastAPI:
     async def cities():
         raise NotImplementedError
 
-    @app.get("/milana/categories", tags=["world"], summary="Категории compact")
+    @app.get("/milana/categories", tags=["world"], summary="Категории мест compact")
     async def categories():
+        raise NotImplementedError
+
+    @app.get("/milana/product-categories", tags=["world"], summary="Категории продуктов compact")
+    async def product_categories():
         raise NotImplementedError
 
     @app.get(
@@ -84,9 +94,10 @@ def build_openapi_app() -> FastAPI:
         summary="NL-поиск мест (Милана, variant B)",
         response_model=MilanaPlacesSearchOut,
         description=(
-            "Pass1 plan (cities+categories) → Pass2 build (compact schemas) → "
-            "places/search × N → message от Миланы. Нужен DEEPSEEK_API_KEY. "
-            "Лог: milana-agent-*.txt через LoggerService."
+            "Pass1 plan (cities+categories+product_categories) → Pass2 build → "
+            "places/search и/или products/search × N → message от Миланы. "
+            "Резолв place_name → place_id, exclude между шагами, default distance. "
+            "Нужен DEEPSEEK_API_KEY. Лог: milana-agent-*.txt через LoggerService."
         ),
     )
     async def milana_places_search(body: MilanaPlacesSearchIn):

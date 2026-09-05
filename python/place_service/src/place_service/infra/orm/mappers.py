@@ -8,8 +8,22 @@ from typing import Any, Optional
 from python.libs.entities.city import City
 from python.libs.entities.common import Contact, ContactType, Rating
 from python.libs.entities.geo import GeoLocation
-from python.libs.entities.place import AttrSchema, Place, PlaceCategory, PlaceCategoryInfo
-from python.libs.entities.schedule import DaySchedule, ScheduleException, TimeInterval, WeeklySchedule
+from python.libs.entities.place import (
+    AttrSchema,
+    Place,
+    PlaceCategory,
+    PlaceCategoryInfo,
+    Product,
+    ProductCategory,
+    ProductCategoryInfo,
+)
+from python.libs.entities.schedule import (
+    DaySchedule,
+    ScheduleEvent,
+    ScheduleException,
+    TimeInterval,
+    WeeklySchedule,
+)
 from python.libs.utils.translit import slugify
 from python.place_service.src.place_service.entities.common import CityResponse
 from python.place_service.src.place_service.infra.orm.models import (
@@ -17,6 +31,8 @@ from python.place_service.src.place_service.infra.orm.models import (
     CityModel,
     PlaceCategoryModel,
     PlaceModel,
+    ProductCategoryModel,
+    ProductModel,
 )
 
 __all__ = [
@@ -31,6 +47,10 @@ __all__ = [
     "schedule_to_json",
     "schedule_from_json",
     "place_to_api_dict",
+    "product_category_model_to_dto",
+    "product_category_to_api",
+    "product_model_to_dto",
+    "product_to_api_dict",
 ]
 
 
@@ -159,11 +179,32 @@ def schedule_from_json(raw: Optional[dict[str, Any]]) -> Optional[WeeklySchedule
                 note=e.get("note"),
             )
         )
+    events = []
+    for ev in raw.get("events") or []:
+        start = _parse_dt(ev.get("start"))
+        end = _parse_dt(ev.get("end"))
+        if start is None or end is None:
+            continue
+        events.append(ScheduleEvent(start=start, end=end, note=ev.get("note")))
     return WeeklySchedule(
         timezone=raw.get("timezone") or "Europe/Moscow",
         periods=periods,
         exceptions=exceptions,
+        events=events,
     )
+
+
+def _parse_dt(value: Any) -> Optional[datetime]:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.replace(tzinfo=None)
+    s = str(value).strip()
+    if not s:
+        return None
+    if s.endswith("Z"):
+        s = s[:-1]
+    return datetime.fromisoformat(s)
 
 
 def schedule_to_json(schedule: Optional[WeeklySchedule] | dict[str, Any]) -> Optional[dict[str, Any]]:
@@ -197,6 +238,14 @@ def schedule_to_json(schedule: Optional[WeeklySchedule] | dict[str, Any]) -> Opt
                 "note": e.note,
             }
             for e in schedule.exceptions
+        ],
+        "events": [
+            {
+                "start": ev.start.isoformat(timespec="seconds"),
+                "end": ev.end.isoformat(timespec="seconds"),
+                "note": ev.note,
+            }
+            for ev in schedule.events
         ],
     }
 
@@ -265,3 +314,98 @@ def place_to_api_dict(place: Place) -> dict[str, Any]:
         "created_at": place.created_at.isoformat() if isinstance(place.created_at, datetime) else place.created_at,
         "updated_at": place.updated_at.isoformat() if isinstance(place.updated_at, datetime) else place.updated_at,
     }
+
+
+def product_category_model_to_dto(model: ProductCategoryModel) -> ProductCategoryInfo:
+    return ProductCategoryInfo(
+        id=model.id,
+        deleted=model.deleted,
+        created_at=model.created_at,
+        updated_at=model.updated_at,
+        code=model.code,
+        title=model.title,
+        title_en=model.title_en or "",
+        icon_url=model.icon_url,
+        sort_order=model.sort_order,
+        is_active=model.is_active,
+    )
+
+
+def product_category_to_api(category: ProductCategoryInfo) -> dict[str, Any]:
+    return {
+        "id": category.id,
+        "code": category.code,
+        "title": category.title,
+        "title_en": category.title_en,
+        "icon_url": category.icon_url,
+        "sort_order": category.sort_order,
+        "is_active": category.is_active,
+    }
+
+
+def _price_to_float(value: Any) -> float | None:
+    if value is None:
+        return None
+    return float(value)
+
+
+def product_model_to_dto(model: ProductModel) -> Product:
+    return Product(
+        id=model.id,
+        deleted=model.deleted,
+        created_at=model.created_at,
+        updated_at=model.updated_at,
+        place_id=model.place_id,
+        name=model.name,
+        description=model.description or "",
+        price=model.price,
+        category=ProductCategory(model.category_code),
+        schedule=schedule_from_json(model.schedule),
+    )
+
+
+def compact_place_dict(place: Place) -> dict[str, Any]:
+    return {
+        "id": place.id,
+        "name": place.name,
+        "city_id": place.city_id,
+        "lat": place.geo.latitude,
+        "lng": place.geo.longitude,
+    }
+
+
+def product_to_api_dict(
+    product: Product,
+    *,
+    place: dict[str, Any] | None = None,
+    distance_m: float | None = None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "id": product.id,
+        "place_id": product.place_id,
+        "name": product.name,
+        "description": product.description,
+        "price": _price_to_float(product.price),
+        "category": (
+            product.category.value
+            if isinstance(product.category, ProductCategory)
+            else product.category
+        ),
+        "schedule": schedule_to_json(product.schedule),
+        "deleted": product.deleted,
+        "created_at": (
+            product.created_at.isoformat()
+            if isinstance(product.created_at, datetime)
+            else product.created_at
+        ),
+        "updated_at": (
+            product.updated_at.isoformat()
+            if isinstance(product.updated_at, datetime)
+            else product.updated_at
+        ),
+    }
+    if place is not None:
+        payload["place"] = place
+    if distance_m is not None:
+        payload["distance_m"] = round(distance_m, 1)
+    return payload

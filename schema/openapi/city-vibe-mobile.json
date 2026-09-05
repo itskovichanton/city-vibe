@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "City Vibe — Mobile API",
-    "description": "Агрегированная схема auth + users + cities + places + design (через api-gateway)",
+    "description": "Агрегированная схема auth + users + cities + places + products + design (через api-gateway)",
     "version": "1.0.0"
   },
   "paths": {
@@ -167,6 +167,25 @@
         }
       }
     },
+    "/product-categories": {
+      "get": {
+        "tags": [
+          "products"
+        ],
+        "summary": "List Product Categories",
+        "operationId": "list_product_categories_product_categories_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/attr-schemas/{category_code}": {
       "get": {
         "tags": [
@@ -316,7 +335,7 @@
           "search"
         ],
         "summary": "Многокритериальный поиск мест",
-        "description": "Обязательны city_id, category. Опционально name, limit=20, page=1, sort_by=rating|distance (+my_geo), open_at, attrs (exact|between|or|and|not_in). Для мобильного клиента и ИИ-команд.",
+        "description": "Обязателен city_id; якорь category / name / open_at. Опционально timezone, exclude_ids, sort_by=rating|distance|created_at, open_at, attrs. Для мобильного клиента и ИИ-команд.",
         "operationId": "search_places_places_search_post",
         "requestBody": {
           "content": {
@@ -480,6 +499,279 @@
         }
       }
     },
+    "/products": {
+      "get": {
+        "tags": [
+          "products"
+        ],
+        "summary": "List Products",
+        "operationId": "list_products_products_get",
+        "parameters": [
+          {
+            "name": "place_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Place Id"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "products"
+        ],
+        "summary": "Create Product",
+        "operationId": "create_product_products_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products/search": {
+      "post": {
+        "tags": [
+          "products",
+          "search"
+        ],
+        "summary": "Многокритериальный поиск продуктов",
+        "description": "Обязателен city_id; якорь category / q / place_id / place_name / place_category / date_from. q — продукт и имя места. exclude_ids vs exclude_place_ids, one_per_place, events, include_past.",
+        "operationId": "search_products_products_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products/{product_id}": {
+      "get": {
+        "tags": [
+          "products"
+        ],
+        "summary": "Get Product",
+        "operationId": "get_product_products__product_id__get",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Product Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "products"
+        ],
+        "summary": "Patch Product",
+        "operationId": "patch_product_products__product_id__patch",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Product Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "products"
+        ],
+        "summary": "Delete Product",
+        "operationId": "delete_product_products__product_id__delete",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Product Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/pin-styles/default": {
       "get": {
         "tags": [
@@ -525,7 +817,7 @@
           "places"
         ],
         "summary": "NL-поиск мест (ИИ-агент Милана)",
-        "description": "Произвольный русский текст q. Variant B: plan(world) → build(compact schemas) → places/search × N → message от Миланы. Также: GET /milana/world, /milana/cities, /milana/categories, /milana/attr-schemas/{code}.",
+        "description": "Произвольный русский текст q. Variant B: plan(world) → build → places/search и/или products/search × N → message от Миланы. Также: GET /milana/world, /milana/cities, /milana/categories, /milana/product-categories, /milana/attr-schemas/{code}.",
         "operationId": "milana_places_search_milana_places_search_post",
         "requestBody": {
           "content": {
@@ -561,35 +853,13 @@
         }
       }
     },
-    "/milana/account": {
-      "get": {
-        "tags": [
-          "milana",
-          "account"
-        ],
-        "summary": "Публичный профиль служебного аккаунта Миланы",
-        "operationId": "milana_account_milana_account_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserOut"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/milana/world": {
       "get": {
         "tags": [
           "milana",
           "world"
         ],
-        "summary": "Справочник мира (города+категории)",
+        "summary": "Справочник мира (города+категории мест и продуктов)",
         "operationId": "milana_world_milana_world_get",
         "responses": {
           "200": {
@@ -631,6 +901,26 @@
         ],
         "summary": "Milana Categories",
         "operationId": "milana_categories_milana_categories_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/milana/product-categories": {
+      "get": {
+        "tags": [
+          "milana",
+          "world"
+        ],
+        "summary": "Milana Product Categories",
+        "operationId": "milana_product_categories_milana_product_categories_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1205,79 +1495,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "users"
-        ],
-        "summary": "Update Profile",
-        "description": "Обновление имени и любимых категорий (онбординг, шаг 1)",
-        "operationId": "update_profile_users__user_id__patch",
-        "parameters": [
-          {
-            "name": "user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "User Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateProfileBody"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserOut"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/users/system/milana": {
-      "get": {
-        "tags": [
-          "users",
-          "system"
-        ],
-        "summary": "Milana service account",
-        "operationId": "get_milana_account_users_system_milana_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserOut"
                 }
               }
             }
@@ -1921,23 +2138,6 @@
         ],
         "title": "UpdateBioBody"
       },
-      "UpdateProfileBody": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "favorite_categories": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Favorite Categories"
-          }
-        },
-        "type": "object",
-        "title": "UpdateProfileBody"
-      },
       "UserOut": {
         "properties": {
           "id": {
@@ -2076,6 +2276,13 @@
           "type": {
             "type": "string",
             "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
           }
         },
         "type": "object",

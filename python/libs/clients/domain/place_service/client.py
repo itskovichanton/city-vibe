@@ -42,6 +42,25 @@ class PlaceServiceClient(Protocol):
 
     def search_places(self, body: dict) -> Any: ...
 
+    def list_product_categories(self) -> Any: ...
+
+    def create_product(self, body: dict) -> Any: ...
+
+    def list_products(
+        self,
+        place_id: Optional[int] = None,
+        category: Optional[str] = None,
+        **kwargs,
+    ) -> Any: ...
+
+    def get_product(self, product_id: int) -> Any: ...
+
+    def patch_product(self, product_id: int, body: dict) -> Any: ...
+
+    def delete_product(self, product_id: int) -> Any: ...
+
+    def search_products(self, body: dict) -> Any: ...
+
 
 @bean
 class PlaceServiceClientImpl(PlaceServiceClient):
@@ -115,3 +134,45 @@ class PlaceServiceClientImpl(PlaceServiceClient):
     @api_call
     def search_places(self, body: dict, session=None, url=None, headers=None):
         return session.post(url=f"{url}/places/search", json=body, timeout=60, headers=headers)
+
+    @api_call
+    def list_product_categories(self, session=None, url=None, headers=None):
+        return session.get(url=f"{url}/product-categories", timeout=30, headers=headers)
+
+    @api_call
+    def create_product(self, body: dict, session=None, url=None, headers=None):
+        return session.post(url=f"{url}/products", json=body, timeout=30, headers=headers)
+
+    @api_call
+    def list_products(
+        self,
+        place_id: Optional[int] = None,
+        category: Optional[str] = None,
+        session=None,
+        url=None,
+        headers=None,
+        **kwargs,
+    ):
+        params = {}
+        if place_id is not None:
+            params["place_id"] = place_id
+        if category is not None:
+            params["category"] = category
+        params.update({k: v for k, v in kwargs.items() if v is not None})
+        return session.get(url=f"{url}/products", params=params, timeout=30, headers=headers)
+
+    @api_call
+    def get_product(self, product_id: int, session=None, url=None, headers=None):
+        return session.get(url=f"{url}/products/{product_id}", timeout=30, headers=headers)
+
+    @api_call
+    def patch_product(self, product_id: int, body: dict, session=None, url=None, headers=None):
+        return session.patch(url=f"{url}/products/{product_id}", json=body, timeout=30, headers=headers)
+
+    @api_call
+    def delete_product(self, product_id: int, session=None, url=None, headers=None):
+        return session.delete(url=f"{url}/products/{product_id}", timeout=30, headers=headers)
+
+    @api_call
+    def search_products(self, body: dict, session=None, url=None, headers=None):
+        return session.post(url=f"{url}/products/search", json=body, timeout=60, headers=headers)

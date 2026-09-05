@@ -1,18 +1,20 @@
-# Milana — NL-поиск мест через ИИ-агента
+# Milana — NL-поиск мест и продуктов через ИИ-агента
 
-← [Оглавление](index.md) · [places-search](places-search.md)
+← [Оглавление](index.md) · [places-search](places-search.md) · [products-search](products-search.md)
 
 **Upstream:** milana-service `:8086` (проксируется gateway как `/milana/*`)
 
 ## Механика (вариант B)
 
-1. **PLAN** — Милана знает мир (города + категории) и раскладывает `q` на шаги `{intent, category, why}`
-2. Подтягиваются **compact** JSON Schema только для выбранных категорий
-3. **BUILD** — Милана сама пишет тела `POST /places/search`
-4. Python только исполняет search + валидирует
-5. **MESSAGE** — тёплый текст от Миланы в поле `message`
+1. **PLAN** — Милана знает мир (города + категории мест + категории продуктов) и раскладывает `q` на шаги `{domain, intent, category, place_name?, place_category?, why}`. `domain` = `place` | `product`. Именованное заведение («акции в кафе Мечта») → `place_name` + опционально `place_category=cafes`.
+2. Для шагов `place` подтягиваются **compact** JSON Schema attrs; у продуктов схем нет.
+3. **BUILD** — Милана пишет тела `POST /places/search` или `POST /products/search`. Имя места — в `place_name`, не только в `q`. Даты → `date_from`/`date_to` (events). LLM не выдумывает id.
+4. Python: резолв `place_name` → `places/search` (`limit=1`) → `place_id`; нет места — шаг пустой. Между шагами копит `exclude_ids` / `exclude_place_ids`. Если есть `my_geo` и нет `sort_by` → `distance`. Продукты без `place_id` → `one_per_place=true`.
+5. **MESSAGE** — тёплый текст от Миланы в поле `message`. Товары/услуги принадлежат местам.
 
 Keyword-heuristic в Python **нет**. Нужен `DEEPSEEK_API_KEY`.
+
+NL-вход остаётся `POST /milana/places/search` (клиент не ломаем); внутри шаги могут ходить в products.
 
 Лог всего общения DeepSeek + place API: файл `logs/milana-agent-milana-service.txt` (`LoggerService.get_file_logger("milana-agent")`).
 
@@ -20,12 +22,13 @@ Keyword-heuristic в Python **нет**. Нужен `DEEPSEEK_API_KEY`.
 
 | Method | Описание |
 |--------|----------|
-| `GET /milana/world` | `{cities, categories}` compact |
+| `GET /milana/world` | `{cities, categories, product_categories}` compact |
 | `GET /milana/cities` | города `{id,name,slug,region,lat,lng}` |
-| `GET /milana/categories` | `{code,title,title_en}` |
-| `GET /milana/attr-schemas/{category_code}` | compact schema (без description) |
+| `GET /milana/categories` | категории мест `{code,title,title_en}` |
+| `GET /milana/product-categories` | категории товаров/услуг `{code,title,title_en}` |
+| `GET /milana/attr-schemas/{category_code}` | compact schema attrs места (без description) |
 
-Source of truth: place-service `GET /cities`, `/categories`, `/attr-schemas/{code}?compact=true`.
+Source of truth: place-service `GET /cities`, `/categories`, `/product-categories`, `/attr-schemas/{code}?compact=true`.
 
 ## NL-поиск
 
@@ -37,6 +40,7 @@ Source of truth: place-service `GET /cities`, `/categories`, `/attr-schemas/{cod
 | `city_id` | нет | Default `3` |
 | `my_geo` | нет | `{lat, lng}` |
 | `weekday` | нет | `0`=пн…`6`=вс |
+| `timezone` | нет | IANA TZ (`Asia/Novosibirsk`) для now / events |
 | `limit_per_step` | нет | default 5 |
 
 ### Ответ
@@ -45,15 +49,27 @@ Source of truth: place-service `GET /cities`, `/categories`, `/attr-schemas/{cod
 {
   "message": "Привет! Я Милана. Вот что нашлось для тебя... Удачи!",
   "plan": [
-    {"intent": "Театр", "category": "theaters", "why": "после работы спектакль"}
+    {"domain": "place", "intent": "Театр", "category": "theaters", "why": "после работы спектакль"},
+    {"domain": "product", "intent": "Кофе в Мечте", "category": "coffee", "place_name": "Мечта", "place_category": "cafes", "why": "акции в кафе"}
   ],
   "steps": [
     {
+      "domain": "place",
       "intent": "Театр",
       "why": "после работы спектакль",
       "search": {"city_id": 3, "category": "theaters", "...": "..."},
       "total": 12,
-      "places": [{"id": 1, "name": "...", "distance_m": 1200}]
+      "places": [{"id": 1, "name": "...", "distance_m": 1200}],
+      "products": []
+    },
+    {
+      "domain": "product",
+      "intent": "Йога",
+      "why": "занятие вечером",
+      "search": {"city_id": 3, "category": "yoga_class", "open_at": [{"weekday": 1, "intervals": [{"open": "19:00"}]}]},
+      "total": 3,
+      "places": [],
+      "products": [{"id": 4, "name": "Хатха-йога вечер", "price": 700, "place": {"name": "..."}}]
     }
   ],
   "model": "deepseek-chat",
@@ -76,14 +92,14 @@ export DEEPSEEK_MAX_TOKENS=4096
 # мир
 curl -s http://localhost:8080/milana/world | jq
 
-# NL search
+# NL search (места и/или продукты внутри)
 curl -s http://localhost:8080/milana/places/search \
   -H 'Content-Type: application/json' \
   -d '{
-  "q": "я хочу сначала после работы (а я работаю до 18:00 + час до центра) сходить в театр а потом пойти поесть в ресторане не делеко (там должен быть паркинг). После этого ночью уже хожу на набережной погулять.",
+  "q": "хочу вечером йогу недорого, а потом поесть в ресторане недалеко с парковкой",
   "city_id": 3,
   "my_geo": {"lat": 54.924424, "lng": 82.999171},
-  "weekday": 4
+  "weekday": 1
 }'
 ```
 

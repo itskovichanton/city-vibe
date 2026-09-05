@@ -52,4 +52,5 @@ curl -s http://localhost:8080/places -H 'Content-Type: application/json' -d '{
 ## Поиск
 
 См. подробный гайд: [places-search.md](places-search.md) — `POST /places/search`.  
+Товары и услуги мест: [products.md](products.md), [products-search.md](products-search.md).  
 NL через ИИ: [milana.md](milana.md) — `POST /milana/places/search`.

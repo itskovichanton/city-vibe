@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "City Vibe — Milana Service",
-    "description": "ИИ-агент Милана: NL → places/search (DeepSeek, variant B)",
+    "description": "ИИ-агент Милана: NL → places/search и products/search (DeepSeek, variant B)",
     "version": "1.1.0"
   },
   "paths": {
@@ -30,7 +30,7 @@
         "tags": [
           "world"
         ],
-        "summary": "Города + категории (compact)",
+        "summary": "Города + категории мест и продуктов (compact)",
         "operationId": "world_milana_world_get",
         "responses": {
           "200": {
@@ -68,8 +68,27 @@
         "tags": [
           "world"
         ],
-        "summary": "Категории compact",
+        "summary": "Категории мест compact",
         "operationId": "categories_milana_categories_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/milana/product-categories": {
+      "get": {
+        "tags": [
+          "world"
+        ],
+        "summary": "Категории продуктов compact",
+        "operationId": "product_categories_milana_product_categories_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -128,7 +147,7 @@
           "milana"
         ],
         "summary": "NL-поиск мест (Милана, variant B)",
-        "description": "Pass1 plan (cities+categories) → Pass2 build (compact schemas) → places/search × N → message от Миланы. Нужен DEEPSEEK_API_KEY. Лог: milana-agent-*.txt через LoggerService.",
+        "description": "Pass1 plan (cities+categories+product_categories) → Pass2 build → places/search и/или products/search × N → message от Миланы. Резолв place_name → place_id, exclude между шагами, default distance. Нужен DEEPSEEK_API_KEY. Лог: milana-agent-*.txt через LoggerService.",
         "operationId": "milana_places_search_milana_places_search_post",
         "requestBody": {
           "content": {
@@ -240,6 +259,18 @@
             ],
             "title": "Weekday"
           },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone",
+            "description": "IANA TZ для now / events"
+          },
           "limit_per_step": {
             "anyOf": [
               {
@@ -308,29 +339,61 @@
       },
       "MilanaPlanStepOut": {
         "properties": {
+          "domain": {
+            "type": "string",
+            "title": "Domain",
+            "default": "place"
+          },
           "intent": {
             "type": "string",
             "title": "Intent"
           },
           "category": {
             "type": "string",
-            "title": "Category"
+            "title": "Category",
+            "default": ""
           },
           "why": {
             "type": "string",
             "title": "Why",
             "default": ""
+          },
+          "place_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Place Name"
+          },
+          "place_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Place Category"
           }
         },
         "type": "object",
         "required": [
-          "intent",
-          "category"
+          "intent"
         ],
         "title": "MilanaPlanStepOut"
       },
       "MilanaStepOut": {
         "properties": {
+          "domain": {
+            "type": "string",
+            "title": "Domain",
+            "default": "place"
+          },
           "intent": {
             "type": "string",
             "title": "Intent"
@@ -357,6 +420,15 @@
             },
             "type": "array",
             "title": "Places",
+            "default": []
+          },
+          "products": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Products",
             "default": []
           }
         },
@@ -390,6 +462,13 @@
           "type": {
             "type": "string",
             "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
           }
         },
         "type": "object",

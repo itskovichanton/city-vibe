@@ -48,12 +48,18 @@ def test_milana_world_catalog(live_backend):
         world = get_json(client, "/milana/world")
         assert isinstance(world, dict)
         assert world.get("cities") or world.get("categories")
+        assert isinstance(world.get("product_categories"), list)
+        assert world["product_categories"]
 
         cities = get_json(client, "/milana/cities")
         assert isinstance(cities, list) and cities
 
         categories = get_json(client, "/milana/categories")
         assert isinstance(categories, list) and categories
+
+        product_categories = get_json(client, "/milana/product-categories")
+        assert isinstance(product_categories, list) and product_categories
+        assert any(c.get("code") == "food" for c in product_categories if isinstance(c, dict))
 
         schema = get_json(client, "/milana/attr-schemas/bars")
         assert isinstance(schema, dict)

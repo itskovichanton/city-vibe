@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Dict, List, Protocol
 
 from sqlalchemy import select, text
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
@@ -16,6 +15,7 @@ from python.place_service.src.place_service.infra.attr_ops import compile_attrs_
 from python.place_service.src.place_service.infra.orm.mappers import place_model_to_dto
 from python.place_service.src.place_service.infra.orm.models import PlaceModel
 from python.place_service.src.place_service.infra.schedule_filter import compile_open_at_filters
+from python.place_service.src.place_service.infra.search_sql import sql_not_in
 
 
 @dataclass
@@ -24,7 +24,7 @@ class PlaceSearchResult:
     total: int
     page: int
     limit: int
-    distances_m: Dict[int, float]  # place_id -> meters (если считали)
+    distances_m: Dict[int, float]
 
 
 class PlaceSearchRepo(Protocol):
@@ -36,17 +36,24 @@ class PlaceSearchRepoImpl(PlaceSearchRepo):
     db: Database
 
     async def search(self, req: PlaceSearchRequest) -> PlaceSearchResult:
-        where = ["deleted = FALSE", "city_id = :city_id", "category_code = :category"]
+        where = ["deleted = FALSE", "city_id = :city_id"]
         params: Dict[str, Any] = {
             "city_id": req.city_id,
-            "category": req.category,
             "limit": req.limit,
             "offset": (req.page - 1) * req.limit,
         }
 
+        if req.category:
+            where.append("category_code = :category")
+            params["category"] = req.category
+
         if req.name:
             where.append("name ILIKE :name_pat")
             params["name_pat"] = f"%{req.name}%"
+
+        excl = sql_not_in("id", req.exclude_ids, params, prefix="ex")
+        if excl:
+            where.append(excl)
 
         if req.attrs:
             attrs_sql, attrs_params = compile_attrs_filters(req.attrs)
@@ -54,7 +61,10 @@ class PlaceSearchRepoImpl(PlaceSearchRepo):
             params.update(attrs_params)
 
         if req.open_at:
-            oa_sql, oa_params = compile_open_at_filters(req.open_at)
+            oa_sql, oa_params = compile_open_at_filters(
+                req.open_at,
+                timezone=req.timezone,
+            )
             where.append(oa_sql)
             params.update(oa_params)
 
@@ -64,6 +74,8 @@ class PlaceSearchRepoImpl(PlaceSearchRepo):
         order_sql = "id DESC"
         if req.sort_by == "rating":
             order_sql = "(rating_up - rating_down) DESC, rating_up DESC, id DESC"
+        elif req.sort_by == "created_at":
+            order_sql = "created_at DESC, id DESC"
         elif req.sort_by == "distance" and req.my_geo is not None:
             params["my_lat"] = req.my_geo.lat
             params["my_lng"] = req.my_geo.lng
@@ -72,7 +84,6 @@ class PlaceSearchRepoImpl(PlaceSearchRepo):
             )
             order_sql = "distance_m ASC NULLS LAST, id DESC"
         elif req.my_geo is not None:
-            # расстояние в ответе без сортировки по нему
             params["my_lat"] = req.my_geo.lat
             params["my_lng"] = req.my_geo.lng
             distance_select = (
@@ -100,7 +111,13 @@ class PlaceSearchRepoImpl(PlaceSearchRepo):
                 if r["distance_m"] is not None
             }
             if not ids:
-                return PlaceSearchResult(items=[], total=total, page=req.page, limit=req.limit, distances_m={})
+                return PlaceSearchResult(
+                    items=[],
+                    total=total,
+                    page=req.page,
+                    limit=req.limit,
+                    distances_m={},
+                )
 
             result = await session.execute(select(PlaceModel).where(PlaceModel.id.in_(ids)))
             by_id = {m.id: m for m in result.scalars().all()}

@@ -38,6 +38,11 @@ def test_cities_categories_attr_schemas(live_backend):
         codes = {c["code"] for c in categories if isinstance(c, dict)}
         assert "bars" in codes or "cafes" in codes or "restaurants" in codes
 
+        product_categories = get_json(client, "/product-categories")
+        assert isinstance(product_categories, list) and product_categories
+        product_codes = {c["code"] for c in product_categories if isinstance(c, dict)}
+        assert "food" in product_codes
+
         schemas = get_json(client, "/attr-schemas")
         assert isinstance(schemas, list)
         bars_schema = get_json(client, "/attr-schemas/bars")

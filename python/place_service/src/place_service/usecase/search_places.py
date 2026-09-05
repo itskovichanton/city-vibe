@@ -29,9 +29,10 @@ class SearchPlacesUseCaseImpl(SearchPlacesUseCase):
     place_search_repo: PlaceSearchRepo
 
     async def execute(self, request: SearchPlacesRequest) -> dict[str, Any]:
-        cat = await self.category_repo.get_by_code(request.category)
-        if cat is None:
-            raise CoreException(message=f"Категория {request.category} не найдена в справочнике")
+        if request.category:
+            cat = await self.category_repo.get_by_code(request.category)
+            if cat is None:
+                raise CoreException(message=f"Категория {request.category} не найдена в справочнике")
         city = await self.city_repo.get_by_id(request.city_id)
         if city is None:
             raise CoreException(

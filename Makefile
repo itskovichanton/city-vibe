@@ -86,6 +86,10 @@ migrate-place:
 		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/migrations/003_search_extensions.sql
 	docker compose -f infra/docker-compose.yml exec -T postgres \
 		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/migrations/004_schedule_covers_fn.sql
+	docker compose -f infra/docker-compose.yml exec -T postgres \
+		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/migrations/005_create_products.sql
+	docker compose -f infra/docker-compose.yml exec -T postgres \
+		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/migrations/006_products_price_nullable.sql
 
 migrate-design:
 	-docker compose -f infra/docker-compose.yml exec -T postgres \
@@ -109,6 +113,10 @@ seed-place:
 		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/seed/001_seed_cities.sql
 	docker compose -f infra/docker-compose.yml exec -T postgres \
 		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/seed/002_seed_categories_attrs.sql
+	docker compose -f infra/docker-compose.yml exec -T postgres \
+		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/seed/003_seed_product_categories.sql
+	docker compose -f infra/docker-compose.yml exec -T postgres \
+		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/seed/004_seed_sample_products.sql
 
 seed-nsk-places:
 	$(PYTHON) $(PLACE_SERVICE)/scripts/seed_nsk_places.py

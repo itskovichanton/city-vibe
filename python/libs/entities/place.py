@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from decimal import Decimal
 from enum import StrEnum
 from typing import Any, Dict, List, Optional
 
@@ -263,6 +264,186 @@ class AttrSchema(Entity):
     category_code: str
     json_schema: Dict[str, Any]
     version: int = 1
+
+
+class ProductCategory(StrEnum):
+    """Коды категорий товаров и услуг (seed → product_categories)."""
+
+    FOOD = "food"
+    READY_MEALS = "ready_meals"
+    BAKERY_GOODS = "bakery_goods"
+    COFFEE = "coffee"
+    DRINKS = "drinks"
+    GROCERY = "grocery"
+    CONCERT = "concert"
+    THEATER_TICKET = "theater_ticket"
+    CINEMA_TICKET = "cinema_ticket"
+    EXHIBITION_TICKET = "exhibition_ticket"
+    STANDUP = "standup"
+    FESTIVAL = "festival"
+    MEMBERSHIP = "membership"
+    YOGA_CLASS = "yoga_class"
+    FITNESS_CLASS = "fitness_class"
+    DANCE_CLASS = "dance_class"
+    WORKSHOP_SESSION = "workshop_session"
+    KIDS_CLASS = "kids_class"
+    BEAUTY = "beauty"
+    HAIRCUT = "haircut"
+    MANICURE = "manicure"
+    SPA_TREATMENT = "spa_treatment"
+    COSMETICS = "cosmetics"
+    SPORT_GOODS = "sport_goods"
+    SPORT_RENTAL = "sport_rental"
+    PERSONAL_TRAINING = "personal_training"
+    CONSTRUCTION = "construction"
+    TOOLS = "tools"
+    FINISHING_MATERIALS = "finishing_materials"
+    PLUMBING = "plumbing"
+    ELECTRICAL = "electrical"
+    FURNITURE = "furniture"
+    HOME_GOODS = "home_goods"
+    CLOTHES = "clothes"
+    SHOES = "shoes"
+    ACCESSORIES = "accessories"
+    DELIVERY = "delivery"
+    REPAIR = "repair"
+    CLEANING = "cleaning"
+    PHOTO_SESSION = "photo_session"
+    MASSAGE = "massage"
+    EDUCATION = "education"
+    AUTO_SERVICE = "auto_service"
+    PET_SERVICE = "pet_service"
+    FLOWERS = "flowers"
+    BOOKS = "books"
+    ELECTRONICS = "electronics"
+    GIFTS = "gifts"
+
+
+PRODUCT_CATEGORY_TITLES: Dict[ProductCategory, str] = {
+    ProductCategory.FOOD: "Еда",
+    ProductCategory.READY_MEALS: "Готовая еда",
+    ProductCategory.BAKERY_GOODS: "Выпечка",
+    ProductCategory.COFFEE: "Кофе",
+    ProductCategory.DRINKS: "Напитки",
+    ProductCategory.GROCERY: "Продукты",
+    ProductCategory.CONCERT: "Концерт",
+    ProductCategory.THEATER_TICKET: "Билет в театр",
+    ProductCategory.CINEMA_TICKET: "Билет в кино",
+    ProductCategory.EXHIBITION_TICKET: "Билет на выставку",
+    ProductCategory.STANDUP: "Стендап",
+    ProductCategory.FESTIVAL: "Фестиваль",
+    ProductCategory.MEMBERSHIP: "Абонемент",
+    ProductCategory.YOGA_CLASS: "Занятие йогой",
+    ProductCategory.FITNESS_CLASS: "Фитнес-занятие",
+    ProductCategory.DANCE_CLASS: "Танцевальное занятие",
+    ProductCategory.WORKSHOP_SESSION: "Мастер-класс",
+    ProductCategory.KIDS_CLASS: "Детское занятие",
+    ProductCategory.BEAUTY: "Красота",
+    ProductCategory.HAIRCUT: "Стрижка",
+    ProductCategory.MANICURE: "Маникюр",
+    ProductCategory.SPA_TREATMENT: "SPA-процедура",
+    ProductCategory.COSMETICS: "Косметика",
+    ProductCategory.SPORT_GOODS: "Спортивные товары",
+    ProductCategory.SPORT_RENTAL: "Прокат спорта",
+    ProductCategory.PERSONAL_TRAINING: "Персональная тренировка",
+    ProductCategory.CONSTRUCTION: "Строительные товары",
+    ProductCategory.TOOLS: "Инструменты",
+    ProductCategory.FINISHING_MATERIALS: "Отделочные материалы",
+    ProductCategory.PLUMBING: "Сантехника",
+    ProductCategory.ELECTRICAL: "Электрика",
+    ProductCategory.FURNITURE: "Мебель",
+    ProductCategory.HOME_GOODS: "Товары для дома",
+    ProductCategory.CLOTHES: "Одежда",
+    ProductCategory.SHOES: "Обувь",
+    ProductCategory.ACCESSORIES: "Аксессуары",
+    ProductCategory.DELIVERY: "Доставка",
+    ProductCategory.REPAIR: "Ремонт",
+    ProductCategory.CLEANING: "Клининг",
+    ProductCategory.PHOTO_SESSION: "Фотосессия",
+    ProductCategory.MASSAGE: "Массаж",
+    ProductCategory.EDUCATION: "Обучение",
+    ProductCategory.AUTO_SERVICE: "Автосервис",
+    ProductCategory.PET_SERVICE: "Услуги для питомцев",
+    ProductCategory.FLOWERS: "Цветы",
+    ProductCategory.BOOKS: "Книги",
+    ProductCategory.ELECTRONICS: "Электроника",
+    ProductCategory.GIFTS: "Подарки",
+}
+
+PRODUCT_CATEGORY_TITLES_EN: Dict[ProductCategory, str] = {
+    ProductCategory.FOOD: "Food",
+    ProductCategory.READY_MEALS: "Ready meals",
+    ProductCategory.BAKERY_GOODS: "Bakery",
+    ProductCategory.COFFEE: "Coffee",
+    ProductCategory.DRINKS: "Drinks",
+    ProductCategory.GROCERY: "Grocery",
+    ProductCategory.CONCERT: "Concert",
+    ProductCategory.THEATER_TICKET: "Theater ticket",
+    ProductCategory.CINEMA_TICKET: "Cinema ticket",
+    ProductCategory.EXHIBITION_TICKET: "Exhibition ticket",
+    ProductCategory.STANDUP: "Stand-up",
+    ProductCategory.FESTIVAL: "Festival",
+    ProductCategory.MEMBERSHIP: "Membership",
+    ProductCategory.YOGA_CLASS: "Yoga class",
+    ProductCategory.FITNESS_CLASS: "Fitness class",
+    ProductCategory.DANCE_CLASS: "Dance class",
+    ProductCategory.WORKSHOP_SESSION: "Workshop",
+    ProductCategory.KIDS_CLASS: "Kids class",
+    ProductCategory.BEAUTY: "Beauty",
+    ProductCategory.HAIRCUT: "Haircut",
+    ProductCategory.MANICURE: "Manicure",
+    ProductCategory.SPA_TREATMENT: "SPA treatment",
+    ProductCategory.COSMETICS: "Cosmetics",
+    ProductCategory.SPORT_GOODS: "Sport goods",
+    ProductCategory.SPORT_RENTAL: "Sport rental",
+    ProductCategory.PERSONAL_TRAINING: "Personal training",
+    ProductCategory.CONSTRUCTION: "Construction goods",
+    ProductCategory.TOOLS: "Tools",
+    ProductCategory.FINISHING_MATERIALS: "Finishing materials",
+    ProductCategory.PLUMBING: "Plumbing",
+    ProductCategory.ELECTRICAL: "Electrical",
+    ProductCategory.FURNITURE: "Furniture",
+    ProductCategory.HOME_GOODS: "Home goods",
+    ProductCategory.CLOTHES: "Clothes",
+    ProductCategory.SHOES: "Shoes",
+    ProductCategory.ACCESSORIES: "Accessories",
+    ProductCategory.DELIVERY: "Delivery",
+    ProductCategory.REPAIR: "Repair",
+    ProductCategory.CLEANING: "Cleaning",
+    ProductCategory.PHOTO_SESSION: "Photo session",
+    ProductCategory.MASSAGE: "Massage",
+    ProductCategory.EDUCATION: "Education",
+    ProductCategory.AUTO_SERVICE: "Auto service",
+    ProductCategory.PET_SERVICE: "Pet service",
+    ProductCategory.FLOWERS: "Flowers",
+    ProductCategory.BOOKS: "Books",
+    ProductCategory.ELECTRONICS: "Electronics",
+    ProductCategory.GIFTS: "Gifts",
+}
+
+
+@dataclass
+class ProductCategoryInfo(Entity):
+    """Строка справочника product_categories."""
+
+    code: str
+    title: str
+    title_en: str = ""
+    icon_url: Optional[str] = None
+    sort_order: int = 0
+    is_active: bool = True
+
+
+@dataclass
+class Product(Entity):
+    """Товар или услуга, которую производит место."""
+
+    place_id: int
+    name: str
+    description: str
+    category: ProductCategory
+    price: Optional[Decimal] = None
+    schedule: Optional[WeeklySchedule] = None
 
 
 @dataclass

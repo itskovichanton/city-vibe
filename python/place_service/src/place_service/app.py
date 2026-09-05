@@ -28,6 +28,22 @@ from python.place_service.src.place_service.usecase.places import (  # noqa: F40
     PatchPlaceUseCaseImpl,
 )
 from python.place_service.src.place_service.usecase.search_places import SearchPlacesUseCaseImpl  # noqa: F401
+from python.place_service.src.place_service.repo.product import ProductRepoImpl  # noqa: F401
+from python.place_service.src.place_service.repo.product_category import ProductCategoryRepoImpl  # noqa: F401
+from python.place_service.src.place_service.repo.product_search import ProductSearchRepoImpl  # noqa: F401
+from python.place_service.src.place_service.usecase.product_categories import (  # noqa: F401
+    ListProductCategoriesUseCaseImpl,
+)
+from python.place_service.src.place_service.usecase.products import (  # noqa: F401
+    CreateProductUseCaseImpl,
+    DeleteProductUseCaseImpl,
+    GetProductUseCaseImpl,
+    ListProductsUseCaseImpl,
+    PatchProductUseCaseImpl,
+)
+from python.place_service.src.place_service.usecase.search_products import (  # noqa: F401
+    SearchProductsUseCaseImpl,
+)
 
 
 @bean

@@ -175,6 +175,24 @@ class Server:
                 return err
             return await self._proxy(request, self._places_url, f"/places/{path}")
 
+        @self.fast_api.get("/product-categories")
+        async def proxy_product_categories(request: Request):
+            return await self._proxy(request, self._places_url, "/product-categories")
+
+        @self.fast_api.api_route("/products", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+        async def proxy_products_root(request: Request):
+            err = self._validate_jwt_optional(request)
+            if err:
+                return err
+            return await self._proxy(request, self._places_url, "/products")
+
+        @self.fast_api.api_route("/products/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+        async def proxy_products(request: Request, path: str):
+            err = self._validate_jwt_optional(request)
+            if err:
+                return err
+            return await self._proxy(request, self._places_url, f"/products/{path}")
+
         # design-service
         @self.fast_api.api_route("/pin-styles", methods=["GET"])
         async def proxy_pins_root(request: Request):
