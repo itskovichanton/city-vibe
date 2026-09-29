@@ -7,11 +7,10 @@ ENV: CITYVIBE_RATE_LIMIT_ENABLED=true
 
 from __future__ import annotations
 
-from typing import Callable
+from typing import Any, Callable, TYPE_CHECKING
 
 import redis.asyncio as redis
 from fastapi import Request
-from pyrate_limiter import Duration, Limiter, Rate, RedisBucket
 from src.mybootstrap_mvc_itskovichanton.exceptions import (
     ERR_REASON_TOO_MANY_REQUESTS,
     CoreException,
@@ -19,8 +18,13 @@ from src.mybootstrap_mvc_itskovichanton.exceptions import (
 
 from python.libs.infra.flags import flags
 
+if TYPE_CHECKING:
+    from pyrate_limiter import Limiter
+
+# pyrate-limiter 4.x: Rate + try_acquire_async(..., blocking=).
+# Импорт внутри _limiter_for — модуль грузится и при выключенном rate-limit.
 # (limit, window_sec) → Limiter; один Redis-клиент на процесс
-_limiters: dict[tuple[int, int], Limiter] = {}
+_limiters: dict[tuple[int, int], Any] = {}
 _redis: redis.Redis | None = None
 
 
@@ -42,6 +46,8 @@ async def _redis_client() -> redis.Redis:
 
 
 async def _limiter_for(limit: int, window_sec: int) -> Limiter:
+    from pyrate_limiter import Duration, Limiter, Rate, RedisBucket
+
     key = (limit, window_sec)
     cached = _limiters.get(key)
     if cached is not None:

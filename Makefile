@@ -46,7 +46,7 @@ install:
 	$(PIP) install -r $(MILANA_SERVICE)/requirements.txt
 	$(PIP) install -r $(NOTIFICATION_SERVICE)/requirements.txt
 	$(PIP) install -r $(API_GATEWAY)/requirements.txt
-	$(PIP) install pwdlib argon2-cffi PyJWT phonenumbers email-validator google-auth aiosmtplib jinja2 httpx fakeredis jsonschema opentelemetry-instrumentation-httpx testcontainers
+	$(PIP) install pwdlib argon2-cffi PyJWT phonenumbers email-validator google-auth aiosmtplib jinja2 httpx fakeredis jsonschema opentelemetry-instrumentation-httpx testcontainers 'pyrate-limiter>=4.5,<5'
 	@echo "OK: зависимости установлены"
 
 infra-up:

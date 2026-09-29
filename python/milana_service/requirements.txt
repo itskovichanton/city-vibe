@@ -6,3 +6,4 @@ pyyaml>=6.0
 pytest>=8.0
 pytest-asyncio>=0.23
 ruff>=0.4
+pyrate-limiter>=4.5,<5
