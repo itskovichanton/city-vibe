@@ -94,7 +94,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       final catalog = ref.read(catalogClientProvider);
       final user = ref.read(currentUserProvider).valueOrNull;
       final productsFuture = catalog.getProductCategories();
-      final placesFuture = catalog.getPlaceCategories();
+      final placesFuture = ref.read(placeCategoriesRepositoryProvider).getAll();
       final matchedProductsFuture = _matchCodes(
         match: () => catalog.matchProductCategories(longBio, limit: 50),
         extra: user?.favoriteProductCategories ?? const [],
@@ -112,7 +112,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       if (!mounted) return;
       setState(() {
         _productCategories = products;
-        _placeCategories = places;
+        _placeCategories =
+            places.map((e) => e.toCatalogItem()).toList(growable: false);
         _matchedProductCodes = matchedProducts;
         _matchedPlaceCodes = matchedPlaces;
       });
@@ -266,119 +267,120 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           SafeArea(
             child: Column(
               children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 4, 16, 0),
-                child: Row(
-                  children: [
-                    if (_step > 0)
-                      IconButton(
-                        onPressed: () => _goToStep(_step - 1),
-                        icon: const Icon(Icons.chevron_left_rounded, size: 32),
-                        color: AppColors.textPrimary,
-                      )
-                    else
-                      const SizedBox(width: 48),
-                    Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(3, (i) {
-                          final active = i <= _step;
-                          return Container(
-                            width: i == _step ? 28 : 18,
-                            height: 4,
-                            margin: const EdgeInsets.symmetric(horizontal: 3),
-                            decoration: BoxDecoration(
-                              color: active
-                                  ? AppColors.accent
-                                  : AppColors.fieldBorder,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
-                    Text(
-                      '${_step + 1} из 3',
-                      style: textTheme.labelMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 420),
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              width: double.infinity,
-                              padding:
-                                  const EdgeInsets.fromLTRB(20, 22, 20, 20),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 4, 16, 0),
+                  child: Row(
+                    children: [
+                      if (_step > 0)
+                        IconButton(
+                          onPressed: () => _goToStep(_step - 1),
+                          icon:
+                              const Icon(Icons.chevron_left_rounded, size: 32),
+                          color: AppColors.textPrimary,
+                        )
+                      else
+                        const SizedBox(width: 48),
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(3, (i) {
+                            final active = i <= _step;
+                            return Container(
+                              width: i == _step ? 28 : 18,
+                              height: 4,
+                              margin: const EdgeInsets.symmetric(horizontal: 3),
                               decoration: BoxDecoration(
-                                color: AppColors.card,
-                                borderRadius: BorderRadius.circular(22),
-                                border:
-                                    Border.all(color: AppColors.cardBorder),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color:
-                                        Colors.black.withValues(alpha: 0.35),
-                                    blurRadius: 24,
-                                    offset: const Offset(0, 12),
-                                  ),
-                                ],
+                                color: active
+                                    ? AppColors.accent
+                                    : AppColors.fieldBorder,
+                                borderRadius: BorderRadius.circular(4),
                               ),
-                              child: PageView(
-                                controller: _pageController,
-                                physics: const NeverScrollableScrollPhysics(),
-                                children: [
-                                  OnboardingStepOnePage(
-                                    key: _stepOneKey,
-                                    onChanged: () => setState(() {}),
-                                    onContinue: _onStepOneContinue,
-                                  ),
-                                  OnboardingInterestsPage(
-                                    key: _productsKey,
-                                    title:
-                                        'Вас интересуют эти товары и услуги?',
-                                    subtitle: _matchHint,
-                                    categories: _productCategories,
-                                    initialSelected: _matchedProductCodes,
-                                  ),
-                                  OnboardingInterestsPage(
-                                    key: _placesKey,
-                                    title:
-                                        'Вам интересны эти места вокруг вас?',
-                                    subtitle: _matchHint,
-                                    categories: _placeCategories,
-                                    initialSelected: _matchedPlaceCodes,
-                                  ),
-                                ],
+                            );
+                          }),
+                        ),
+                      ),
+                      Text(
+                        '${_step + 1} из 3',
+                        style: textTheme.labelMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                width: double.infinity,
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 22, 20, 20),
+                                decoration: BoxDecoration(
+                                  color: AppColors.card,
+                                  borderRadius: BorderRadius.circular(22),
+                                  border:
+                                      Border.all(color: AppColors.cardBorder),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.35),
+                                      blurRadius: 24,
+                                      offset: const Offset(0, 12),
+                                    ),
+                                  ],
+                                ),
+                                child: PageView(
+                                  controller: _pageController,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  children: [
+                                    OnboardingStepOnePage(
+                                      key: _stepOneKey,
+                                      onChanged: () => setState(() {}),
+                                      onContinue: _onStepOneContinue,
+                                    ),
+                                    OnboardingInterestsPage(
+                                      key: _productsKey,
+                                      title:
+                                          'Вас интересуют эти товары и услуги?',
+                                      subtitle: _matchHint,
+                                      categories: _productCategories,
+                                      initialSelected: _matchedProductCodes,
+                                    ),
+                                    OnboardingInterestsPage(
+                                      key: _placesKey,
+                                      title:
+                                          'Вам интересны эти места вокруг вас?',
+                                      subtitle: _matchHint,
+                                      categories: _placeCategories,
+                                      initialSelected: _matchedPlaceCodes,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          GradientButton(
-                            label: _continueLabel,
-                            onPressed:
-                                _canContinue ? _onBottomContinue : null,
-                          ),
-                          const SizedBox(height: 88),
-                        ],
+                            const SizedBox(height: 12),
+                            GradientButton(
+                              label: _continueLabel,
+                              onPressed:
+                                  _canContinue ? _onBottomContinue : null,
+                            ),
+                            const SizedBox(height: 88),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
           const Align(
             alignment: Alignment.bottomCenter,
             child: ScrollingCityDecorBar(),

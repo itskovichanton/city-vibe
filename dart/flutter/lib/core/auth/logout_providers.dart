@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Очищает сессию и пользовательские данные.
 ///
 /// JWT — secure storage; профиль — SharedPreferences.
-/// Справочники городов (SQLite) и категории (API-кэш в памяти) не трогаем.
+/// Справочники городов и категорий мест (SQLite) не трогаем.
 typedef AppLogoutFn = Future<void> Function({
   bool notifyServer,
   bool emitLoggedOutEvent,

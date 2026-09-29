@@ -8,6 +8,8 @@ import 'package:city_vibe/core/api/user_client.dart';
 import 'package:city_vibe/core/app/app_identity.dart';
 import 'package:city_vibe/core/cache/cities_repository.dart';
 import 'package:city_vibe/core/cache/city_local_store.dart';
+import 'package:city_vibe/core/cache/place_categories_repository.dart';
+import 'package:city_vibe/core/cache/place_category_local_store.dart';
 import 'package:city_vibe/core/network/api_http.dart';
 import 'package:city_vibe/core/network/dio_client.dart';
 import 'package:dio/dio.dart';
@@ -58,5 +60,25 @@ final citiesRepositoryProvider = Provider<CitiesRepository>((ref) {
   return CitiesRepository(
     client: ref.watch(commonClientProvider),
     store: ref.watch(cityLocalStoreProvider),
+  );
+});
+
+final placeCategoryLocalStoreProvider =
+    Provider<PlaceCategoryLocalStore>((ref) {
+  final store = createPlaceCategoryLocalStore();
+  ref.onDispose(() {
+    final s = store;
+    if (s is SqlitePlaceCategoryLocalStore) {
+      unawaited(s.close());
+    }
+  });
+  return store;
+});
+
+final placeCategoriesRepositoryProvider =
+    Provider<PlaceCategoriesRepository>((ref) {
+  return PlaceCategoriesRepository(
+    client: ref.watch(catalogClientProvider),
+    store: ref.watch(placeCategoryLocalStoreProvider),
   );
 });
