@@ -23,23 +23,19 @@ class CatalogClient {
     );
   }
 
+  /// `GET /categories` — полный справочник категорий мест.
+  Future<List<CatalogItem>> getPlaceCategories({int? limit}) {
+    return _http.get(
+      '/categories',
+      parse: (data) => _parseCatalogList(data, limit: limit),
+    );
+  }
+
   /// `GET /product-categories` — полный справочник товаров и услуг.
   Future<List<CatalogItem>> getProductCategories({int? limit}) {
     return _http.get(
       '/product-categories',
-      parse: (data) {
-        final list = data as List<dynamic>;
-        final items = list
-            .whereType<Map>()
-            .map((e) => CatalogItem.fromJson(Map<String, dynamic>.from(e)))
-            .where((c) => c.isActive)
-            .toList(growable: false)
-          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-        if (limit != null && limit > 0 && items.length > limit) {
-          return items.sublist(0, limit);
-        }
-        return items;
-      },
+      parse: (data) => _parseCatalogList(data, limit: limit),
     );
   }
 
@@ -82,5 +78,35 @@ class CatalogClient {
       limit: limit,
       effort: effort,
     );
+  }
+
+  /// Подбор категорий мест по bio.
+  Future<CatalogMatchResult> matchPlaceCategories(
+    String prompt, {
+    int limit = 50,
+    int effort = 50,
+    List<String> fields = const ['title'],
+  }) {
+    return match(
+      prompt: prompt,
+      catalog: 'place_categories',
+      fields: fields,
+      limit: limit,
+      effort: effort,
+    );
+  }
+
+  List<CatalogItem> _parseCatalogList(dynamic data, {int? limit}) {
+    final list = data as List<dynamic>;
+    final items = list
+        .whereType<Map>()
+        .map((e) => CatalogItem.fromJson(Map<String, dynamic>.from(e)))
+        .where((c) => c.isActive)
+        .toList(growable: false)
+      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    if (limit != null && limit > 0 && items.length > limit) {
+      return items.sublist(0, limit);
+    }
+    return items;
   }
 }

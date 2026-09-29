@@ -43,11 +43,6 @@ final milanaClientProvider = Provider<MilanaClient>((ref) {
   return MilanaClient(ref.watch(apiHttpProvider));
 });
 
-/// Первые 10 категорий для онбординга.
-final onboardingCategoriesProvider = FutureProvider((ref) async {
-  return ref.watch(commonClientProvider).getCategories(limit: 10);
-});
-
 final cityLocalStoreProvider = Provider<CityLocalStore>((ref) {
   final store = createCityLocalStore();
   ref.onDispose(() {

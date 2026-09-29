@@ -4,23 +4,28 @@ import 'package:city_vibe/features/onboarding/presentation/widgets/category_chip
 import 'package:city_vibe/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
-class OnboardingStepThreePage extends StatefulWidget {
-  const OnboardingStepThreePage({
+/// Выбор чипов справочника с предвыбором от catalog/match.
+class OnboardingInterestsPage extends StatefulWidget {
+  const OnboardingInterestsPage({
     super.key,
+    required this.title,
+    required this.subtitle,
     required this.categories,
     required this.initialSelected,
     required this.onContinue,
   });
 
+  final String title;
+  final String subtitle;
   final List<CatalogItem> categories;
   final Set<String> initialSelected;
   final Future<void> Function(Set<String> selectedCodes) onContinue;
 
   @override
-  State<OnboardingStepThreePage> createState() => _OnboardingStepThreePageState();
+  State<OnboardingInterestsPage> createState() => _OnboardingInterestsPageState();
 }
 
-class _OnboardingStepThreePageState extends State<OnboardingStepThreePage> {
+class _OnboardingInterestsPageState extends State<OnboardingInterestsPage> {
   late Set<String> _selected;
   bool _submitting = false;
 
@@ -31,7 +36,7 @@ class _OnboardingStepThreePageState extends State<OnboardingStepThreePage> {
   }
 
   @override
-  void didUpdateWidget(OnboardingStepThreePage oldWidget) {
+  void didUpdateWidget(OnboardingInterestsPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialSelected != widget.initialSelected ||
         oldWidget.categories != widget.categories) {
@@ -59,13 +64,13 @@ class _OnboardingStepThreePageState extends State<OnboardingStepThreePage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Вас интересуют эти товары и услуги?',
+            widget.title,
             style: textTheme.headlineMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
-            'Мы отметили то, что подходит по вашему рассказу. Можно поправить.',
+            widget.subtitle,
             style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),

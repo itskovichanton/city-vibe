@@ -1,11 +1,9 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:city_vibe/core/api/models/place_category.dart';
 import 'package:city_vibe/core/user/user_providers.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dart';
-import 'package:city_vibe/features/onboarding/presentation/widgets/category_chip_wrap.dart';
 import 'package:city_vibe/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,14 +12,12 @@ import 'package:image_picker/image_picker.dart';
 class OnboardingStepOnePage extends ConsumerStatefulWidget {
   const OnboardingStepOnePage({
     super.key,
-    required this.categories,
     required this.onContinue,
   });
 
-  final List<PlaceCategory> categories;
   final Future<void> Function({
     required String name,
-    required Set<String> selectedCategoryCodes,
+    required String longBio,
     String? avatarFilePath,
   }) onContinue;
 
@@ -31,9 +27,10 @@ class OnboardingStepOnePage extends ConsumerStatefulWidget {
 }
 
 class _OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
+  static const _bioMaxLen = 500;
   late final TextEditingController _nameController;
+  late final TextEditingController _bioController;
   final _picker = ImagePicker();
-  final Set<String> _selected = {};
   String? _avatarFilePath;
   bool _submitting = false;
 
@@ -42,20 +39,22 @@ class _OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
     super.initState();
     final user = ref.read(currentUserProvider).valueOrNull;
     _nameController = TextEditingController(text: user?.name ?? '');
-    _selected.addAll(user?.favoriteCategories ?? const []);
+    _bioController = TextEditingController(text: user?.longBio ?? '');
     _nameController.addListener(() => setState(() {}));
+    _bioController.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _bioController.dispose();
     super.dispose();
   }
 
   bool get _canContinue =>
       !_submitting &&
       _nameController.text.trim().isNotEmpty &&
-      _selected.isNotEmpty;
+      _bioController.text.trim().isNotEmpty;
 
   Future<void> _pickAvatar() async {
     final source = await showModalBottomSheet<ImageSource>(
@@ -139,7 +138,7 @@ class _OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
     try {
       await widget.onContinue(
         name: _nameController.text.trim(),
-        selectedCategoryCodes: Set<String>.from(_selected),
+        longBio: _bioController.text.trim(),
         avatarFilePath: _avatarFilePath,
       );
     } finally {
@@ -165,6 +164,7 @@ class _OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider).valueOrNull;
     final textTheme = Theme.of(context).textTheme;
+    final bioLen = _bioController.text.length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 16),
@@ -223,33 +223,64 @@ class _OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Какие места вам нравятся?',
+            'Расскажите о себе',
             style: textTheme.titleMedium,
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Выберите любимые категории',
-            style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-          ),
           const SizedBox(height: 12),
-          CategoryChipWrap(
-            items: widget.categories
-                .map(CategoryChipItem.fromPlace)
-                .toList(growable: false),
-            selected: _selected,
-            onToggle: (code) {
-              setState(() {
-                if (_selected.contains(code)) {
-                  _selected.remove(code);
-                } else {
-                  _selected.add(code);
-                }
-              });
-            },
+          TextField(
+            controller: _bioController,
+            maxLines: 8,
+            maxLength: _bioMaxLen,
+            style: textTheme.bodyMedium,
+            decoration: InputDecoration(
+              hintText:
+                  'Я обожаю атмосферные места, парки, у меня есть машина, …',
+              hintStyle: textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary.withValues(alpha: 0.7),
+              ),
+              filled: true,
+              fillColor: AppColors.fieldFill,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AppColors.fieldBorder),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AppColors.fieldBorder),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+              ),
+              counterText: '$bioLen/$_bioMaxLen',
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.accent.withValues(alpha: 0.25)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.auto_awesome, color: AppColors.accent, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Чем больше Вы расскажете о себе, тем точнее ИИ-Ассистент Милана '
+                    'подберёт места и события под Ваши интересы.',
+                    style: textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 28),
           GradientButton(
-            label: _submitting ? 'Сохраняем…' : 'Продолжить',
+            label: _submitting ? 'Подбираем интересы…' : 'Продолжить',
             onPressed: _canContinue ? _submit : null,
           ),
         ],

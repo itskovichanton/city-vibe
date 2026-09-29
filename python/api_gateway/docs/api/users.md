@@ -21,8 +21,8 @@
 | `name` | string | Имя |
 | `status` | string | Статус сущности (enum Status) |
 | `gender` | enum `Gender` | `male` \| `female` |
-| `short_bio` | string | Коротко о себе (онбординг шаг 1) |
-| `long_bio` | string | Развёрнутое «о себе» (шаг 2) |
+| `short_bio` | string | Коротко о себе |
+| `long_bio` | string | Развёрнутое «о себе» (онбординг, «Расскажите о себе») |
 | `age` | int \| null | Возраст 1..120 |
 | `avatar_url` | string \| null | URL в MinIO/S3 |
 | `role` | string | По умолчанию `REGULAR` |
@@ -40,9 +40,9 @@
 
 | Шаг | Метод | Что делает |
 |-----|-------|------------|
-| 1 | `PATCH /users/{id}` | Имя, категории мест |
-| 2 | `PUT /users/{id}/bio` | Длинное bio |
-| 3 | `PATCH /users/{id}` | Категории товаров/услуг (`favorite_product_categories`); мобилка: `POST /catalog/match` по bio, затем все чипы с предвыбором |
+| 1 | `PATCH /users/{id}` + `PUT /users/{id}/bio` | Имя и длинное bio («Расскажите о себе»). Категорий мест на этом шаге нет. |
+| 2 | `PATCH /users/{id}` | Категории товаров/услуг (`favorite_product_categories`); мобилка: `POST /catalog/match` по `product_categories`, все чипы с предвыбором |
+| 3 | `PATCH /users/{id}` | Категории мест (`favorite_categories`); мобилка: `POST /catalog/match` по `place_categories`, все чипы с предвыбором |
 | 4 | `POST /users/{id}/onboarding/complete` | `onboarding_completed=true` |
 | * | `POST /users/{id}/avatar` | Аватар (можно на любом шаге после create) |
 
@@ -169,7 +169,7 @@ curl -s -X PATCH http://localhost:8080/users/1 \
 
 ## `PUT /users/{user_id}/bio`
 
-Обновить развёрнутое bio (онбординг шаг 2).
+Обновить развёрнутое bio (онбординг, поле «Расскажите о себе»).
 
 ### Защита
 

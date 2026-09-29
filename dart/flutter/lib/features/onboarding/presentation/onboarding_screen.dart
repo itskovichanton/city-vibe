@@ -11,15 +11,14 @@ import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dar
 import 'package:city_vibe/features/auth/presentation/widgets/login_background.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/scrolling_city_decor_bar.dart';
 import 'package:city_vibe/features/onboarding/onboarding_providers.dart';
+import 'package:city_vibe/features/onboarding/presentation/pages/onboarding_interests_page.dart';
 import 'package:city_vibe/features/onboarding/presentation/pages/onboarding_step_one_page.dart';
-import 'package:city_vibe/features/onboarding/presentation/pages/onboarding_step_three_page.dart';
-import 'package:city_vibe/features/onboarding/presentation/pages/onboarding_step_two_page.dart';
 import 'package:city_vibe/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Онбординг: 3 слайда (профиль, bio, интересы по товарам) перед приветствием Миланы.
+/// Онбординг: знакомство + bio → товары/услуги → места → приветствие Миланы.
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -28,11 +27,16 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 }
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
+  static const _matchHint =
+      'Мы отметили то, что подходит по вашему рассказу. Можно поправить.';
+
   final _pageController = PageController();
   int _step = 0;
   bool _isSwitchingAccount = false;
   List<CatalogItem> _productCategories = const [];
+  List<CatalogItem> _placeCategories = const [];
   Set<String> _matchedProductCodes = {};
+  Set<String> _matchedPlaceCodes = {};
 
   @override
   void dispose() {
@@ -49,25 +53,65 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
+  Future<Set<String>> _matchCodes({
+    required Future<CatalogMatchResult> Function() match,
+    Iterable<String> extra = const [],
+  }) async {
+    final codes = {...extra.where((c) => c.isNotEmpty)};
+    try {
+      final result = await match();
+      codes.addAll(
+        result.items.map((e) => e.code).where((code) => code.isNotEmpty),
+      );
+    } catch (_) {
+      // Match опционален: полный список всё равно покажем.
+    }
+    return codes;
+  }
+
   Future<void> _onStepOneContinue({
     required String name,
-    required Set<String> selectedCategoryCodes,
+    required String longBio,
     String? avatarFilePath,
   }) async {
     final userId = ref.read(currentUserProvider).valueOrNull?.id;
     if (userId == null) return;
 
     try {
-      await ref.read(currentUserProvider.notifier).updateProfile(
-            name: name,
-            favoriteCategories: selectedCategoryCodes.toList(growable: false),
-          );
+      await ref.read(currentUserProvider.notifier).updateProfile(name: name);
       if (avatarFilePath != null) {
         await ref.read(currentUserProvider.notifier).uploadAvatar(
               filePath: avatarFilePath,
             );
         unawaited(AmbientMusic.ensurePlaying());
       }
+      await ref.read(currentUserProvider.notifier).updateBio(longBio: longBio);
+
+      final catalog = ref.read(catalogClientProvider);
+      final user = ref.read(currentUserProvider).valueOrNull;
+      final productsFuture = catalog.getProductCategories();
+      final placesFuture = catalog.getPlaceCategories();
+      final matchedProductsFuture = _matchCodes(
+        match: () => catalog.matchProductCategories(longBio, limit: 50),
+        extra: user?.favoriteProductCategories ?? const [],
+      );
+      final matchedPlacesFuture = _matchCodes(
+        match: () => catalog.matchPlaceCategories(longBio, limit: 50),
+        extra: user?.favoriteCategories ?? const [],
+      );
+
+      final products = await productsFuture;
+      final places = await placesFuture;
+      final matchedProducts = await matchedProductsFuture;
+      final matchedPlaces = await matchedPlacesFuture;
+
+      if (!mounted) return;
+      setState(() {
+        _productCategories = products;
+        _placeCategories = places;
+        _matchedProductCodes = matchedProducts;
+        _matchedPlaceCodes = matchedPlaces;
+      });
       await _goToStep(1);
     } on ApiException catch (e) {
       if (!mounted || e.requiresReLogin) return;
@@ -145,28 +189,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
-  Future<void> _onStepTwoContinue(String longBio) async {
+  Future<void> _onProductsContinue(Set<String> selected) async {
     try {
-      await ref.read(currentUserProvider.notifier).updateBio(longBio: longBio);
-      final catalog = ref.read(catalogClientProvider);
-      final catsFuture = catalog.getProductCategories();
-      final matched = <String>{
-        ...?ref.read(currentUserProvider).valueOrNull?.favoriteProductCategories,
-      };
-      try {
-        final result = await catalog.matchProductCategories(longBio, limit: 50);
-        matched.addAll(
-          result.items.map((e) => e.code).where((code) => code.isNotEmpty),
-        );
-      } catch (_) {
-        // Match опционален: полный список всё равно покажем.
-      }
-      final cats = await catsFuture;
-      if (!mounted) return;
-      setState(() {
-        _productCategories = cats;
-        _matchedProductCodes = matched;
-      });
+      await ref.read(currentUserProvider.notifier).updateProfile(
+            favoriteProductCategories: selected.toList(growable: false),
+          );
       await _goToStep(2);
     } on ApiException catch (e) {
       if (!mounted || e.requiresReLogin) return;
@@ -176,10 +203,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
-  Future<void> _onStepThreeContinue(Set<String> selected) async {
+  Future<void> _onPlacesContinue(Set<String> selected) async {
     try {
       await ref.read(currentUserProvider.notifier).updateProfile(
-            favoriteProductCategories: selected.toList(growable: false),
+            favoriteCategories: selected.toList(growable: false),
           );
       await ref.read(currentUserProvider.notifier).completeOnboarding();
       unawaited(ref.read(milanaAccountProvider.future));
@@ -196,7 +223,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final categoriesAsync = ref.watch(onboardingCategoriesProvider);
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -248,78 +274,83 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ),
               ),
               Expanded(
-                child: categoriesAsync.when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Center(child: Text('Ошибка: $e')),
-                  data: (categories) => Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.topCenter,
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 420),
-                              child: Container(
-                                width: double.infinity,
-                                padding:
-                                    const EdgeInsets.fromLTRB(20, 22, 20, 20),
-                                decoration: BoxDecoration(
-                                  color: AppColors.card,
-                                  borderRadius: BorderRadius.circular(22),
-                                  border:
-                                      Border.all(color: AppColors.cardBorder),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.35),
-                                      blurRadius: 24,
-                                      offset: const Offset(0, 12),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 420),
+                            child: Container(
+                              width: double.infinity,
+                              padding:
+                                  const EdgeInsets.fromLTRB(20, 22, 20, 20),
+                              decoration: BoxDecoration(
+                                color: AppColors.card,
+                                borderRadius: BorderRadius.circular(22),
+                                border:
+                                    Border.all(color: AppColors.cardBorder),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color:
+                                        Colors.black.withValues(alpha: 0.35),
+                                    blurRadius: 24,
+                                    offset: const Offset(0, 12),
+                                  ),
+                                ],
+                              ),
+                              child: PageView(
+                                controller: _pageController,
+                                physics: const NeverScrollableScrollPhysics(),
+                                children: [
+                                  OnboardingStepOnePage(
+                                    onContinue: _onStepOneContinue,
+                                  ),
+                                  OnboardingInterestsPage(
+                                    key: ValueKey(
+                                      'products:${_productCategories.length}:${_matchedProductCodes.join(',')}',
                                     ),
-                                  ],
-                                ),
-                                child: PageView(
-                                  controller: _pageController,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  children: [
-                                    OnboardingStepOnePage(
-                                      categories: categories,
-                                      onContinue: _onStepOneContinue,
+                                    title:
+                                        'Вас интересуют эти товары и услуги?',
+                                    subtitle: _matchHint,
+                                    categories: _productCategories,
+                                    initialSelected: _matchedProductCodes,
+                                    onContinue: _onProductsContinue,
+                                  ),
+                                  OnboardingInterestsPage(
+                                    key: ValueKey(
+                                      'places:${_placeCategories.length}:${_matchedPlaceCodes.join(',')}',
                                     ),
-                                    OnboardingStepTwoPage(
-                                      onContinue: _onStepTwoContinue,
-                                    ),
-                                    OnboardingStepThreePage(
-                                      key: ValueKey(
-                                        '${_productCategories.length}:${_matchedProductCodes.join(',')}',
-                                      ),
-                                      categories: _productCategories,
-                                      initialSelected: _matchedProductCodes,
-                                      onContinue: _onStepThreeContinue,
-                                    ),
-                                  ],
-                                ),
+                                    title:
+                                        'Вам интересны эти места вокруг вас?',
+                                    subtitle: _matchHint,
+                                    categories: _placeCategories,
+                                    initialSelected: _matchedPlaceCodes,
+                                    onContinue: _onPlacesContinue,
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 420),
-                            child: GradientButton(
-                              label: _isSwitchingAccount
-                                  ? 'Выходим…'
-                                  : 'Сменить аккаунт',
-                              onPressed: _isSwitchingAccount
-                                  ? null
-                                  : _promptSwitchAccount,
-                            ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 420),
+                          child: GradientButton(
+                            label: _isSwitchingAccount
+                                ? 'Выходим…'
+                                : 'Сменить аккаунт',
+                            onPressed: _isSwitchingAccount
+                                ? null
+                                : _promptSwitchAccount,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
