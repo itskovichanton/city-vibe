@@ -36,6 +36,7 @@ def test_serialize_user_event_payload():
     data = deserialize_message(raw)
     assert data["name"] == "Алексей"
     assert data["favorite_categories"] == ["bars"]
+    assert data.get("favorite_product_categories") == []
 
 
 def test_serialize_bytes_passthrough():

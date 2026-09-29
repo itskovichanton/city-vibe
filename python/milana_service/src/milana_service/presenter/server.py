@@ -15,14 +15,19 @@ from src.mybootstrap_mvc_itskovichanton.result_presenter import ResultPresenter
 from python.libs.infra import CityVibeInfraSupport
 from python.libs.infra.decorators import rate_limit
 from python.milana_service.src.milana_service.agent.places_nl_search import PlacesNlSearchAgent
-from python.milana_service.src.milana_service.entities.request import MilanaPlacesSearchRequest
+from python.milana_service.src.milana_service.entities.request import (
+    MilanaCatalogMatchRequest,
+    MilanaPlacesSearchRequest,
+)
 from python.milana_service.src.milana_service.usecase.get_milana_account import GetMilanaAccountUseCase
 from python.milana_service.src.milana_service.usecase.milana_catalog import (
     GetMilanaAttrSchemaUseCase,
     GetMilanaWorldUseCase,
+    ListMilanaCatalogsUseCase,
     ListMilanaCategoriesUseCase,
     ListMilanaCitiesUseCase,
     ListMilanaProductCategoriesUseCase,
+    MatchMilanaCatalogUseCase,
 )
 from python.milana_service.src.milana_service.usecase.milana_places_search import MilanaPlacesSearchUseCase
 
@@ -39,6 +44,8 @@ class Server:
     list_milana_cities_uc: ListMilanaCitiesUseCase
     list_milana_categories_uc: ListMilanaCategoriesUseCase
     list_milana_product_categories_uc: ListMilanaProductCategoriesUseCase
+    list_milana_catalogs_uc: ListMilanaCatalogsUseCase
+    match_milana_catalog_uc: MatchMilanaCatalogUseCase
     get_milana_attr_schema_uc: GetMilanaAttrSchemaUseCase
     milana_places_search_uc: MilanaPlacesSearchUseCase
     presenter: ResultPresenter = default_dataclass_field(
@@ -136,6 +143,33 @@ class Server:
                     self.list_milana_product_categories_uc.execute,
                     call=None,
                 ),
+            )
+
+        @self.fast_api.get(
+            "/milana/catalogs",
+            tags=["milana", "catalog"],
+            summary="Справочники для NL-подбора строк",
+        )
+        @rate_limit("milana.catalogs", limit=60)
+        async def milana_catalogs(request: Request):
+            return self.presenter.present(
+                await self.action_runner.run(self.list_milana_catalogs_uc.execute, call=None),
+            )
+
+        @self.fast_api.post(
+            "/milana/catalog/match",
+            tags=["milana", "catalog"],
+            summary="Строки справочника по вольному описанию (алиасы + LLM)",
+            description=(
+                "Гибрид: сначала алиасы place-service, затем DeepSeek по порциям "
+                "effort строк (УсилиеПоиска). 0 = только алиасы. "
+                "Коды только из справочника."
+            ),
+        )
+        @rate_limit("milana.catalog.match", limit=40)
+        async def milana_catalog_match(request: Request, body: MilanaCatalogMatchRequest):
+            return self.presenter.present(
+                await self.action_runner.run(self.match_milana_catalog_uc.execute, call=body),
             )
 
         @self.fast_api.get(

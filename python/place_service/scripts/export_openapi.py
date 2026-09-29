@@ -43,6 +43,14 @@ class CategoryOut(BaseModel):
     is_active: bool = True
 
 
+class CatalogMatchIn(BaseModel):
+    prompt: str
+    catalog: Optional[str] = None
+    entity_type: Optional[str] = None
+    fields: Optional[List[str]] = None
+    limit: int = 8
+
+
 class AttrSchemaOut(BaseModel):
     id: int
     category_code: str
@@ -115,6 +123,14 @@ def build_openapi_app() -> FastAPI:
 
     @app.get("/categories", tags=["categories"], response_model=List[CategoryOut])
     async def list_categories():
+        raise NotImplementedError
+
+    @app.get("/catalogs", tags=["catalog"])
+    async def list_catalogs():
+        raise NotImplementedError
+
+    @app.post("/catalog/match", tags=["catalog"])
+    async def match_catalog(body: CatalogMatchIn):
         raise NotImplementedError
 
     @app.get("/product-categories", tags=["products"], response_model=List[CategoryOut])

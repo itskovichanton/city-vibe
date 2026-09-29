@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:city_vibe/core/api/auth_client.dart';
+import 'package:city_vibe/core/api/catalog_client.dart';
 import 'package:city_vibe/core/api/common_client.dart';
 import 'package:city_vibe/core/api/milana_client.dart';
 import 'package:city_vibe/core/api/user_client.dart';
@@ -24,6 +25,10 @@ final apiHttpProvider = Provider<ApiHttp>((ref) {
 
 final commonClientProvider = Provider<CommonClient>((ref) {
   return CommonClient(ref.watch(apiHttpProvider));
+});
+
+final catalogClientProvider = Provider<CatalogClient>((ref) {
+  return CatalogClient(ref.watch(apiHttpProvider));
 });
 
 final authClientProvider = Provider<AuthClient>((ref) {

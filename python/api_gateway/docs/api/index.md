@@ -13,6 +13,8 @@
 | `/categories`, `/attr-schemas/*` | place-service | 8083 | [categories](categories.md) |
 | `/places/*` | place-service | 8083 | [places](places.md), [places-search](places-search.md) |
 | `/product-categories`, `/products/*` | place-service | 8083 | [products](products.md), [products-search](products-search.md) |
+| `/catalogs` | place-service | 8083 | [catalog-match](catalog-match.md) |
+| `/catalog/match` | milana-service | 8086 | [catalog-match](catalog-match.md) |
 | `/pin-styles/*`, `/chat-themes/*` | design-service | 8085 | [design](design.md) |
 | `/milana/*` | milana-service | 8086 | [milana](milana.md) |
 
@@ -27,6 +29,7 @@
 - [places-search.md](places-search.md)
 - [products.md](products.md)
 - [products-search.md](products-search.md)
+- [catalog-match.md](catalog-match.md)
 - [milana.md](milana.md)
 - [users.md](users.md)
 - [design.md](design.md)

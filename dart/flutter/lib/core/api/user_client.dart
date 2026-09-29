@@ -20,6 +20,7 @@ class UserClient {
     int userId, {
     String? name,
     List<String>? favoriteCategories,
+    List<String>? favoriteProductCategories,
   }) {
     return _http.patch(
       '/users/$userId',
@@ -27,6 +28,8 @@ class UserClient {
         if (name != null) 'name': name,
         if (favoriteCategories != null)
           'favorite_categories': favoriteCategories,
+        if (favoriteProductCategories != null)
+          'favorite_product_categories': favoriteProductCategories,
       },
       parse: (data) =>
           UserProfile.fromJson(Map<String, dynamic>.from(data as Map)),

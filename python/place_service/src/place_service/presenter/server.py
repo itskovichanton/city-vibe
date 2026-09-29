@@ -30,6 +30,7 @@ from python.place_service.src.place_service.presenter.mappers import (
     to_patch_product_request,
 )
 from python.place_service.src.place_service.presenter.models import (
+    CatalogMatchBody,
     PlaceCreateBody,
     PlacePatchBody,
     ProductCreateBody,
@@ -40,6 +41,10 @@ from python.place_service.src.place_service.usecase.attr_schemas import (
     ListAttrSchemasUseCase,
 )
 from python.place_service.src.place_service.usecase.categories import ListCategoriesUseCase
+from python.place_service.src.place_service.usecase.match_catalog import (
+    ListCatalogsUseCase,
+    MatchCatalogUseCase,
+)
 from python.place_service.src.place_service.usecase.cities import (
     GetCityUseCase,
     GetNearestCityUseCase,
@@ -74,6 +79,8 @@ class Server:
     get_nearest_city_uc: GetNearestCityUseCase
     get_city_uc: GetCityUseCase
     list_categories_uc: ListCategoriesUseCase
+    list_catalogs_uc: ListCatalogsUseCase
+    match_catalog_uc: MatchCatalogUseCase
     list_attr_schemas_uc: ListAttrSchemasUseCase
     get_attr_schema_uc: GetAttrSchemaUseCase
     create_place_uc: CreatePlaceUseCase
@@ -159,6 +166,33 @@ class Server:
         async def list_categories(request: Request):
             return self.presenter.present(
                 await self.action_runner.run(self.list_categories_uc.execute, call=None),
+            )
+
+        @self.fast_api.get(
+            "/catalogs",
+            tags=["catalog"],
+            summary="Справочники, доступные для NL-подбора",
+        )
+        @rate_limit("catalogs.list", limit=60)
+        async def list_catalogs(request: Request):
+            return self.presenter.present(
+                await self.action_runner.run(self.list_catalogs_uc.execute, call=None),
+            )
+
+        @self.fast_api.post(
+            "/catalog/match",
+            tags=["catalog"],
+            summary="Строки справочника по вольному описанию",
+            description=(
+                "Без LLM: алиасы + поля title/name. "
+                "catalog или entity_type (ProductCategoryInfo, PlaceCategoryInfo, City). "
+                "В каждой строке why — почему она подошла."
+            ),
+        )
+        @rate_limit("catalog.match", limit=60)
+        async def match_catalog(request: Request, body: CatalogMatchBody):
+            return self.presenter.present(
+                await self.action_runner.run(self.match_catalog_uc.execute, call=body),
             )
 
         @self.fast_api.get("/attr-schemas", tags=["attrs"], summary="Все JSON Schema attrs")

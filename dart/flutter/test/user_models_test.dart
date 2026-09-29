@@ -26,6 +26,7 @@ void main() {
         gender: Gender.male,
         longBio: 'Люблю парки',
         favoriteCategories: ['bars', 'cafes'],
+        favoriteProductCategories: ['coffee'],
         onboardingCompleted: false,
         avatarUrl: 'avatars/42/photo.jpg',
         cityId: 3,
@@ -37,6 +38,7 @@ void main() {
       expect(restored.status, UserStatus.active);
       expect(restored.longBio, 'Люблю парки');
       expect(restored.favoriteCategories, ['bars', 'cafes']);
+      expect(restored.favoriteProductCategories, ['coffee']);
       expect(restored.onboardingCompleted, false);
       expect(restored.avatarUrl, 'avatars/42/photo.jpg');
       expect(restored.cityId, 3);
@@ -47,9 +49,11 @@ void main() {
       final next = user.copyWith(
         name: 'New',
         favoriteCategories: ['theaters'],
+        favoriteProductCategories: ['yoga_class'],
       );
       expect(next.name, 'New');
       expect(next.favoriteCategories, ['theaters']);
+      expect(next.favoriteProductCategories, ['yoga_class']);
       expect(user.name, 'Old');
     });
 

@@ -106,6 +106,56 @@
             }
           }
         }
+      },
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Обновить профиль",
+        "operationId": "update_profile_users__user_id__patch",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/users/{user_id}/bio": {
@@ -299,7 +349,15 @@
             },
             "type": "array",
             "title": "Favorite Categories",
-            "description": "Коды категорий"
+            "description": "Коды категорий мест"
+          },
+          "favorite_product_categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Favorite Product Categories",
+            "description": "Коды категорий товаров и услуг"
           },
           "city_id": {
             "anyOf": [
@@ -382,6 +440,52 @@
         ],
         "title": "UpdateBioBody"
       },
+      "UpdateProfileBody": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "Имя"
+          },
+          "favorite_categories": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Favorite Categories"
+          },
+          "favorite_product_categories": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Favorite Product Categories"
+          }
+        },
+        "type": "object",
+        "title": "UpdateProfileBody"
+      },
       "UserOut": {
         "properties": {
           "id": {
@@ -443,6 +547,13 @@
             },
             "type": "array",
             "title": "Favorite Categories"
+          },
+          "favorite_product_categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Favorite Product Categories"
           },
           "onboarding_completed": {
             "type": "boolean",
@@ -520,6 +631,13 @@
           "type": {
             "type": "string",
             "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
           }
         },
         "type": "object",

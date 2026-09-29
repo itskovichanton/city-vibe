@@ -13,6 +13,26 @@ class MilanaGeo(BaseModel):
     lng: float
 
 
+class MilanaCatalogMatchRequest(BaseModel):
+    prompt: str = Field(..., min_length=2, description="Вольное описание")
+    catalog: Optional[str] = Field(
+        None,
+        description="product_categories | place_categories | cities",
+    )
+    entity_type: Optional[str] = Field(
+        None,
+        description="ProductCategoryInfo | PlaceCategoryInfo | City",
+    )
+    fields: Optional[List[str]] = None
+    limit: int = Field(8, ge=1, le=50)
+    effort: Optional[int] = Field(
+        None,
+        ge=0,
+        le=80,
+        description="УсилиеПоиска: макс. строк справочника в одном вызове LLM (0 = только алиасы)",
+    )
+
+
 class MilanaPlacesSearchRequest(BaseModel):
     """NL-запрос пользователя → агент строит и вызывает places/search и/или products/search."""
 
@@ -93,6 +113,10 @@ class MilanaPlacesSearchResponse(BaseModel):
     plan: List[MilanaPlanStep] = Field(
         default_factory=list,
         description="Pass-1 план: intent/category/why",
+    )
+    catalog_matches: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Shortlist справочников от POST /catalog/match (items с why)",
     )
     model: Optional[str] = Field(None, description="Модель LLM")
     used_llm: bool = True

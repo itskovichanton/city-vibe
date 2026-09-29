@@ -44,6 +44,10 @@ class CreateUserBody(BaseModel):
     age: Optional[int] = Field(None, description="Возраст 1..120")
     short_bio: str = Field("", description="Коротко о себе")
     favorite_categories: List[str] = Field(default_factory=list, description="Любимые категории мест")
+    favorite_product_categories: List[str] = Field(
+        default_factory=list,
+        description="Любимые категории товаров и услуг (ProductCategory)",
+    )
     city_id: Optional[int] = Field(None, description="ID города из place-service")
     birthdate: Optional[date] = Field(None, description="Дата рождения")
     auth_account_id: Optional[int] = Field(None, description="ID аккаунта auth-service")
@@ -58,6 +62,10 @@ class UpdateProfileBody(BaseModel):
     favorite_categories: Optional[List[str]] = Field(
         None,
         description="Коды любимых категорий мест (PlaceCategory)",
+    )
+    favorite_product_categories: Optional[List[str]] = Field(
+        None,
+        description="Коды любимых категорий товаров и услуг (ProductCategory)",
     )
 
 

@@ -30,6 +30,7 @@ class CreateUserUseCaseImpl(CreateUserUseCase):
             age=request.age,
             short_bio=request.short_bio,
             favorite_categories=request.favorite_categories,
+            favorite_product_categories=request.favorite_product_categories,
             avatar_url=request.avatar_url,
             city_id=request.city_id,
             birthdate=request.birthdate,

@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from python.libs.entities.place import PlaceCategory
+from python.libs.entities.place import PlaceCategory, ProductCategory
 from python.libs.entities.user import Gender, Status, User, UserRole
 from python.user_service.src.user_service.entities.common import UpdateProfileRequest
 from python.user_service.src.user_service.usecase.update_profile import UpdateProfileUseCaseImpl
@@ -26,6 +26,7 @@ async def test_update_profile_use_case_publishes_event():
         gender=Gender.MALE,
         role=UserRole.REGULAR,
         favorite_categories=[PlaceCategory.BARS],
+        favorite_product_categories=[ProductCategory.COFFEE],
     )
 
     repo = AsyncMock()
@@ -41,6 +42,7 @@ async def test_update_profile_use_case_publishes_event():
             user_id=7,
             name="Новое имя",
             favorite_categories=[PlaceCategory.BARS],
+            favorite_product_categories=[ProductCategory.COFFEE],
         )
     )
 

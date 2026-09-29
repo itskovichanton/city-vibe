@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from python.libs.entities.city import City
 from python.libs.entities.common import Contact, DevicePlatform, Entity, Status
-from python.libs.entities.place import PlaceCategory
+from python.libs.entities.place import PlaceCategory, ProductCategory
 
 
 class UserRole(StrEnum):
@@ -56,6 +56,7 @@ class User(Entity):
     city_id: Optional[int] = None
     auth_account_id: Optional[int] = None
     favorite_categories: List[PlaceCategory] = field(default_factory=list)
+    favorite_product_categories: List[ProductCategory] = field(default_factory=list)
     contacts: List[Contact] = field(default_factory=list)
     devices: List[UserDevice] = field(default_factory=list)
     onboarding_completed: bool = False

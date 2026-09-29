@@ -1,6 +1,7 @@
 from src.mybootstrap_core_itskovichanton.app import Application
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
 
+from python.milana_service.src.milana_service.agent.catalog_hybrid import CatalogHybridMatcher  # noqa: F401
 from python.milana_service.src.milana_service.agent.places_nl_search import PlacesNlSearchAgent  # noqa: F401
 from python.milana_service.src.milana_service.infra.deepseek import DeepSeekClient  # noqa: F401
 from python.milana_service.src.milana_service.infra.place_search_client import PlaceSearchHttpClient  # noqa: F401
@@ -14,6 +15,8 @@ from python.milana_service.src.milana_service.usecase.milana_catalog import (  #
     ListMilanaCategoriesUseCaseImpl,
     ListMilanaCitiesUseCaseImpl,
     ListMilanaProductCategoriesUseCaseImpl,
+    ListMilanaCatalogsUseCaseImpl,
+    MatchMilanaCatalogUseCaseImpl,
 )
 from python.milana_service.src.milana_service.usecase.milana_places_search import (  # noqa: F401
     MilanaPlacesSearchUseCaseImpl,

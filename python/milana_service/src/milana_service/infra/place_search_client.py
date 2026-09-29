@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any, Dict, List
 
 import httpx
@@ -11,6 +10,7 @@ from src.mybootstrap_ioc_itskovichanton.ioc import bean
 from src.mybootstrap_mvc_itskovichanton.exceptions import CoreException
 
 from python.libs.utils.schema_compact import compact_json_schema
+from python.milana_service.src.milana_service.infra.agent_log import log_agent
 
 
 @bean(base_url=("clients.place_service.url", str, "http://localhost:8083"))
@@ -19,13 +19,10 @@ class PlaceSearchHttpClient:
 
     def init(self, **kwargs):
         self.base_url = (kwargs.get("base_url") or "http://localhost:8083").rstrip("/")
-        self._flog = self.logger_service.get_file_logger("milana-agent", max_line_len=80000)
+        self._flog = self.logger_service.get_file_logger("milana-agent", max_line_len=0)
 
     def _log(self, event: str, **payload: Any) -> None:
-        try:
-            self._flog.info(json.dumps({"event": event, **payload}, ensure_ascii=False, default=str))
-        except Exception:
-            self._flog.info(f"{event}: {payload!r}")
+        log_agent(self._flog, event, **payload)
 
     async def _get_json(self, path: str) -> Any:
         url = f"{self.base_url}{path}"
@@ -36,6 +33,45 @@ class PlaceSearchHttpClient:
                 raise CoreException(message=f"GET {path} HTTP {resp.status_code}: {resp.text[:300]}")
             data = resp.json()
         return data.get("result", data) if isinstance(data, dict) else data
+
+    async def _post_json(self, path: str, body: Dict[str, Any], *, timeout: float = 30.0) -> Any:
+        url = f"{self.base_url}{path}"
+        self._log("place_api_post", path=path, body=body)
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.post(url, json=body)
+            self._log(
+                "place_api_post_response",
+                path=path,
+                status=resp.status_code,
+                body_preview=resp.text[:4000],
+            )
+            if resp.status_code >= 400:
+                raise CoreException(
+                    message=f"{path.lstrip('/')} HTTP {resp.status_code}: {resp.text[:300]}",
+                )
+            data = resp.json()
+        return data.get("result", data) if isinstance(data, dict) else data
+
+    async def match_catalog(
+        self,
+        prompt: str,
+        catalog: str,
+        *,
+        fields: List[str] | None = None,
+        entity_type: str | None = None,
+        limit: int = 8,
+    ) -> Dict[str, Any]:
+        body: Dict[str, Any] = {"prompt": prompt, "limit": limit}
+        if catalog:
+            body["catalog"] = catalog
+        if fields:
+            body["fields"] = fields
+        if entity_type:
+            body["entity_type"] = entity_type
+        payload = await self._post_json("/catalog/match", body)
+        if not isinstance(payload, dict):
+            raise CoreException(message="Неожиданный ответ /catalog/match")
+        return payload
 
     async def search(self, body: Dict[str, Any]) -> Dict[str, Any]:
         return await self._post_search("/places/search", body)
@@ -89,6 +125,9 @@ class PlaceSearchHttpClient:
 
     async def list_product_categories_compact(self) -> List[Dict[str, Any]]:
         return await self._list_category_catalog("/product-categories")
+
+    async def list_catalogs(self) -> Any:
+        return await self._get_json("/catalogs")
 
     async def _list_category_catalog(self, path: str) -> List[Dict[str, Any]]:
         raw = await self._get_json(path)

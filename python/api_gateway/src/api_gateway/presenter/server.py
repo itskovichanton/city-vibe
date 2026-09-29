@@ -153,6 +153,16 @@ class Server:
         async def proxy_categories(request: Request):
             return await self._proxy(request, self._places_url, "/categories")
 
+        @self.fast_api.get("/catalogs")
+        async def proxy_catalogs(request: Request):
+            return await self._proxy(request, self._places_url, "/catalogs")
+
+        @self.fast_api.post("/catalog/match")
+        async def proxy_catalog_match(request: Request):
+            return await self._proxy(
+                request, self._milana_url, "/milana/catalog/match", timeout=120.0
+            )
+
         @self.fast_api.api_route("/attr-schemas", methods=["GET"])
         async def proxy_attr_schemas_root(request: Request):
             return await self._proxy(request, self._places_url, "/attr-schemas")

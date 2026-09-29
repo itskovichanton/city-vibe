@@ -27,6 +27,7 @@
 | `avatar_url` | string \| null | URL в MinIO/S3 |
 | `role` | string | По умолчанию `REGULAR` |
 | `favorite_categories` | string[] | Коды категорий мест (`PlaceCategory`) |
+| `favorite_product_categories` | string[] | Коды категорий товаров и услуг (`ProductCategory`) |
 | `onboarding_completed` | bool | Флаг завершения онбординга |
 | `deleted` | bool | Soft-delete |
 | `city_id` | int \| null | Город из place-service |
@@ -39,9 +40,10 @@
 
 | Шаг | Метод | Что делает |
 |-----|-------|------------|
-| 1 | `POST /users` | Создать профиль (имя, категории, город…) |
+| 1 | `PATCH /users/{id}` | Имя, категории мест |
 | 2 | `PUT /users/{id}/bio` | Длинное bio |
-| 3 | `POST /users/{id}/onboarding/complete` | `onboarding_completed=true` |
+| 3 | `PATCH /users/{id}` | Категории товаров/услуг (`favorite_product_categories`); мобилка: `POST /catalog/match` по bio, затем все чипы с предвыбором |
+| 4 | `POST /users/{id}/onboarding/complete` | `onboarding_completed=true` |
 | * | `POST /users/{id}/avatar` | Аватар (можно на любом шаге после create) |
 
 При регистрации через auth шаг 1 часто уже выполнен сервером (sync create).
@@ -66,7 +68,8 @@
 | `gender` | enum `Gender` | да | `male` \| `female` |
 | `age` | int \| null | нет | 1..120 |
 | `short_bio` | string | нет | Коротко о себе (default `""`) |
-| `favorite_categories` | string[] | нет | Неизвестные коды категорий пропускаются |
+| `favorite_categories` | string[] | нет | Неизвестные коды категорий мест пропускаются |
+| `favorite_product_categories` | string[] | нет | Коды `ProductCategory`; неизвестные пропускаются |
 | `city_id` | int \| null | нет | ID из `/cities` |
 | `birthdate` | date \| null | нет | |
 | `auth_account_id` | int \| null | нет | ID auth-аккаунта (ставит auth-service) |
@@ -122,6 +125,48 @@ curl -s http://localhost:8080/users/1 | jq
 
 ---
 
+## `PATCH /users/{user_id}`
+
+Частичное обновление профиля (имя, интересы).
+
+### Защита
+
+- `@require_s2s`
+- `@idempotent("users.update")`
+- `@rate_limit("users.update", limit=60)`
+
+### Path
+
+| Параметр | Тип | Обяз. |
+|----------|-----|-------|
+| `user_id` | int | да |
+
+### Body (`UpdateProfileBody`)
+
+| Поле | Тип | Обяз. | Описание |
+|------|-----|-------|----------|
+| `name` | string \| null | нет | Имя |
+| `favorite_categories` | string[] \| null | нет | Коды мест (`PlaceCategory`); неизвестные пропускаются |
+| `favorite_product_categories` | string[] \| null | нет | Коды товаров/услуг (`ProductCategory`); неизвестные пропускаются |
+
+Пропущенное поле не меняется. Пустой массив сбрасывает список.
+
+### Response `200` — обновлённый `UserOut`
+
+### Пример
+
+```bash
+curl -s -X PATCH http://localhost:8080/users/1 \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Мария",
+    "favorite_categories": ["cafes", "parks"],
+    "favorite_product_categories": ["coffee", "yoga_class"]
+  }'
+```
+
+---
+
 ## `PUT /users/{user_id}/bio`
 
 Обновить развёрнутое bio (онбординг шаг 2).
@@ -158,7 +203,7 @@ curl -s -X PUT http://localhost:8080/users/1/bio \
 
 ## `POST /users/{user_id}/onboarding/complete`
 
-Завершить онбординг (шаг 3): выставляет `onboarding_completed=true`.
+Завершить онбординг: выставляет `onboarding_completed=true`.
 
 ### Защита
 

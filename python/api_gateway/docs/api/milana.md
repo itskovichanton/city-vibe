@@ -6,17 +6,19 @@
 
 ## Механика (вариант B)
 
-1. **PLAN** — Милана знает мир (города + категории мест + категории продуктов) и раскладывает `q` на шаги `{domain, intent, category, place_name?, place_category?, why}`. `domain` = `place` | `product`. Именованное заведение («акции в кафе Мечта») → `place_name` + опционально `place_category=cafes`.
+0. **catalog/match** — гибрид: алиасы + DeepSeek по порциям `effort` строк. Shortlist с `why` вместо полного мира.
+1. **PLAN** — Милана видит только shortlist и раскладывает `q` на шаги `{domain, intent, category, place_name?, place_category?, why}`. `domain` = `place` | `product`.
 2. Для шагов `place` подтягиваются **compact** JSON Schema attrs; у продуктов схем нет.
-3. **BUILD** — Милана пишет тела `POST /places/search` или `POST /products/search`. Имя места — в `place_name`, не только в `q`. Даты → `date_from`/`date_to` (events). LLM не выдумывает id.
-4. Python: резолв `place_name` → `places/search` (`limit=1`) → `place_id`; нет места — шаг пустой. Между шагами копит `exclude_ids` / `exclude_place_ids`. Если есть `my_geo` и нет `sort_by` → `distance`. Продукты без `place_id` → `one_per_place=true`.
-5. **MESSAGE** — тёплый текст от Миланы в поле `message`. Товары/услуги принадлежат местам.
+3. **BUILD** — тела `POST /places/search` или `POST /products/search`.
+4. Python: резолв `place_name` → `place_id`; exclude между шагами; default `distance`.
+5. **MESSAGE** — текст в `message`. В ответе также `catalog_matches` (shortlist с why).
 
 Keyword-heuristic в Python **нет**. Нужен `DEEPSEEK_API_KEY`.
 
 NL-вход остаётся `POST /milana/places/search` (клиент не ломаем); внутри шаги могут ходить в products.
 
-Лог всего общения DeepSeek + place API: файл `logs/milana-agent-milana-service.txt` (`LoggerService.get_file_logger("milana-agent")`).
+Лог DeepSeek (полный prompt in / reply out) и place API: `python/milana_service/.../logs/milana-agent-milana-service-*.txt`.
+Ключ: `DEEPSEEK_API_KEY` в корневом `.env` (подхватывается при старте milana / `make start-all`).
 
 ## Справочники мира
 
@@ -26,6 +28,8 @@ NL-вход остаётся `POST /milana/places/search` (клиент не л�
 | `GET /milana/cities` | города `{id,name,slug,region,lat,lng}` |
 | `GET /milana/categories` | категории мест `{code,title,title_en}` |
 | `GET /milana/product-categories` | категории товаров/услуг `{code,title,title_en}` |
+| `GET /milana/catalogs` | реестр справочников для match |
+| `POST /milana/catalog/match` | NL → строки справочника + `why` (алиасы + LLM, `effort`) |
 | `GET /milana/attr-schemas/{category_code}` | compact schema attrs места (без description) |
 
 Source of truth: place-service `GET /cities`, `/categories`, `/product-categories`, `/attr-schemas/{code}?compact=true`.
@@ -52,6 +56,10 @@ Source of truth: place-service `GET /cities`, `/categories`, `/product-categorie
     {"domain": "place", "intent": "Театр", "category": "theaters", "why": "после работы спектакль"},
     {"domain": "product", "intent": "Кофе в Мечте", "category": "coffee", "place_name": "Мечта", "place_category": "cafes", "why": "акции в кафе"}
   ],
+  "catalog_matches": {
+    "product_categories": [{"code": "coffee", "title": "Кофе", "why": "запрос про кофе"}],
+    "place_categories": [{"code": "cafes", "title": "Кафе", "why": "заведение: кафе"}]
+  },
   "steps": [
     {
       "domain": "place",

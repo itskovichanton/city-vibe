@@ -8,7 +8,9 @@ from src.mybootstrap_mvc_itskovichanton.exceptions import (
     CoreException,
 )
 
+from python.milana_service.src.milana_service.agent.catalog_hybrid import CatalogHybridMatcher
 from python.milana_service.src.milana_service.agent.places_nl_search import PlacesNlSearchAgent
+from python.milana_service.src.milana_service.entities.request import MilanaCatalogMatchRequest
 
 
 class GetMilanaWorldUseCase(Protocol):
@@ -33,6 +35,16 @@ class ListMilanaProductCategoriesUseCase(Protocol):
 
 class GetMilanaAttrSchemaUseCase(Protocol):
     async def execute(self, category_code: str) -> Any:
+        ...
+
+
+class ListMilanaCatalogsUseCase(Protocol):
+    async def execute(self) -> Any:
+        ...
+
+
+class MatchMilanaCatalogUseCase(Protocol):
+    async def execute(self, request: MilanaCatalogMatchRequest) -> Any:
         ...
 
 
@@ -82,3 +94,30 @@ class GetMilanaAttrSchemaUseCaseImpl(GetMilanaAttrSchemaUseCase):
                 message=f"Schema для {category_code} не найдена: {e}",
                 reason=ERR_REASON_SERVER_RESPONDED_WITH_ERROR_NOT_FOUND,
             ) from e
+
+
+@bean
+class ListMilanaCatalogsUseCaseImpl(ListMilanaCatalogsUseCase):
+    places_nl_agent: PlacesNlSearchAgent
+
+    async def execute(self) -> Any:
+        return await self.places_nl_agent.places.list_catalogs()
+
+
+@bean
+class MatchMilanaCatalogUseCaseImpl(MatchMilanaCatalogUseCase):
+    catalog_matcher: CatalogHybridMatcher
+
+    async def execute(self, request: MilanaCatalogMatchRequest) -> Any:
+        catalog = request.catalog
+        entity_type = request.entity_type
+        if not catalog and not entity_type:
+            raise CoreException(message="Нужен catalog или entity_type")
+        return await self.catalog_matcher.match(
+            request.prompt,
+            catalog=catalog,
+            entity_type=entity_type,
+            fields=request.fields,
+            limit=request.limit,
+            effort=request.effort,
+        )

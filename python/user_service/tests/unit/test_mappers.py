@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from user_service.infra.orm.mappers import user_dto_to_response, user_model_to_dto
 from user_service.infra.orm.models import UserModel
 
-from python.libs.entities.place import PlaceCategory
+from python.libs.entities.place import PlaceCategory, ProductCategory
 from python.libs.entities.user import Gender, Status
 
 
@@ -21,6 +21,7 @@ def test_user_model_to_dto():
         status="ACTIVE",
         role="REGULAR",
         favorite_categories=["bars", "theaters"],
+        favorite_product_categories=["coffee", "yoga_class", "unknown_product"],
         onboarding_completed=True,
         deleted=False,
         created_at=datetime.now(timezone.utc),
@@ -32,9 +33,12 @@ def test_user_model_to_dto():
     assert dto.gender == Gender.FEMALE
     assert dto.status == Status.ACTIVE
     assert PlaceCategory.BARS in dto.favorite_categories
+    assert ProductCategory.COFFEE in dto.favorite_product_categories
+    assert ProductCategory.YOGA_CLASS in dto.favorite_product_categories
     assert dto.onboarding_completed is True
 
     response = user_dto_to_response(dto)
     assert response.id == 10
     assert response.gender == Gender.FEMALE
     assert response.avatar_url.endswith(".jpg")
+    assert ProductCategory.COFFEE in response.favorite_product_categories

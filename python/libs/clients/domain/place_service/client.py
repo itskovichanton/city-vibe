@@ -140,6 +140,14 @@ class PlaceServiceClientImpl(PlaceServiceClient):
         return session.get(url=f"{url}/product-categories", timeout=30, headers=headers)
 
     @api_call
+    def list_catalogs(self, session=None, url=None, headers=None):
+        return session.get(url=f"{url}/catalogs", timeout=30, headers=headers)
+
+    @api_call
+    def match_catalog(self, body: dict, session=None, url=None, headers=None):
+        return session.post(url=f"{url}/catalog/match", json=body, timeout=30, headers=headers)
+
+    @api_call
     def create_product(self, body: dict, session=None, url=None, headers=None):
         return session.post(url=f"{url}/products", json=body, timeout=30, headers=headers)
 

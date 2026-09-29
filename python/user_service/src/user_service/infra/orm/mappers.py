@@ -2,23 +2,31 @@
 
 from datetime import date
 
-from python.libs.entities.place import PlaceCategory
+from python.libs.entities.place import PlaceCategory, ProductCategory
 from python.libs.entities.user import Gender, Status, User, UserRole
 from python.user_service.src.user_service.entities.common import UserResponse
 from python.user_service.src.user_service.infra.orm.models import UserModel
 
 
-def _parse_categories(raw: list[str] | None) -> list[PlaceCategory]:
+def _parse_enum_codes(raw: list[str] | None, enum_cls: type) -> list:
     if not raw:
         return []
-    result: list[PlaceCategory] = []
+    result = []
     for code in raw:
         try:
-            result.append(PlaceCategory(code))
+            result.append(enum_cls(code))
         except ValueError:
-            # Неизвестная категория из БД — пропускаем, не валим весь профиль
+            # Неизвестный код из БД — пропускаем, не валим весь профиль
             continue
     return result
+
+
+def _parse_categories(raw: list[str] | None) -> list[PlaceCategory]:
+    return _parse_enum_codes(raw, PlaceCategory)
+
+
+def _parse_product_categories(raw: list[str] | None) -> list[ProductCategory]:
+    return _parse_enum_codes(raw, ProductCategory)
 
 
 def _coerce_gender(raw: Gender | str | None) -> Gender:
@@ -51,6 +59,9 @@ def user_model_to_dto(model: UserModel) -> User:
         city_id=model.city_id,
         auth_account_id=model.auth_account_id,
         favorite_categories=_parse_categories(model.favorite_categories),
+        favorite_product_categories=_parse_product_categories(
+            getattr(model, "favorite_product_categories", None),
+        ),
         onboarding_completed=model.onboarding_completed,
         birthdate=model.birthdate,
     )
@@ -69,6 +80,7 @@ def user_dto_to_response(user: User) -> UserResponse:
         avatar_url=user.avatar_url,
         role=user.role,
         favorite_categories=list(user.favorite_categories),
+        favorite_product_categories=list(user.favorite_product_categories),
         onboarding_completed=user.onboarding_completed,
         deleted=user.deleted,
         city_id=user.city_id,

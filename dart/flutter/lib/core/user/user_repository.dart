@@ -94,11 +94,13 @@ class UserRepository {
     int userId, {
     String? name,
     List<String>? favoriteCategories,
+    List<String>? favoriteProductCategories,
   }) async {
     final user = await _client.updateProfile(
       userId,
       name: name,
       favoriteCategories: favoriteCategories,
+      favoriteProductCategories: favoriteProductCategories,
     );
     return save(user);
   }

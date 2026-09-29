@@ -38,8 +38,15 @@ class UserModel(Base):
     # Статус / роль храним строками — проще миграции и OpenAPI
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="ACTIVE")
     role: Mapped[str] = mapped_column(String(32), nullable=False, default="REGULAR")
-    # Массив кодов категорий (bars, cafes, ...)
+    # Массив кодов категорий мест (bars, cafes, ...)
     favorite_categories: Mapped[list[str]] = mapped_column(
+        ARRAY(String(64)),
+        nullable=False,
+        default=list,
+        server_default="{}",
+    )
+    # Коды ProductCategory (food, yoga_class, ...) — не смешивать с местами
+    favorite_product_categories: Mapped[list[str]] = mapped_column(
         ARRAY(String(64)),
         nullable=False,
         default=list,

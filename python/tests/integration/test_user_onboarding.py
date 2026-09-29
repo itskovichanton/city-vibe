@@ -19,7 +19,7 @@ for p in (REPO_ROOT, USER_SRC, SITE):
         sys.path.insert(0, str(p))
 
 from python.libs.clients.db import Database  # noqa: E402
-from python.libs.entities.place import PlaceCategory  # noqa: E402
+from python.libs.entities.place import PlaceCategory, ProductCategory  # noqa: E402
 from python.libs.entities.user import Gender, UserRole  # noqa: E402
 from python.user_service.src.user_service.entities.common import (  # noqa: E402
     CompleteOnboardingRequest,
@@ -157,17 +157,20 @@ async def test_update_profile_name_and_categories(user_stack):
                 PlaceCategory.BARS,
                 PlaceCategory.THEATERS,
             ],
+            favorite_product_categories=[ProductCategory.COFFEE],
         )
     )
 
     assert updated.name == "Алексей"
     assert PlaceCategory.BARS in updated.favorite_categories
     assert PlaceCategory.THEATERS in updated.favorite_categories
+    assert ProductCategory.COFFEE in updated.favorite_product_categories
 
     stored = await repo.get_by_id(created.id)
     assert stored is not None
     assert stored.name == "Алексей"
     assert PlaceCategory.BARS in stored.favorite_categories
+    assert ProductCategory.COFFEE in stored.favorite_product_categories
 
 
 async def test_get_milana_service_account(user_stack):

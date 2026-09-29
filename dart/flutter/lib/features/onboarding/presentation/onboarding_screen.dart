@@ -1,6 +1,7 @@
 import 'package:city_vibe/core/audio/ambient_music.dart';
 import 'package:city_vibe/core/auth/logout_providers.dart';
 import 'package:city_vibe/core/api/api_providers.dart';
+import 'package:city_vibe/core/api/models/catalog_models.dart';
 import 'package:city_vibe/core/network/api_exception.dart';
 import 'dart:async';
 
@@ -11,13 +12,14 @@ import 'package:city_vibe/features/auth/presentation/widgets/login_background.da
 import 'package:city_vibe/features/auth/presentation/widgets/scrolling_city_decor_bar.dart';
 import 'package:city_vibe/features/onboarding/onboarding_providers.dart';
 import 'package:city_vibe/features/onboarding/presentation/pages/onboarding_step_one_page.dart';
+import 'package:city_vibe/features/onboarding/presentation/pages/onboarding_step_three_page.dart';
 import 'package:city_vibe/features/onboarding/presentation/pages/onboarding_step_two_page.dart';
 import 'package:city_vibe/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Онбординг: 2 слайда (профиль + bio) перед приветствием Миланы.
+/// Онбординг: 3 слайда (профиль, bio, интересы по товарам) перед приветствием Миланы.
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -29,6 +31,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
   int _step = 0;
   bool _isSwitchingAccount = false;
+  List<CatalogItem> _productCategories = const [];
+  Set<String> _matchedProductCodes = {};
 
   @override
   void dispose() {
@@ -144,6 +148,39 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _onStepTwoContinue(String longBio) async {
     try {
       await ref.read(currentUserProvider.notifier).updateBio(longBio: longBio);
+      final catalog = ref.read(catalogClientProvider);
+      final catsFuture = catalog.getProductCategories();
+      final matched = <String>{
+        ...?ref.read(currentUserProvider).valueOrNull?.favoriteProductCategories,
+      };
+      try {
+        final result = await catalog.matchProductCategories(longBio, limit: 50);
+        matched.addAll(
+          result.items.map((e) => e.code).where((code) => code.isNotEmpty),
+        );
+      } catch (_) {
+        // Match опционален: полный список всё равно покажем.
+      }
+      final cats = await catsFuture;
+      if (!mounted) return;
+      setState(() {
+        _productCategories = cats;
+        _matchedProductCodes = matched;
+      });
+      await _goToStep(2);
+    } on ApiException catch (e) {
+      if (!mounted || e.requiresReLogin) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message), behavior: SnackBarBehavior.floating),
+      );
+    }
+  }
+
+  Future<void> _onStepThreeContinue(Set<String> selected) async {
+    try {
+      await ref.read(currentUserProvider.notifier).updateProfile(
+            favoriteProductCategories: selected.toList(growable: false),
+          );
       await ref.read(currentUserProvider.notifier).completeOnboarding();
       unawaited(ref.read(milanaAccountProvider.future));
       unawaited(AmbientMusic.ensurePlaying());
@@ -185,7 +222,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     Expanded(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(2, (i) {
+                        children: List.generate(3, (i) {
                           final active = i <= _step;
                           return Container(
                             width: i == _step ? 28 : 18,
@@ -202,7 +239,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       ),
                     ),
                     Text(
-                      '${_step + 1} из 2',
+                      '${_step + 1} из 3',
                       style: textTheme.labelMedium?.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -252,6 +289,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                     ),
                                     OnboardingStepTwoPage(
                                       onContinue: _onStepTwoContinue,
+                                    ),
+                                    OnboardingStepThreePage(
+                                      key: ValueKey(
+                                        '${_productCategories.length}:${_matchedProductCodes.join(',')}',
+                                      ),
+                                      categories: _productCategories,
+                                      initialSelected: _matchedProductCodes,
+                                      onContinue: _onStepThreeContinue,
                                     ),
                                   ],
                                 ),

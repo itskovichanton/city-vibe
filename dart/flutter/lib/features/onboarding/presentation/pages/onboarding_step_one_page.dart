@@ -5,6 +5,7 @@ import 'package:city_vibe/core/api/models/place_category.dart';
 import 'package:city_vibe/core/user/user_providers.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dart';
+import 'package:city_vibe/features/onboarding/presentation/widgets/category_chip_wrap.dart';
 import 'package:city_vibe/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -231,34 +232,20 @@ class _OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
             style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: widget.categories.map((cat) {
-              final selected = _selected.contains(cat.code);
-              return FilterChip(
-                label: Text(cat.title),
-                selected: selected,
-                showCheckmark: false,
-                onSelected: (v) {
-                  setState(() {
-                    if (v) {
-                      _selected.add(cat.code);
-                    } else {
-                      _selected.remove(cat.code);
-                    }
-                  });
-                },
-                selectedColor: AppColors.accent.withValues(alpha: 0.35),
-                side: BorderSide(
-                  color: selected ? AppColors.accent : AppColors.fieldBorder,
-                ),
-                backgroundColor: AppColors.fieldFill,
-                labelStyle: TextStyle(
-                  color: selected ? AppColors.textPrimary : AppColors.textSecondary,
-                ),
-              );
-            }).toList(),
+          CategoryChipWrap(
+            items: widget.categories
+                .map(CategoryChipItem.fromPlace)
+                .toList(growable: false),
+            selected: _selected,
+            onToggle: (code) {
+              setState(() {
+                if (_selected.contains(code)) {
+                  _selected.remove(code);
+                } else {
+                  _selected.add(code);
+                }
+              });
+            },
           ),
           const SizedBox(height: 28),
           GradientButton(

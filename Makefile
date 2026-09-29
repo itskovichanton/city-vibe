@@ -19,7 +19,7 @@ CLIENTS_DIR := $(LIBS)/clients
 export PYTHONPATH := $(REPO_ROOT):$(USER_SERVICE)/src:$(AUTH_SERVICE)/src:$(PLACE_SERVICE)/src:$(DESIGN_SERVICE)/src:$(MILANA_SERVICE)/src:$(NOTIFICATION_SERVICE)/src:$(API_GATEWAY)/src:/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages
 
 .PHONY: help install infra-up infra-down migrate-user migrate-auth migrate-place migrate-design migrate-notification migrate-all \
-        seed-user seed-place seed-design seed-nsk-places seed-nsk-products run-user run-auth run-place run-design run-milana run-notification run-gateway test-user test-auth test-place \
+        seed-user seed-place seed-design seed-nsk-places seed-nsk-products seed-catalog-aliases run-user run-auth run-place run-design run-milana run-notification run-gateway test-user test-auth test-place \
         test-design test-milana test-notification test-libs test-unit test-integration test-e2e test-all openapi openapi-user openapi-auth openapi-place \
         openapi-design openapi-milana openapi-gateway openapi-notification openapi-mobile openapi-all up-all start-all stop-all restart-all docs lint format clean
 
@@ -29,6 +29,7 @@ help:
 	@echo "  infra-up           — postgres, rabbitmq, redis, minio, jaeger, mailhog, mock-notify"
 	@echo "  migrate-all        — все SQL-миграции"
 	@echo "  seed-place         — сид ~50 городов"
+	@echo "  seed-catalog-aliases — синонимы для POST /catalog/match"
 	@echo "  seed-nsk-products  — большой демо-каталог products для NSK-мест"
 	@echo "  up-all             — infra + migrate + seed"
 	@echo "  start-all          — up-all + запуск ВСЕХ микросервисов в фоне"
@@ -69,6 +70,8 @@ migrate-user:
 		psql -U cityvibe -d cityvibe_users < $(USER_SERVICE)/sql/migrations/004_add_gender.sql
 	docker compose -f infra/docker-compose.yml exec -T postgres \
 		psql -U cityvibe -d cityvibe_users < $(USER_SERVICE)/sql/migrations/005_seed_milana_account.sql
+	docker compose -f infra/docker-compose.yml exec -T postgres \
+		psql -U cityvibe -d cityvibe_users < $(USER_SERVICE)/sql/migrations/006_favorite_product_categories.sql
 
 migrate-auth:
 	docker compose -f infra/docker-compose.yml exec -T postgres \
@@ -91,6 +94,8 @@ migrate-place:
 		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/migrations/005_create_products.sql
 	docker compose -f infra/docker-compose.yml exec -T postgres \
 		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/migrations/006_products_price_nullable.sql
+	docker compose -f infra/docker-compose.yml exec -T postgres \
+		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/migrations/007_catalog_aliases.sql
 
 migrate-design:
 	-docker compose -f infra/docker-compose.yml exec -T postgres \
@@ -118,12 +123,16 @@ seed-place:
 		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/seed/003_seed_product_categories.sql
 	docker compose -f infra/docker-compose.yml exec -T postgres \
 		psql -U cityvibe -d cityvibe_places < $(PLACE_SERVICE)/sql/seed/004_seed_sample_products.sql
+	$(PYTHON) $(PLACE_SERVICE)/scripts/seed_catalog_aliases.py
 
 seed-nsk-places:
 	$(PYTHON) $(PLACE_SERVICE)/scripts/seed_nsk_places.py
 
 seed-nsk-products:
 	$(PYTHON) $(PLACE_SERVICE)/scripts/seed_nsk_products.py
+
+seed-catalog-aliases:
+	$(PYTHON) $(PLACE_SERVICE)/scripts/seed_catalog_aliases.py
 
 seed-design:
 	docker compose -f infra/docker-compose.yml exec -T postgres \

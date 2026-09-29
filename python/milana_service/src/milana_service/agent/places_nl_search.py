@@ -11,12 +11,14 @@ from src.mybootstrap_ioc_itskovichanton.ioc import bean
 from src.mybootstrap_mvc_itskovichanton.exceptions import CoreException
 
 from python.milana_service.src.milana_service.agent import prompts
+from python.milana_service.src.milana_service.infra.agent_log import log_agent
 from python.milana_service.src.milana_service.entities.request import (
     MilanaPlacesSearchRequest,
     MilanaPlacesSearchResponse,
     MilanaPlanStep,
     MilanaSearchStepResult,
 )
+from python.milana_service.src.milana_service.agent.catalog_hybrid import CatalogHybridMatcher
 from python.milana_service.src.milana_service.infra.deepseek import DeepSeekClient
 from python.milana_service.src.milana_service.infra.place_search_client import PlaceSearchHttpClient
 from python.place_service.src.place_service.entities.search import PlaceSearchRequest, ProductSearchRequest
@@ -26,23 +28,23 @@ from python.place_service.src.place_service.entities.search import PlaceSearchRe
     default_city_id=("milana.default_city_id", int, 3),
     places_per_step=("milana.places_per_step", int, 5),
     max_steps=("milana.max_steps", int, 5),
+    catalog_match_effort=("milana.catalog_match_effort", int, 50),
 )
 class PlacesNlSearchAgent:
     deepseek: DeepSeekClient
     places: PlaceSearchHttpClient
+    catalog_matcher: CatalogHybridMatcher
     logger_service: LoggerService
 
     def init(self, **kwargs):
         self.default_city_id = int(kwargs.get("default_city_id") or 3)
         self.places_per_step = int(kwargs.get("places_per_step") or 5)
         self.max_steps = int(kwargs.get("max_steps") or 5)
-        self._flog = self.logger_service.get_file_logger("milana-agent", max_line_len=80000)
+        self.catalog_match_effort = int(kwargs.get("catalog_match_effort") or 50)
+        self._flog = self.logger_service.get_file_logger("milana-agent", max_line_len=0)
 
     def _log(self, event: str, **payload: Any) -> None:
-        try:
-            self._flog.info(json.dumps({"event": event, **payload}, ensure_ascii=False, default=str))
-        except Exception:
-            self._flog.info(f"{event}: {payload!r}")
+        log_agent(self._flog, event, **payload)
 
     async def world_digest(self) -> Dict[str, Any]:
         cities = await self.places.list_cities_compact()
@@ -76,16 +78,25 @@ class PlacesNlSearchAgent:
             limit_per_step=per_step,
         )
 
-        cities = await self.places.list_cities_compact()
-        categories = await self.places.list_categories_compact()
-        product_categories = await self.places.list_product_categories_compact()
+        catalog_matches = await self._match_world(req.q)
+        cities = self._slim_catalog_items(catalog_matches.get("cities") or [], city_keys=("id", "name", "slug", "why"))
+        categories = self._slim_catalog_items(
+            catalog_matches.get("place_categories") or [],
+            city_keys=("code", "title", "why"),
+        )
+        product_categories = self._slim_catalog_items(
+            catalog_matches.get("product_categories") or [],
+            city_keys=("code", "title", "why"),
+        )
         known_place_codes = {c["code"] for c in categories if c.get("code")}
         known_product_codes = {c["code"] for c in product_categories if c.get("code")}
         self._log(
-            "world_loaded",
+            "world_shortlist",
             cities_n=len(cities),
             categories_n=len(categories),
             product_categories_n=len(product_categories),
+            product_codes=sorted(known_product_codes),
+            place_codes=sorted(known_place_codes),
         )
 
         plan_raw = await self.deepseek.chat_json(
@@ -231,9 +242,38 @@ class PlacesNlSearchAgent:
             message=message,
             steps=step_results,
             plan=[MilanaPlanStep(**s) for s in plan_steps],
+            catalog_matches=catalog_matches,
             model=self.deepseek.model,
             used_llm=True,
         )
+
+    async def _match_world(self, q: str) -> Dict[str, Any]:
+        effort = self.catalog_match_effort
+        product = await self.catalog_matcher.match(
+            q, catalog="product_categories", fields=["title"], limit=8, effort=effort,
+        )
+        place = await self.catalog_matcher.match(
+            q, catalog="place_categories", fields=["title"], limit=8, effort=effort,
+        )
+        cities = await self.catalog_matcher.match(
+            q, catalog="cities", fields=["name"], limit=3, effort=effort,
+        )
+        return {
+            "product_categories": product.get("items") or [],
+            "place_categories": place.get("items") or [],
+            "cities": cities.get("items") or [],
+        }
+
+    @staticmethod
+    def _slim_catalog_items(items: List[Dict[str, Any]], *, city_keys: tuple[str, ...]) -> List[Dict[str, Any]]:
+        out: List[Dict[str, Any]] = []
+        for row in items:
+            if not isinstance(row, dict):
+                continue
+            slim = {k: row.get(k) for k in city_keys if row.get(k) not in (None, "")}
+            if slim:
+                out.append(slim)
+        return out
 
     def _parse_plan(
         self,

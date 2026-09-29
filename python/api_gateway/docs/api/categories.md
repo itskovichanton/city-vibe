@@ -30,4 +30,6 @@ Query: `?compact=true` — без `description`, только type/enum/min/max 
 
 Категории товаров и услуг — отдельный справочник: [products.md](products.md) — `GET /product-categories`.
 
+Подбор по вольному тексту: [catalog-match.md](catalog-match.md).
+
 См. также LLM-справочники: [milana.md](milana.md) — `GET /milana/world`, `/milana/attr-schemas/{code}`.

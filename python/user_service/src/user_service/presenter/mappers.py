@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from python.libs.entities.place import PlaceCategory
+from python.libs.entities.place import PlaceCategory, ProductCategory
 from python.user_service.src.user_service.entities.common import (
     CompleteOnboardingRequest,
     CreateUserRequest,
@@ -13,16 +13,24 @@ from python.user_service.src.user_service.entities.common import (
 )
 
 
-def parse_category_codes(codes: list[str] | None) -> list[PlaceCategory] | None:
+def _parse_codes(codes: list[str] | None, enum_cls: type) -> list | None:
     if codes is None:
         return None
-    parsed: list[PlaceCategory] = []
+    parsed = []
     for code in codes:
         try:
-            parsed.append(PlaceCategory(code))
+            parsed.append(enum_cls(code))
         except ValueError:
             continue
     return parsed
+
+
+def parse_category_codes(codes: list[str] | None) -> list[PlaceCategory] | None:
+    return _parse_codes(codes, PlaceCategory)
+
+
+def parse_product_category_codes(codes: list[str] | None) -> list[ProductCategory] | None:
+    return _parse_codes(codes, ProductCategory)
 
 
 def to_create_user_request(body) -> CreateUserRequest:
@@ -32,6 +40,9 @@ def to_create_user_request(body) -> CreateUserRequest:
         age=body.age,
         short_bio=body.short_bio,
         favorite_categories=parse_category_codes(body.favorite_categories) or [],
+        favorite_product_categories=parse_product_category_codes(
+            getattr(body, "favorite_product_categories", None),
+        ) or [],
         city_id=body.city_id,
         birthdate=body.birthdate,
         auth_account_id=body.auth_account_id,
@@ -43,6 +54,9 @@ def to_update_profile_request(user_id: int, body) -> UpdateProfileRequest:
         user_id=user_id,
         name=body.name,
         favorite_categories=parse_category_codes(body.favorite_categories),
+        favorite_product_categories=parse_product_category_codes(
+            getattr(body, "favorite_product_categories", None),
+        ),
     )
 
 

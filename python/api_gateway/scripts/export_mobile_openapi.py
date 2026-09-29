@@ -109,6 +109,7 @@ class CreateUserBody(BaseModel):
     age: Optional[int] = None
     short_bio: str = ""
     favorite_categories: List[str] = Field(default_factory=list)
+    favorite_product_categories: List[str] = Field(default_factory=list)
     city_id: Optional[int] = None
     birthdate: Optional[date] = None
     auth_account_id: Optional[int] = None
@@ -116,6 +117,12 @@ class CreateUserBody(BaseModel):
 
 class UpdateBioBody(BaseModel):
     long_bio: str
+
+
+class UpdateProfileBody(BaseModel):
+    name: Optional[str] = None
+    favorite_categories: Optional[List[str]] = None
+    favorite_product_categories: Optional[List[str]] = None
 
 
 class UserOut(BaseModel):
@@ -129,6 +136,7 @@ class UserOut(BaseModel):
     avatar_url: Optional[str] = None
     role: str = "REGULAR"
     favorite_categories: List[str] = Field(default_factory=list)
+    favorite_product_categories: List[str] = Field(default_factory=list)
     onboarding_completed: bool = False
     deleted: bool = False
     city_id: Optional[int] = None
@@ -139,6 +147,20 @@ class UserOut(BaseModel):
 class AvatarUploadOut(BaseModel):
     avatar_url: str
     user: UserOut
+
+
+class CatalogMatchIn(BaseModel):
+    prompt: str
+    catalog: Optional[str] = None
+    entity_type: Optional[str] = None
+    fields: Optional[List[str]] = None
+    limit: int = 8
+    effort: Optional[int] = Field(
+        None,
+        ge=0,
+        le=80,
+        description="УсилиеПоиска: макс. строк справочника на один вызов LLM (0 = только алиасы)",
+    )
 
 
 def build_openapi_app() -> FastAPI:
@@ -170,6 +192,19 @@ def build_openapi_app() -> FastAPI:
 
     @app.get("/categories", tags=["categories"])
     async def list_categories():
+        raise NotImplementedError
+
+    @app.get("/catalogs", tags=["catalog"])
+    async def list_catalogs():
+        raise NotImplementedError
+
+    @app.post(
+        "/catalog/match",
+        tags=["catalog"],
+        summary="Гибрид: алиасы + LLM порциями effort (УсилиеПоиска)",
+        description="Прокси на milana POST /milana/catalog/match. effort=0 — только алиасы.",
+    )
+    async def match_catalog(body: CatalogMatchIn):
         raise NotImplementedError
 
     @app.get("/product-categories", tags=["products"])
@@ -259,9 +294,9 @@ def build_openapi_app() -> FastAPI:
         tags=["milana", "places"],
         summary="NL-поиск мест (ИИ-агент Милана)",
         description=(
-            "Произвольный русский текст q. Variant B: plan(world) → build → "
-            "places/search и/или products/search × N → message от Миланы. Также: GET /milana/world, "
-            "/milana/cities, /milana/categories, /milana/product-categories, /milana/attr-schemas/{code}."
+            "Произвольный русский текст q. catalog/match shortlist → plan → build → "
+            "places/search и/или products/search × N → message. GET /milana/world, "
+            "/milana/catalog/match, /milana/cities, /milana/categories, /milana/product-categories."
         ),
     )
     async def milana_places_search(body: dict):
@@ -281,6 +316,14 @@ def build_openapi_app() -> FastAPI:
 
     @app.get("/milana/product-categories", tags=["milana", "world"])
     async def milana_product_categories():
+        raise NotImplementedError
+
+    @app.get("/milana/catalogs", tags=["milana", "catalog"])
+    async def milana_catalogs():
+        raise NotImplementedError
+
+    @app.post("/milana/catalog/match", tags=["milana", "catalog"])
+    async def milana_catalog_match(body: CatalogMatchIn):
         raise NotImplementedError
 
     @app.get("/milana/attr-schemas/{category_code}", tags=["milana", "world"])
@@ -337,6 +380,10 @@ def build_openapi_app() -> FastAPI:
 
     @app.get("/users/{user_id}", tags=["users"], response_model=UserOut)
     async def get_user(user_id: int):
+        raise NotImplementedError
+
+    @app.patch("/users/{user_id}", tags=["users"], response_model=UserOut)
+    async def update_profile(user_id: int, body: UpdateProfileBody):
         raise NotImplementedError
 
     @app.put("/users/{user_id}/bio", tags=["users"], response_model=UserOut)

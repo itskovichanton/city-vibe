@@ -11,6 +11,9 @@ from src.mybootstrap_core_itskovichanton.logger import LoggerService
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
 from src.mybootstrap_mvc_itskovichanton.exceptions import CoreException
 
+from python.libs.infra.envfile import load_repo_env
+from python.milana_service.src.milana_service.infra.agent_log import log_agent
+
 
 @bean(
     base_url=("deepseek.base_url", str, "https://api.deepseek.com"),
@@ -25,6 +28,7 @@ class DeepSeekClient:
     logger_service: LoggerService
 
     def init(self, **kwargs):
+        load_repo_env()
         self.base_url = (
             os.environ.get("DEEPSEEK_BASE_URL")
             or kwargs.get("base_url")
@@ -36,17 +40,21 @@ class DeepSeekClient:
         self.temperature = float(kwargs.get("temperature") or 0.2)
         self.timeout_sec = int(kwargs.get("timeout_sec") or 90)
         self.api_key = (os.environ.get("DEEPSEEK_API_KEY") or "").strip()
-        self._flog = self.logger_service.get_file_logger("milana-agent", max_line_len=80000)
+        self._flog = self.logger_service.get_file_logger("milana-agent", max_line_len=0)
+        log_agent(
+            self._flog,
+            "deepseek_init",
+            configured=self.configured,
+            model=self.model,
+            base_url=self.base_url,
+        )
 
     @property
     def configured(self) -> bool:
         return bool(self.api_key)
 
     def _log(self, event: str, **payload: Any) -> None:
-        try:
-            self._flog.info(json.dumps({"event": event, **payload}, ensure_ascii=False, default=str))
-        except Exception:
-            self._flog.info(f"{event}: {payload!r}")
+        log_agent(self._flog, event, **payload)
 
     async def chat_json(
         self,
@@ -78,10 +86,8 @@ class DeepSeekClient:
             phase=phase,
             url=url,
             model=self.model,
-            system_chars=len(system),
-            user_chars=len(user),
-            system_preview=system[:1500],
-            user_preview=user[:4000],
+            system=system,
+            user=user,
             max_tokens=payload["max_tokens"],
         )
         async with httpx.AsyncClient(timeout=self.timeout_sec) as client:
@@ -107,7 +113,7 @@ class DeepSeekClient:
             "deepseek_response",
             phase=phase,
             usage=usage,
-            content_preview=str(content)[:6000],
+            content=content,
         )
         return _parse_json_content(content)
 

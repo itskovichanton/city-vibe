@@ -32,6 +32,7 @@ class UpdateProfileUseCaseImpl(UpdateProfileUseCase):
             request.user_id,
             name=request.name,
             favorite_categories=request.favorite_categories,
+            favorite_product_categories=request.favorite_product_categories,
         )
         if user is None:
             raise CoreException(

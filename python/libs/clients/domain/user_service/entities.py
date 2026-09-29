@@ -16,6 +16,7 @@ class CreateUserBody:
     age: int | None = None
     short_bio: str | None = ''
     favorite_categories: list[str] | None = None
+    favorite_product_categories: list[str] | None = None
     city_id: int | None = None
     birthdate: str | None = None
     auth_account_id: int | None = None
@@ -30,6 +31,7 @@ class UpdateBioBody:
 class UpdateProfileBody:
     name: str | None = None
     favorite_categories: list[str] | None = None
+    favorite_product_categories: list[str] | None = None
 
 
 @dataclass
@@ -44,6 +46,7 @@ class UserOut:
     avatar_url: str | None = None
     role: str | None = 'REGULAR'
     favorite_categories: list[str] | None = None
+    favorite_product_categories: list[str] | None = None
     onboarding_completed: bool | None = False
     deleted: bool | None = False
     city_id: int | None = None

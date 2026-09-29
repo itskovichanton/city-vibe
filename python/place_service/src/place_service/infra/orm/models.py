@@ -121,6 +121,24 @@ class ProductCategoryModel(Base):
     )
 
 
+class CatalogAliasModel(Base):
+    __tablename__ = "catalog_aliases"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    catalog: Mapped[str] = mapped_column(String(64), nullable=False)
+    target_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    alias: Mapped[str] = mapped_column(Text, nullable=False)
+    why: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    weight: Mapped[float] = mapped_column(Float, nullable=False, default=1.0)
+    deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+
 class ProductModel(Base):
     __tablename__ = "products"
 

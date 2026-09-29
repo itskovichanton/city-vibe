@@ -45,6 +45,7 @@ class UserProfile {
     this.longBio = '',
     this.role = 'REGULAR',
     this.favoriteCategories = const [],
+    this.favoriteProductCategories = const [],
     this.onboardingCompleted = false,
     this.deleted = false,
     this.cityId,
@@ -62,6 +63,7 @@ class UserProfile {
   final String longBio;
   final String role;
   final List<String> favoriteCategories;
+  final List<String> favoriteProductCategories;
   final bool onboardingCompleted;
   final bool deleted;
   final int? cityId;
@@ -79,6 +81,7 @@ class UserProfile {
     String? longBio,
     String? role,
     List<String>? favoriteCategories,
+    List<String>? favoriteProductCategories,
     bool? onboardingCompleted,
     bool? deleted,
     int? cityId,
@@ -101,6 +104,8 @@ class UserProfile {
       longBio: longBio ?? this.longBio,
       role: role ?? this.role,
       favoriteCategories: favoriteCategories ?? this.favoriteCategories,
+      favoriteProductCategories:
+          favoriteProductCategories ?? this.favoriteProductCategories,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       deleted: deleted ?? this.deleted,
       cityId: clearCityId ? null : (cityId ?? this.cityId),
@@ -112,7 +117,6 @@ class UserProfile {
   }
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
-    final fav = json['favorite_categories'];
     return UserProfile(
       id: json['id'] as int,
       name: json['name'] as String,
@@ -122,9 +126,8 @@ class UserProfile {
       shortBio: (json['short_bio'] as String?) ?? '',
       longBio: (json['long_bio'] as String?) ?? '',
       role: (json['role'] as String?) ?? 'REGULAR',
-      favoriteCategories: fav is List
-          ? fav.map((e) => e.toString()).toList(growable: false)
-          : const [],
+      favoriteCategories: _stringList(json['favorite_categories']),
+      favoriteProductCategories: _stringList(json['favorite_product_categories']),
       onboardingCompleted: (json['onboarding_completed'] as bool?) ?? false,
       deleted: (json['deleted'] as bool?) ?? false,
       cityId: json['city_id'] as int?,
@@ -147,6 +150,7 @@ class UserProfile {
         'long_bio': longBio,
         'role': role,
         'favorite_categories': favoriteCategories,
+        'favorite_product_categories': favoriteProductCategories,
         'onboarding_completed': onboardingCompleted,
         'deleted': deleted,
         'city_id': cityId,
@@ -154,4 +158,11 @@ class UserProfile {
         'avatar_url': avatarUrl,
         'auth_account_id': authAccountId,
       };
+}
+
+List<String> _stringList(dynamic raw) {
+  if (raw is List) {
+    return raw.map((e) => e.toString()).toList(growable: false);
+  }
+  return const [];
 }

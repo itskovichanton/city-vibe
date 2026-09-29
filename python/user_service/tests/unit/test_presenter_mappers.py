@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from python.libs.entities.place import PlaceCategory
+from python.libs.entities.place import PlaceCategory, ProductCategory
 from python.user_service.src.user_service.presenter.mappers import (
     parse_category_codes,
+    parse_product_category_codes,
     to_complete_onboarding_request,
     to_create_user_request,
     to_delete_user_request,
@@ -24,6 +25,14 @@ def test_parse_category_codes_skips_unknown():
     assert parse_category_codes(None) is None
 
 
+def test_parse_product_category_codes_skips_unknown():
+    assert parse_product_category_codes(["coffee", "nope", "yoga_class"]) == [
+        ProductCategory.COFFEE,
+        ProductCategory.YOGA_CLASS,
+    ]
+    assert parse_product_category_codes(None) is None
+
+
 def test_to_create_user_request():
     body = SimpleNamespace(
         name="Anna",
@@ -31,6 +40,7 @@ def test_to_create_user_request():
         age=25,
         short_bio="hi",
         favorite_categories=["bars"],
+        favorite_product_categories=["coffee"],
         city_id=1,
         birthdate=None,
         auth_account_id=10,
@@ -38,15 +48,21 @@ def test_to_create_user_request():
     req = to_create_user_request(body)
     assert req.name == "Anna"
     assert req.favorite_categories == [PlaceCategory.BARS]
+    assert req.favorite_product_categories == [ProductCategory.COFFEE]
     assert req.auth_account_id == 10
 
 
 def test_to_update_profile_request():
-    body = SimpleNamespace(name="Maria", favorite_categories=["parks"])
+    body = SimpleNamespace(
+        name="Maria",
+        favorite_categories=["parks"],
+        favorite_product_categories=["yoga_class", "bad"],
+    )
     req = to_update_profile_request(7, body)
     assert req.user_id == 7
     assert req.name == "Maria"
     assert req.favorite_categories == [PlaceCategory.PARKS]
+    assert req.favorite_product_categories == [ProductCategory.YOGA_CLASS]
 
 
 def test_to_update_bio_request():

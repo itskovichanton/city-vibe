@@ -82,10 +82,22 @@ def test_onboarding_flow_patch_bio_complete(live_backend):
         )
         assert "театры" in step2.get("long_bio", "")
 
+        step3 = patch_json(
+            client,
+            f"/users/{user_id}",
+            {
+                "favorite_product_categories": ["coffee", "yoga_class", "invalid_code"],
+            },
+        )
+        assert "coffee" in (step3.get("favorite_product_categories") or [])
+        assert "yoga_class" in (step3.get("favorite_product_categories") or [])
+        assert "invalid_code" not in (step3.get("favorite_product_categories") or [])
+
         done = post_json(client, f"/users/{user_id}/onboarding/complete", {})
         assert done.get("onboarding_completed") is True
         assert "bars" in (done.get("favorite_categories") or [])
         assert "theaters" in (done.get("favorite_categories") or [])
+        assert "coffee" in (done.get("favorite_product_categories") or [])
 
         milana = get_json(client, "/milana/account")
         assert milana.get("name") == "Милана"

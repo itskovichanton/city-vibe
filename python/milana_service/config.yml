@@ -20,6 +20,8 @@ milana:
   default_city_id: 3
   places_per_step: 5
   max_steps: 5
+  # УсилиеПоиска: сколько строк справочника скормить LLM за один вызов (весь каталог режется на порции).
+  catalog_match_effort: 50
 
 clients:
   place_service:

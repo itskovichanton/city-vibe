@@ -27,10 +27,17 @@ class ApiHttp {
   Future<T> post<T>(
     String path, {
     Object? body,
+    Duration? timeout,
     required T Function(dynamic data) parse,
   }) {
     return _send(
-      () => _dio.post<dynamic>(path, data: body),
+      () => _dio.post<dynamic>(
+        path,
+        data: body,
+        options: timeout == null
+            ? null
+            : Options(sendTimeout: timeout, receiveTimeout: timeout),
+      ),
       parse: parse,
     );
   }

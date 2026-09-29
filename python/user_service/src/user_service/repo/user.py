@@ -8,7 +8,7 @@ from sqlalchemy import select
 from src.mybootstrap_ioc_itskovichanton.ioc import bean
 
 from python.libs.clients.db import Database
-from python.libs.entities.place import PlaceCategory
+from python.libs.entities.place import PlaceCategory, ProductCategory
 from python.libs.entities.user import Gender, Status, User, UserRole
 from python.user_service.src.user_service.infra.orm.mappers import user_model_to_dto
 from python.user_service.src.user_service.infra.orm.models import UserModel
@@ -28,6 +28,7 @@ class UserRepo(Protocol):
         age: Optional[int] = None,
         short_bio: str = "",
         favorite_categories: list[PlaceCategory] | None = None,
+        favorite_product_categories: list[ProductCategory] | None = None,
         avatar_url: Optional[str] = None,
         city_id: Optional[int] = None,
         birthdate: Optional[date] = None,
@@ -44,6 +45,7 @@ class UserRepo(Protocol):
         *,
         name: str | None = None,
         favorite_categories: list[PlaceCategory] | None = None,
+        favorite_product_categories: list[ProductCategory] | None = None,
     ) -> Optional[User]:
         ...
 
@@ -78,12 +80,14 @@ class UserRepoImpl(UserRepo):
         age: Optional[int] = None,
         short_bio: str = "",
         favorite_categories: list[PlaceCategory] | None = None,
+        favorite_product_categories: list[ProductCategory] | None = None,
         avatar_url: Optional[str] = None,
         city_id: Optional[int] = None,
         birthdate: Optional[date] = None,
         auth_account_id: Optional[int] = None,
     ) -> User:
         categories = [c.value for c in (favorite_categories or [])]
+        product_categories = [c.value for c in (favorite_product_categories or [])]
         model = UserModel(
             name=name,
             gender=gender if isinstance(gender, Gender) else Gender(gender),
@@ -97,6 +101,7 @@ class UserRepoImpl(UserRepo):
             status=Status.ACTIVE.name,
             role=UserRole.REGULAR.name,
             favorite_categories=categories,
+            favorite_product_categories=product_categories,
             onboarding_completed=False,
             deleted=False,
         )
@@ -122,6 +127,7 @@ class UserRepoImpl(UserRepo):
         *,
         name: str | None = None,
         favorite_categories: list[PlaceCategory] | None = None,
+        favorite_product_categories: list[ProductCategory] | None = None,
     ) -> Optional[User]:
         async with self.db.session() as session:
             model = await session.get(UserModel, user_id)
@@ -131,6 +137,10 @@ class UserRepoImpl(UserRepo):
                 model.name = name
             if favorite_categories is not None:
                 model.favorite_categories = [c.value for c in favorite_categories]
+            if favorite_product_categories is not None:
+                model.favorite_product_categories = [
+                    c.value for c in favorite_product_categories
+                ]
             await session.flush()
             await session.refresh(model)
             return user_model_to_dto(model)
@@ -159,6 +169,9 @@ class UserRepoImpl(UserRepo):
             model.status = user.status.name
             model.role = user.role.name
             model.favorite_categories = [c.value for c in user.favorite_categories]
+            model.favorite_product_categories = [
+                c.value for c in user.favorite_product_categories
+            ]
             model.onboarding_completed = user.onboarding_completed
             model.deleted = user.deleted
             model.city_id = user.city_id

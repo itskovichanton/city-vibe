@@ -4,6 +4,12 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PYTHON="${PYTHON:-/Library/Frameworks/Python.framework/Versions/3.12/bin/python3}"
+if [[ -f "${ROOT}/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "${ROOT}/.env"
+  set +a
+fi
 LOG_DIR="${ROOT}/.run/logs"
 PID_DIR="${ROOT}/.run/pids"
 mkdir -p "$LOG_DIR" "$PID_DIR"

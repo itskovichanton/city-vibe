@@ -12,6 +12,20 @@ from pydantic import BaseModel, Field
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
+class CatalogMatchIn(BaseModel):
+    prompt: str
+    catalog: Optional[str] = None
+    entity_type: Optional[str] = None
+    fields: Optional[List[str]] = None
+    limit: int = 8
+    effort: Optional[int] = Field(
+        None,
+        ge=0,
+        le=80,
+        description="УсилиеПоиска: макс. строк справочника на один вызов LLM (0 = только алиасы)",
+    )
+
+
 class MilanaGeo(BaseModel):
     lat: float
     lng: float
@@ -80,6 +94,22 @@ def build_openapi_app() -> FastAPI:
     async def product_categories():
         raise NotImplementedError
 
+    @app.get("/milana/catalogs", tags=["catalog"], summary="Справочники для NL-подбора")
+    async def catalogs():
+        raise NotImplementedError
+
+    @app.post(
+        "/milana/catalog/match",
+        tags=["catalog"],
+        summary="Строки справочника по вольному описанию (алиасы + LLM)",
+        description=(
+            "Гибрид: алиасы place-service, затем DeepSeek по порциям effort строк "
+            "(УсилиеПоиска). 0 = только алиасы."
+        ),
+    )
+    async def catalog_match(body: CatalogMatchIn):
+        raise NotImplementedError
+
     @app.get(
         "/milana/attr-schemas/{category_code}",
         tags=["world"],
@@ -94,7 +124,7 @@ def build_openapi_app() -> FastAPI:
         summary="NL-поиск мест (Милана, variant B)",
         response_model=MilanaPlacesSearchOut,
         description=(
-            "Pass1 plan (cities+categories+product_categories) → Pass2 build → "
+            "Pass1 catalog/match shortlist → plan → build → "
             "places/search и/или products/search × N → message от Миланы. "
             "Резолв place_name → place_id, exclude между шагами, default distance. "
             "Нужен DEEPSEEK_API_KEY. Лог: milana-agent-*.txt через LoggerService."

@@ -116,6 +116,7 @@ class CurrentUserNotifier extends AsyncNotifier<UserProfile?> {
   Future<UserProfile> updateProfile({
     String? name,
     List<String>? favoriteCategories,
+    List<String>? favoriteProductCategories,
   }) async {
     final userId = state.value?.id;
     if (userId == null) throw StateError('Нет текущего пользователя');
@@ -126,6 +127,7 @@ class CurrentUserNotifier extends AsyncNotifier<UserProfile?> {
         userId,
         name: name,
         favoriteCategories: favoriteCategories,
+        favoriteProductCategories: favoriteProductCategories,
       );
       SessionGuard.instance.rejectIfBanned(user);
       return user;

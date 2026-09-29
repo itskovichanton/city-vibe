@@ -5,7 +5,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from python.tests.e2e.helpers import assert_http_error, ensure_attr_schema, get_json
+from python.tests.e2e.helpers import assert_http_error, ensure_attr_schema, get_json, post_json
 
 pytestmark = pytest.mark.e2e
 
@@ -42,6 +42,31 @@ def test_cities_categories_attr_schemas(live_backend):
         assert isinstance(product_categories, list) and product_categories
         product_codes = {c["code"] for c in product_categories if isinstance(c, dict)}
         assert "food" in product_codes
+
+        catalogs = get_json(client, "/catalogs")
+        assert isinstance(catalogs, list)
+        catalog_codes = {c["catalog"] for c in catalogs if isinstance(c, dict)}
+        assert "product_categories" in catalog_codes
+
+        matched = post_json(
+            client,
+            "/catalog/match",
+            {
+                "prompt": "люблю сладенькое и спортом заниматься",
+                "entity_type": "ProductCategoryInfo",
+                "fields": ["title"],
+                "limit": 8,
+                "effort": 0,
+            },
+        )
+        assert isinstance(matched, dict)
+        assert matched.get("effort") == 0
+        assert matched.get("used_llm") is False
+        items = matched.get("items") or []
+        codes = {row["code"] for row in items if isinstance(row, dict)}
+        assert "bakery_goods" in codes
+        assert "coffee" in codes
+        assert all(isinstance(row.get("why"), str) and row["why"] for row in items if isinstance(row, dict))
 
         schemas = get_json(client, "/attr-schemas")
         assert isinstance(schemas, list)

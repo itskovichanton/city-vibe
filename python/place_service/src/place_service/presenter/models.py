@@ -58,3 +58,20 @@ class ProductPatchBody(BaseModel):
     price: Optional[float] = Field(None, ge=0)
     category: Optional[str] = None
     schedule: Optional[Dict[str, Any]] = None
+
+
+class CatalogMatchBody(BaseModel):
+    prompt: str = Field(..., min_length=2, description="Вольное описание на естественном языке")
+    catalog: Optional[str] = Field(
+        None,
+        description="product_categories | place_categories | cities",
+    )
+    entity_type: Optional[str] = Field(
+        None,
+        description="ProductCategoryInfo | PlaceCategoryInfo | City",
+    )
+    fields: Optional[List[str]] = Field(
+        None,
+        description="Поля строки, по которым матчить (плюс таблица алиасов)",
+    )
+    limit: int = Field(8, ge=1, le=50)

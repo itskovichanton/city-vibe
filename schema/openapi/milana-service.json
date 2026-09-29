@@ -101,6 +101,65 @@
         }
       }
     },
+    "/milana/catalogs": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Справочники для NL-подбора",
+        "operationId": "catalogs_milana_catalogs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/milana/catalog/match": {
+      "post": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Строки справочника по вольному описанию (алиасы + LLM)",
+        "description": "Гибрид: алиасы place-service, затем DeepSeek по порциям effort строк (УсилиеПоиска). 0 = только алиасы.",
+        "operationId": "catalog_match_milana_catalog_match_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogMatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/milana/attr-schemas/{category_code}": {
       "get": {
         "tags": [
@@ -147,7 +206,7 @@
           "milana"
         ],
         "summary": "NL-поиск мест (Милана, variant B)",
-        "description": "Pass1 plan (cities+categories+product_categories) → Pass2 build → places/search и/или products/search × N → message от Миланы. Резолв place_name → place_id, exclude между шагами, default distance. Нужен DEEPSEEK_API_KEY. Лог: milana-agent-*.txt через LoggerService.",
+        "description": "Pass1 catalog/match shortlist → plan → build → places/search и/или products/search × N → message от Миланы. Резолв place_name → place_id, exclude между шагами, default distance. Нужен DEEPSEEK_API_KEY. Лог: milana-agent-*.txt через LoggerService.",
         "operationId": "milana_places_search_milana_places_search_post",
         "requestBody": {
           "content": {
@@ -186,6 +245,74 @@
   },
   "components": {
     "schemas": {
+      "CatalogMatchIn": {
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "catalog": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog"
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "default": 8
+          },
+          "effort": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 80.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effort",
+            "description": "УсилиеПоиска: макс. строк справочника на один вызов LLM (0 = только алиасы)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt"
+        ],
+        "title": "CatalogMatchIn"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {

@@ -25,7 +25,11 @@ class CreateUserBody(BaseModel):
     gender: Gender = Field(..., description="Пол")
     age: Optional[int] = Field(None, description="Возраст")
     short_bio: str = Field("", description="Коротко о себе")
-    favorite_categories: List[str] = Field(default_factory=list, description="Коды категорий")
+    favorite_categories: List[str] = Field(default_factory=list, description="Коды категорий мест")
+    favorite_product_categories: List[str] = Field(
+        default_factory=list,
+        description="Коды категорий товаров и услуг",
+    )
     city_id: Optional[int] = Field(None, description="ID города")
     birthdate: Optional[date] = Field(None, description="Дата рождения")
     auth_account_id: Optional[int] = Field(None, description="ID auth-аккаунта")
@@ -33,6 +37,12 @@ class CreateUserBody(BaseModel):
 
 class UpdateBioBody(BaseModel):
     long_bio: str = Field(..., description="О себе в свободной форме")
+
+
+class UpdateProfileBody(BaseModel):
+    name: Optional[str] = Field(None, description="Имя")
+    favorite_categories: Optional[List[str]] = None
+    favorite_product_categories: Optional[List[str]] = None
 
 
 class UserOut(BaseModel):
@@ -46,6 +56,7 @@ class UserOut(BaseModel):
     avatar_url: Optional[str] = None
     role: str = "REGULAR"
     favorite_categories: List[str] = Field(default_factory=list)
+    favorite_product_categories: List[str] = Field(default_factory=list)
     onboarding_completed: bool = False
     deleted: bool = False
     city_id: Optional[int] = None
@@ -76,6 +87,10 @@ def build_openapi_app() -> FastAPI:
 
     @app.get("/users/{user_id}", tags=["users"], response_model=UserOut, summary="Получить профиль")
     async def get_user(user_id: int) -> UserOut:
+        raise NotImplementedError
+
+    @app.patch("/users/{user_id}", tags=["users"], response_model=UserOut, summary="Обновить профиль")
+    async def update_profile(user_id: int, body: UpdateProfileBody) -> UserOut:
         raise NotImplementedError
 
     @app.put("/users/{user_id}/bio", tags=["users"], response_model=UserOut, summary="Обновить bio")

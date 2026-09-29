@@ -167,6 +167,65 @@
         }
       }
     },
+    "/catalogs": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "List Catalogs",
+        "operationId": "list_catalogs_catalogs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalog/match": {
+      "post": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Гибрид: алиасы + LLM порциями effort (УсилиеПоиска)",
+        "description": "Прокси на milana POST /milana/catalog/match. effort=0 — только алиасы.",
+        "operationId": "match_catalog_catalog_match_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogMatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/product-categories": {
       "get": {
         "tags": [
@@ -817,7 +876,7 @@
           "places"
         ],
         "summary": "NL-поиск мест (ИИ-агент Милана)",
-        "description": "Произвольный русский текст q. Variant B: plan(world) → build → places/search и/или products/search × N → message от Миланы. Также: GET /milana/world, /milana/cities, /milana/categories, /milana/product-categories, /milana/attr-schemas/{code}.",
+        "description": "Произвольный русский текст q. catalog/match shortlist → plan → build → places/search и/или products/search × N → message. GET /milana/world, /milana/catalog/match, /milana/cities, /milana/categories, /milana/product-categories.",
         "operationId": "milana_places_search_milana_places_search_post",
         "requestBody": {
           "content": {
@@ -927,6 +986,66 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/milana/catalogs": {
+      "get": {
+        "tags": [
+          "milana",
+          "catalog"
+        ],
+        "summary": "Milana Catalogs",
+        "operationId": "milana_catalogs_milana_catalogs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/milana/catalog/match": {
+      "post": {
+        "tags": [
+          "milana",
+          "catalog"
+        ],
+        "summary": "Milana Catalog Match",
+        "operationId": "milana_catalog_match_milana_catalog_match_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogMatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -1500,6 +1619,56 @@
             }
           }
         }
+      },
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Update Profile",
+        "operationId": "update_profile_users__user_id__patch",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/users/{user_id}/bio": {
@@ -1658,6 +1827,74 @@
         ],
         "title": "AvatarUploadOut"
       },
+      "CatalogMatchIn": {
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "catalog": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog"
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "default": 8
+          },
+          "effort": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 80.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effort",
+            "description": "УсилиеПоиска: макс. строк справочника на один вызов LLM (0 = только алиасы)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt"
+        ],
+        "title": "CatalogMatchIn"
+      },
       "ChallengeOut": {
         "properties": {
           "challenge_id": {
@@ -1806,6 +2043,13 @@
             },
             "type": "array",
             "title": "Favorite Categories"
+          },
+          "favorite_product_categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Favorite Product Categories"
           },
           "city_id": {
             "anyOf": [
@@ -2138,6 +2382,51 @@
         ],
         "title": "UpdateBioBody"
       },
+      "UpdateProfileBody": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "favorite_categories": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Favorite Categories"
+          },
+          "favorite_product_categories": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Favorite Product Categories"
+          }
+        },
+        "type": "object",
+        "title": "UpdateProfileBody"
+      },
       "UserOut": {
         "properties": {
           "id": {
@@ -2199,6 +2488,13 @@
             },
             "type": "array",
             "title": "Favorite Categories"
+          },
+          "favorite_product_categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Favorite Product Categories"
           },
           "onboarding_completed": {
             "type": "boolean",

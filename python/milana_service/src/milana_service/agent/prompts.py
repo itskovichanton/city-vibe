@@ -61,9 +61,11 @@ PRODUCT_SEARCH_CONTRACT = """
 PLAN_SYSTEM = f"""{PERSONA}
 
 Задача (pass 1 — PLAN): разбей пожелания пользователя на упорядоченные шаги поиска.
-Не пиши тело search. Только выбери domain и category из справочников.
+Не пиши тело search. Только выбери domain и category из КОРОТКИХ справочников ниже.
+Полного мира категорий у тебя нет — только shortlist от catalog/match (с полем why).
+
 Если в тексте названо заведение («акции в кафе Мечта») — укажи place_name
-и при возможности place_category места (cafes, concerts, gyms, …).
+и при возможности place_category места из shortlist categories.
 
 Верни СТРОГО JSON:
 {{
@@ -71,10 +73,10 @@ PLAN_SYSTEM = f"""{PERSONA}
     {{
       "domain": "place",
       "intent": "кратко что ищем (рус.)",
-      "category": "код из categories или product_categories (можно пустую строку, если ищем по имени места)",
+      "category": "код из shortlist (можно пустую строку, если ищем по имени места)",
       "place_name": "имя заведения из текста или null",
-      "place_category": "код категории МЕСТА или null",
-      "why": "почему этот шаг из текста пользователя (1 фраза)"
+      "place_category": "код категории МЕСТА из shortlist или null",
+      "why": "почему этот шаг: опирайся на why из shortlist и на текст пользователя"
     }}
   ]
 }}
@@ -82,13 +84,15 @@ PLAN_SYSTEM = f"""{PERSONA}
 Правила:
 - Максимум 5 шагов, без дублей.
 - domain только "place" или "product".
-- domain=place → category только из справочника categories (заведения: ресторан, бар, театр как место).
-- domain=product → category только из product_categories (еда, кофе, концерт, абонемент…).
-  Для «акции в кафе Мечта» domain=product, category=coffee или food, place_name=Мечта, place_category=cafes.
-- Место и продукт — разные сущности: «сходить в ресторан» = place, «купить сет / абонемент / билет» = product.
+- domain=place → category только из categories (shortlist мест).
+- domain=product → category только из product_categories (shortlist товаров/услуг).
+  Для «акции в кафе Мечта» domain=product, category из product_categories (coffee/food/…),
+  place_name=Мечта, place_category из categories (cafes).
+- Не выдумывай коды, которых нет в shortlist.
+- Если shortlist пуст — можно шаг с пустой category и place_name из текста.
 - Даты в тексте («5 октября», «в субботу») запомни для BUILD (date_from/date_to + events).
 - Учитывай порядок («сначала… потом…»).
-- Не выдумывай категории и id.
+- Не выдумывай id.
 """
 
 BUILD_SYSTEM = f"""{PERSONA}
@@ -157,6 +161,10 @@ def plan_user_payload(
                 "my_geo": my_geo,
                 "weekday_hint": weekday,
                 "timezone": timezone,
+                "note": (
+                    "categories и product_categories — shortlist catalog/match, "
+                    "не полный справочник. Выбирай code только отсюда."
+                ),
             },
             "cities": cities,
             "categories": categories,
@@ -196,3 +204,29 @@ def build_user_payload(
 
 def compose_user_payload(*, q: str, steps_payload: list) -> str:
     return json.dumps({"q": q, "steps": steps_payload}, ensure_ascii=False)
+
+
+CATALOG_MATCH_SYSTEM = f"""{PERSONA}
+
+Задача: по вольному тексту пользователя выбрать строки ЗАКРЫТОГО справочника.
+Тебе дают только порцию строк (code/slug + title). Не выдумывай коды.
+Разговорные формулировки («фоткаться», «сладенькое») сопоставляй по смыслу.
+
+Верни СТРОГО JSON:
+{{
+  "items": [
+    {{
+      "key": "код из списка (code или slug)",
+      "why": "кратко по-русски, почему подходит",
+      "confidence": 0.0
+    }}
+  ]
+}}
+
+confidence от 0 до 1. Пустой items, если в этой порции нет подходящих строк.
+Ключи только из переданного списка.
+""".strip()
+
+
+def catalog_match_user_payload(*, prompt: str, rows: List[Dict[str, Any]]) -> str:
+    return json.dumps({"prompt": prompt, "rows": rows}, ensure_ascii=False)

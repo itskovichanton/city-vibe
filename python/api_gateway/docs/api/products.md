@@ -12,6 +12,8 @@
 | Method | Path | Описание |
 |--------|------|----------|
 | GET | `/product-categories` | Коды `food`, `yoga_class`, `concert`, … |
+| GET | `/catalogs` | Реестр справочников для NL-подбора |
+| POST | `/catalog/match` | Гибрид: алиасы + LLM порциями `effort` (через Милану) |
 
 ## Методы
 

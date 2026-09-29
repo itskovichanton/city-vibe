@@ -18,6 +18,10 @@ def _bootstrap_sys_path() -> None:
 
 _bootstrap_sys_path()
 
+from python.libs.infra.envfile import load_repo_env  # noqa: E402
+
+load_repo_env()
+
 from src.mbulak_tools.events import exit_signal  # noqa: E402
 from src.mybootstrap_core_itskovichanton.di import injector  # noqa: E402
 

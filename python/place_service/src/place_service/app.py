@@ -5,6 +5,7 @@ from python.libs.clients.db import Database  # noqa: F401
 from python.libs.infra.support import CityVibeInfraSupport  # noqa: F401
 from python.place_service.src.place_service.presenter.server import Server
 from python.place_service.src.place_service.repo.attr_schema import AttrSchemaRepoImpl  # noqa: F401
+from python.place_service.src.place_service.repo.catalog_alias import CatalogAliasRepoImpl  # noqa: F401
 from python.place_service.src.place_service.repo.category import CategoryRepoImpl  # noqa: F401
 from python.place_service.src.place_service.repo.city import CityRepoImpl  # noqa: F401
 from python.place_service.src.place_service.repo.place import PlaceRepoImpl  # noqa: F401
@@ -14,6 +15,10 @@ from python.place_service.src.place_service.usecase.attr_schemas import (  # noq
     ListAttrSchemasUseCaseImpl,
 )
 from python.place_service.src.place_service.usecase.categories import ListCategoriesUseCaseImpl  # noqa: F401
+from python.place_service.src.place_service.usecase.match_catalog import (  # noqa: F401
+    ListCatalogsUseCaseImpl,
+    MatchCatalogUseCaseImpl,
+)
 from python.place_service.src.place_service.usecase.cities import (  # noqa: F401
     GetCityUseCaseImpl,
     GetNearestCityUseCaseImpl,

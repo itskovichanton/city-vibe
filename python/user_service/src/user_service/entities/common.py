@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import List, Optional
 
-from python.libs.entities.place import PlaceCategory
+from python.libs.entities.place import PlaceCategory, ProductCategory
 from python.libs.entities.user import Gender, Status, UserRole
 
 
@@ -17,6 +17,7 @@ class CreateUserRequest:
     age: Optional[int] = None
     short_bio: str = ""
     favorite_categories: List[PlaceCategory] = field(default_factory=list)
+    favorite_product_categories: List[ProductCategory] = field(default_factory=list)
     avatar_url: Optional[str] = None
     city_id: Optional[int] = None
     birthdate: Optional[date] = None
@@ -33,16 +34,17 @@ class UpdateBioRequest:
 
 @dataclass
 class UpdateProfileRequest:
-    """Обновление профиля (имя, категории) — онбординг, шаг 1."""
+    """Обновление профиля (имя, категории мест и товаров)."""
 
     user_id: int
     name: str | None = None
     favorite_categories: List[PlaceCategory] | None = None
+    favorite_product_categories: List[ProductCategory] | None = None
 
 
 @dataclass
 class CompleteOnboardingRequest:
-    """Завершение онбординга (шаг 3)."""
+    """Завершение онбординга."""
 
     user_id: int
 
@@ -92,6 +94,7 @@ class UserResponse:
     avatar_url: Optional[str] = None
     role: UserRole = UserRole.REGULAR
     favorite_categories: List[PlaceCategory] = field(default_factory=list)
+    favorite_product_categories: List[ProductCategory] = field(default_factory=list)
     onboarding_completed: bool = False
     deleted: bool = False
     city_id: Optional[int] = None
