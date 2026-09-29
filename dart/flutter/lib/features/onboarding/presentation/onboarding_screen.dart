@@ -363,17 +363,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               ),
                             ),
                           ),
-                          if (_step == 0) ...[
-                            const SizedBox(height: 12),
-                            GradientButton(
-                              label: _isSwitchingAccount
-                                  ? 'Выходим…'
-                                  : 'Сменить аккаунт',
-                              onPressed: _isSwitchingAccount
-                                  ? null
-                                  : _promptSwitchAccount,
-                            ),
-                          ],
                           const SizedBox(height: 12),
                           GradientButton(
                             label: _continueLabel,
@@ -394,6 +383,35 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             alignment: Alignment.bottomCenter,
             child: ScrollingCityDecorBar(),
           ),
+          if (_step == 0)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: TextButton(
+                    onPressed:
+                        _isSwitchingAccount ? null : _promptSwitchAccount,
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.textSecondary,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                    ),
+                    child: Text(
+                      _isSwitchingAccount ? 'Выходим…' : 'Сменить аккаунт',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary.withValues(alpha: 0.75),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
