@@ -13,7 +13,7 @@
 | `code` | `bars`, `restaurants`, … |
 | `title` | «Бары», … |
 | `title_en` | English |
-| `icon_url` | опционально |
+| `icon_url` | S3-ключ (`place_categories/{code}.png`), отдача: `GET /media/{key}` |
 | `sort_order` | порядок в UI |
 
 Enum в коде (`python.libs.entities.place.PlaceCategory`) остаётся как набор допустимых кодов.
