@@ -31,8 +31,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       'Мы отметили то, что подходит по вашему рассказу. Можно поправить.';
 
   final _pageController = PageController();
+  final _stepOneKey = GlobalKey<OnboardingStepOnePageState>();
+  final _productsKey = GlobalKey<OnboardingInterestsPageState>();
+  final _placesKey = GlobalKey<OnboardingInterestsPageState>();
   int _step = 0;
   bool _isSwitchingAccount = false;
+  bool _continueBusy = false;
   List<CatalogItem> _productCategories = const [];
   List<CatalogItem> _placeCategories = const [];
   Set<String> _matchedProductCodes = {};
@@ -177,6 +181,35 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     await _switchAccount();
   }
 
+  bool get _canContinue {
+    if (_continueBusy) return false;
+    if (_step == 0) {
+      return _stepOneKey.currentState?.canContinue ?? false;
+    }
+    return true;
+  }
+
+  String get _continueLabel {
+    if (!_continueBusy) return 'Продолжить';
+    return _step == 0 ? 'Подбираем интересы…' : 'Сохраняем…';
+  }
+
+  Future<void> _onBottomContinue() async {
+    if (!_canContinue) return;
+    setState(() => _continueBusy = true);
+    try {
+      if (_step == 0) {
+        await _stepOneKey.currentState?.submit();
+      } else if (_step == 1) {
+        await _onProductsContinue(_productsKey.currentState?.selected ?? {});
+      } else {
+        await _onPlacesContinue(_placesKey.currentState?.selected ?? {});
+      }
+    } finally {
+      if (mounted) setState(() => _continueBusy = false);
+    }
+  }
+
   Future<void> _switchAccount() async {
     if (_isSwitchingAccount) return;
     setState(() => _isSwitchingAccount = true);
@@ -275,14 +308,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 420),
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: Column(
+                        children: [
+                          Expanded(
                             child: Container(
                               width: double.infinity,
                               padding:
@@ -306,51 +339,51 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                 physics: const NeverScrollableScrollPhysics(),
                                 children: [
                                   OnboardingStepOnePage(
+                                    key: _stepOneKey,
+                                    onChanged: () => setState(() {}),
                                     onContinue: _onStepOneContinue,
                                   ),
                                   OnboardingInterestsPage(
-                                    key: ValueKey(
-                                      'products:${_productCategories.length}:${_matchedProductCodes.join(',')}',
-                                    ),
+                                    key: _productsKey,
                                     title:
                                         'Вас интересуют эти товары и услуги?',
                                     subtitle: _matchHint,
                                     categories: _productCategories,
                                     initialSelected: _matchedProductCodes,
-                                    onContinue: _onProductsContinue,
                                   ),
                                   OnboardingInterestsPage(
-                                    key: ValueKey(
-                                      'places:${_placeCategories.length}:${_matchedPlaceCodes.join(',')}',
-                                    ),
+                                    key: _placesKey,
                                     title:
                                         'Вам интересны эти места вокруг вас?',
                                     subtitle: _matchHint,
                                     categories: _placeCategories,
                                     initialSelected: _matchedPlaceCodes,
-                                    onContinue: _onPlacesContinue,
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 420),
-                          child: GradientButton(
-                            label: _isSwitchingAccount
-                                ? 'Выходим…'
-                                : 'Сменить аккаунт',
-                            onPressed: _isSwitchingAccount
-                                ? null
-                                : _promptSwitchAccount,
+                          if (_step == 0) ...[
+                            const SizedBox(height: 12),
+                            GradientButton(
+                              label: _isSwitchingAccount
+                                  ? 'Выходим…'
+                                  : 'Сменить аккаунт',
+                              onPressed: _isSwitchingAccount
+                                  ? null
+                                  : _promptSwitchAccount,
+                            ),
+                          ],
+                          const SizedBox(height: 12),
+                          GradientButton(
+                            label: _continueLabel,
+                            onPressed:
+                                _canContinue ? _onBottomContinue : null,
                           ),
-                        ),
+                          const SizedBox(height: 88),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),

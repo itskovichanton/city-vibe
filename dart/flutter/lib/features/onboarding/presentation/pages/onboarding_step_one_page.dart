@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:city_vibe/core/user/user_providers.dart';
 import 'package:city_vibe/features/auth/presentation/widgets/auth_text_field.dart';
-import 'package:city_vibe/features/auth/presentation/widgets/gradient_button.dart';
 import 'package:city_vibe/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +12,7 @@ class OnboardingStepOnePage extends ConsumerStatefulWidget {
   const OnboardingStepOnePage({
     super.key,
     required this.onContinue,
+    this.onChanged,
   });
 
   final Future<void> Function({
@@ -20,19 +20,23 @@ class OnboardingStepOnePage extends ConsumerStatefulWidget {
     required String longBio,
     String? avatarFilePath,
   }) onContinue;
+  final VoidCallback? onChanged;
 
   @override
   ConsumerState<OnboardingStepOnePage> createState() =>
-      _OnboardingStepOnePageState();
+      OnboardingStepOnePageState();
 }
 
-class _OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
+class OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
   static const _bioMaxLen = 500;
   late final TextEditingController _nameController;
   late final TextEditingController _bioController;
   final _picker = ImagePicker();
   String? _avatarFilePath;
-  bool _submitting = false;
+
+  bool get canContinue =>
+      _nameController.text.trim().isNotEmpty &&
+      _bioController.text.trim().isNotEmpty;
 
   @override
   void initState() {
@@ -40,8 +44,14 @@ class _OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
     final user = ref.read(currentUserProvider).valueOrNull;
     _nameController = TextEditingController(text: user?.name ?? '');
     _bioController = TextEditingController(text: user?.longBio ?? '');
-    _nameController.addListener(() => setState(() {}));
-    _bioController.addListener(() => setState(() {}));
+    _nameController.addListener(_onFieldsChanged);
+    _bioController.addListener(_onFieldsChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) => widget.onChanged?.call());
+  }
+
+  void _onFieldsChanged() {
+    setState(() {});
+    widget.onChanged?.call();
   }
 
   @override
@@ -51,10 +61,14 @@ class _OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
     super.dispose();
   }
 
-  bool get _canContinue =>
-      !_submitting &&
-      _nameController.text.trim().isNotEmpty &&
-      _bioController.text.trim().isNotEmpty;
+  Future<void> submit() async {
+    if (!canContinue) return;
+    await widget.onContinue(
+      name: _nameController.text.trim(),
+      longBio: _bioController.text.trim(),
+      avatarFilePath: _avatarFilePath,
+    );
+  }
 
   Future<void> _pickAvatar() async {
     final source = await showModalBottomSheet<ImageSource>(
@@ -129,20 +143,6 @@ class _OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
           behavior: SnackBarBehavior.floating,
         ),
       );
-    }
-  }
-
-  Future<void> _submit() async {
-    if (!_canContinue) return;
-    setState(() => _submitting = true);
-    try {
-      await widget.onContinue(
-        name: _nameController.text.trim(),
-        longBio: _bioController.text.trim(),
-        avatarFilePath: _avatarFilePath,
-      );
-    } finally {
-      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -277,11 +277,6 @@ class _OnboardingStepOnePageState extends ConsumerState<OnboardingStepOnePage> {
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 28),
-          GradientButton(
-            label: _submitting ? 'Подбираем интересы…' : 'Продолжить',
-            onPressed: _canContinue ? _submit : null,
           ),
         ],
       ),
